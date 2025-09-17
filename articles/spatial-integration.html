@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="GeoSpatialSuite Development Team" />
+
+
+<title>Spatial Data Integration</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Spatial Data Integration</h1>
+<h4 class="author">GeoSpatialSuite Development Team</h4>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>Spatial data integration is essential for combining information from
+different sources and scales. The GeoSpatialSuite package provides the
+<code>universal_spatial_join()</code> function that handles all major
+spatial data combinations with automatic method detection and robust
+error handling.</p>
+</div>
+<div id="learning-objectives" class="section level2">
+<h2>Learning Objectives</h2>
+<p>By the end of this vignette, you will be able to:</p>
+<ul>
+<li>Integrate vector and raster datasets using universal spatial
+joins</li>
+<li>Extract raster values to point/polygon locations</li>
+<li>Calculate zonal statistics for regions</li>
+<li>Resample and align raster data</li>
+<li>Handle different coordinate systems automatically</li>
+<li>Perform multi-scale spatial operations</li>
+</ul>
+</div>
+<div id="prerequisites" class="section level2">
+<h2>Prerequisites</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># Load required packages</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(geospatialsuite)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(terra)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">library</span>(sf)</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co"># Verify package functionality</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="fu">test_function_availability</span>()</span></code></pre></div>
+</div>
+<div id="universal-spatial-join-overview" class="section level2">
+<h2>Universal Spatial Join Overview</h2>
+<p>The <code>universal_spatial_join()</code> function automatically
+detects data types and selects the appropriate spatial operation:</p>
+<ul>
+<li><strong>Vector → Raster</strong>: Extract raster values to
+points/polygons</li>
+<li><strong>Raster → Vector</strong>: Calculate zonal statistics</li>
+<li><strong>Raster → Raster</strong>: Resample, align, or overlay</li>
+<li><strong>Vector → Vector</strong>: Spatial intersection and
+overlay</li>
+</ul>
+</div>
+<div id="basic-spatial-joins" class="section level2">
+<h2>Basic Spatial Joins</h2>
+<div id="vector-to-raster-extraction-most-common" class="section level3">
+<h3>Vector to Raster Extraction (Most Common)</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># Create sample point data (field sites)</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>field_sites <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="at">site_id =</span> <span class="fu">paste0</span>(<span class="st">&quot;Site_&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">20</span>),</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="at">lon =</span> <span class="fu">runif</span>(<span class="dv">20</span>, <span class="sc">-</span><span class="fl">83.5</span>, <span class="sc">-</span><span class="fl">83.0</span>),</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">lat =</span> <span class="fu">runif</span>(<span class="dv">20</span>, <span class="fl">40.2</span>, <span class="fl">40.7</span>),</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="at">crop_type =</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="st">&quot;corn&quot;</span>, <span class="st">&quot;soybeans&quot;</span>, <span class="st">&quot;wheat&quot;</span>), <span class="dv">20</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>)</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co"># Create sample raster data (satellite imagery)</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>satellite_raster <span class="ot">&lt;-</span> <span class="fu">rast</span>(<span class="at">nrows =</span> <span class="dv">50</span>, <span class="at">ncols =</span> <span class="dv">50</span>, </span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>                        <span class="at">xmin =</span> <span class="sc">-</span><span class="fl">83.5</span>, <span class="at">xmax =</span> <span class="sc">-</span><span class="fl">83.0</span>, </span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>                        <span class="at">ymin =</span> <span class="fl">40.2</span>, <span class="at">ymax =</span> <span class="fl">40.7</span>)</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="fu">values</span>(satellite_raster) <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">2500</span>, <span class="fl">0.2</span>, <span class="fl">0.9</span>)</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="fu">names</span>(satellite_raster) <span class="ot">&lt;-</span> <span class="st">&quot;ndvi&quot;</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co"># Extract raster values to points (automatic method detection)</span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>extracted_results <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>  <span class="at">source_data =</span> field_sites,</span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a>  <span class="at">target_data =</span> satellite_raster,</span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;auto&quot;</span>,  <span class="co"># Automatically detects &quot;extract&quot;</span></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a>)</span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a></span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a><span class="co"># View results - original data plus extracted values</span></span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a><span class="fu">head</span>(extracted_results)</span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">names</span>(extracted_results))</span></code></pre></div>
+</div>
+<div id="extraction-with-buffer" class="section level3">
+<h3>Extraction with Buffer</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Extract values with 100m buffer around each point</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>buffered_extraction <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="at">source_data =</span> field_sites,</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="at">target_data =</span> satellite_raster,</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;extract&quot;</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  <span class="at">buffer_distance =</span> <span class="fl">0.001</span>,  <span class="co"># ~100m in degrees</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">summary_function =</span> <span class="st">&quot;mean&quot;</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>)</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co"># Compare point vs buffered extraction</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>comparison_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>  <span class="at">site_id =</span> extracted_results<span class="sc">$</span>site_id,</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>  <span class="at">point_extraction =</span> extracted_results<span class="sc">$</span>extracted_ndvi,</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>  <span class="at">buffer_extraction =</span> buffered_extraction<span class="sc">$</span>extracted_ndvi</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>)</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co"># Calculate differences</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>comparison_data<span class="sc">$</span>difference <span class="ot">&lt;-</span> <span class="fu">abs</span>(comparison_data<span class="sc">$</span>point_extraction <span class="sc">-</span> </span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>                                comparison_data<span class="sc">$</span>buffer_extraction)</span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">summary</span>(comparison_data<span class="sc">$</span>difference))</span></code></pre></div>
+</div>
+</div>
+<div id="zonal-statistics" class="section level2">
+<h2>Zonal Statistics</h2>
+<div id="raster-to-vector-analysis" class="section level3">
+<h3>Raster to Vector Analysis</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># Create sample polygon data (management zones)</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>management_zones <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">zone_id =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">x_center =</span> <span class="fu">runif</span>(<span class="dv">5</span>, <span class="sc">-</span><span class="fl">83.4</span>, <span class="sc">-</span><span class="fl">83.1</span>),</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">y_center =</span> <span class="fu">runif</span>(<span class="dv">5</span>, <span class="fl">40.3</span>, <span class="fl">40.6</span>),</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">zone_type =</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="st">&quot;irrigated&quot;</span>, <span class="st">&quot;dryland&quot;</span>), <span class="dv">5</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>)</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co"># Convert to polygons with buffers</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>zones_sf <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(management_zones, </span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>                     <span class="at">coords =</span> <span class="fu">c</span>(<span class="st">&quot;x_center&quot;</span>, <span class="st">&quot;y_center&quot;</span>), </span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>                     <span class="at">crs =</span> <span class="dv">4326</span>)</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>zones_polygons <span class="ot">&lt;-</span> <span class="fu">st_buffer</span>(zones_sf, <span class="at">dist =</span> <span class="fl">0.02</span>)  <span class="co"># ~2km buffer</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co"># Calculate zonal statistics</span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>zonal_results <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>  <span class="at">source_data =</span> satellite_raster,  <span class="co"># Raster first for zonal</span></span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>  <span class="at">target_data =</span> zones_polygons,    <span class="co"># Polygons second</span></span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;zonal&quot;</span>,</span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a>  <span class="at">summary_function =</span> <span class="st">&quot;mean&quot;</span>,</span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a>)</span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co"># View zonal statistics</span></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a><span class="fu">head</span>(zonal_results)</span></code></pre></div>
+</div>
+<div id="multiple-summary-functions" class="section level3">
+<h3>Multiple Summary Functions</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Calculate multiple statistics for each zone</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>summary_functions <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;mean&quot;</span>, <span class="st">&quot;median&quot;</span>, <span class="st">&quot;max&quot;</span>, <span class="st">&quot;min&quot;</span>, <span class="st">&quot;sd&quot;</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>zonal_multi_stats <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="cf">for</span> (func <span class="cf">in</span> summary_functions) {</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  result <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>    <span class="at">source_data =</span> satellite_raster,</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>    <span class="at">target_data =</span> zones_polygons,</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">&quot;zonal&quot;</span>,</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>    <span class="at">summary_function =</span> func,</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>    <span class="at">verbose =</span> <span class="cn">FALSE</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>  )</span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>  </span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>  <span class="co"># Extract the new column</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a>  stat_col <span class="ot">&lt;-</span> <span class="fu">names</span>(result)[<span class="sc">!</span><span class="fu">names</span>(result) <span class="sc">%in%</span> <span class="fu">names</span>(zones_polygons)]</span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a>  zonal_multi_stats[[func]] <span class="ot">&lt;-</span> result[[stat_col[<span class="dv">1</span>]]]</span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a>}</span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co"># Combine into summary data frame</span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a>zone_summary <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a>  <span class="at">zone_id =</span> zones_polygons<span class="sc">$</span>zone_id,</span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a>  <span class="at">zone_type =</span> zones_polygons<span class="sc">$</span>zone_type,</span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a>  <span class="at">mean_ndvi =</span> zonal_multi_stats<span class="sc">$</span>mean,</span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a>  <span class="at">median_ndvi =</span> zonal_multi_stats<span class="sc">$</span>median,</span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a>  <span class="at">max_ndvi =</span> zonal_multi_stats<span class="sc">$</span>max,</span>
+<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a>  <span class="at">min_ndvi =</span> zonal_multi_stats<span class="sc">$</span>min,</span>
+<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a>  <span class="at">sd_ndvi =</span> zonal_multi_stats<span class="sc">$</span>sd</span>
+<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a>)</span>
+<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a></span>
+<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a><span class="fu">print</span>(zone_summary)</span></code></pre></div>
+</div>
+</div>
+<div id="raster-operations" class="section level2">
+<h2>Raster Operations</h2>
+<div id="raster-resampling-and-alignment" class="section level3">
+<h3>Raster Resampling and Alignment</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># Create rasters with different resolutions</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>high_res_raster <span class="ot">&lt;-</span> <span class="fu">rast</span>(<span class="at">nrows =</span> <span class="dv">100</span>, <span class="at">ncols =</span> <span class="dv">100</span>, </span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>                       <span class="at">xmin =</span> <span class="sc">-</span><span class="fl">83.5</span>, <span class="at">xmax =</span> <span class="sc">-</span><span class="fl">83.0</span>, </span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>                       <span class="at">ymin =</span> <span class="fl">40.2</span>, <span class="at">ymax =</span> <span class="fl">40.7</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="fu">values</span>(high_res_raster) <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">10000</span>, <span class="fl">0.3</span>, <span class="fl">0.8</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="fu">names</span>(high_res_raster) <span class="ot">&lt;-</span> <span class="st">&quot;detailed_ndvi&quot;</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>low_res_raster <span class="ot">&lt;-</span> <span class="fu">rast</span>(<span class="at">nrows =</span> <span class="dv">20</span>, <span class="at">ncols =</span> <span class="dv">20</span>, </span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>                      <span class="at">xmin =</span> <span class="sc">-</span><span class="fl">83.5</span>, <span class="at">xmax =</span> <span class="sc">-</span><span class="fl">83.0</span>, </span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>                      <span class="at">ymin =</span> <span class="fl">40.2</span>, <span class="at">ymax =</span> <span class="fl">40.7</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="fu">values</span>(low_res_raster) <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">400</span>, <span class="fl">0.1</span>, <span class="fl">0.6</span>)</span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="fu">names</span>(low_res_raster) <span class="ot">&lt;-</span> <span class="st">&quot;coarse_data&quot;</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co"># Resample high resolution to match low resolution</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a>resampled_result <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a>  <span class="at">source_data =</span> high_res_raster,</span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a>  <span class="at">target_data =</span> low_res_raster,</span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;resample&quot;</span>,</span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a>  <span class="at">summary_function =</span> <span class="st">&quot;mean&quot;</span>,</span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a>)</span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co"># Check resolution change</span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Original resolution:&quot;</span>, <span class="fu">res</span>(high_res_raster), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Resampled resolution:&quot;</span>, <span class="fu">res</span>(resampled_result), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+</div>
+<div id="scale-factor-operations" class="section level3">
+<h3>Scale Factor Operations</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># Aggregate by scale factor (coarser resolution)</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>aggregated_raster <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">source_data =</span> high_res_raster,</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="at">target_data =</span> <span class="cn">NULL</span>,  <span class="co"># No target needed for scaling</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;resample&quot;</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">scale_factor =</span> <span class="dv">5</span>,    <span class="co"># 5x coarser resolution</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="at">summary_function =</span> <span class="st">&quot;mean&quot;</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>)</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co"># Disaggregate (finer resolution)</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>disaggregated_raster <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>  <span class="at">source_data =</span> low_res_raster,</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>  <span class="at">target_data =</span> <span class="cn">NULL</span>,</span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;resample&quot;</span>,</span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>  <span class="at">scale_factor =</span> <span class="fl">0.5</span>,  <span class="co"># 2x finer resolution</span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>)</span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Original low res:&quot;</span>, <span class="fu">res</span>(low_res_raster), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Disaggregated res:&quot;</span>, <span class="fu">res</span>(disaggregated_raster), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="vector-to-vector-operations" class="section level2">
+<h2>Vector to Vector Operations</h2>
+<div id="spatial-overlay" class="section level3">
+<h3>Spatial Overlay</h3>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># Create county boundaries (simplified)</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>counties <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">county =</span> <span class="fu">c</span>(<span class="st">&quot;Franklin&quot;</span>, <span class="st">&quot;Delaware&quot;</span>, <span class="st">&quot;Union&quot;</span>),</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">x_center =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">83.0</span>, <span class="sc">-</span><span class="fl">83.1</span>, <span class="sc">-</span><span class="fl">83.3</span>),</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">y_center =</span> <span class="fu">c</span>(<span class="fl">40.0</span>, <span class="fl">40.4</span>, <span class="fl">40.2</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>)</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>counties_sf <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(counties, <span class="at">coords =</span> <span class="fu">c</span>(<span class="st">&quot;x_center&quot;</span>, <span class="st">&quot;y_center&quot;</span>), <span class="at">crs =</span> <span class="dv">4326</span>)</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>counties_polygons <span class="ot">&lt;-</span> <span class="fu">st_buffer</span>(counties_sf, <span class="at">dist =</span> <span class="fl">0.15</span>)  <span class="co"># Large county-like areas</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co"># Find which county each field site is in</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>sites_with_counties <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>  <span class="at">source_data =</span> field_sites,</span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>  <span class="at">target_data =</span> counties_polygons,</span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;overlay&quot;</span>,</span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a>)</span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a></span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="co"># View results</span></span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="fu">head</span>(sites_with_counties)</span></code></pre></div>
+</div>
+<div id="nearest-neighbor-analysis" class="section level3">
+<h3>Nearest Neighbor Analysis</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># Find nearest weather station for each field site</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>weather_stations <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="at">station_id =</span> <span class="fu">paste0</span>(<span class="st">&quot;WX_&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>),</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="at">longitude =</span> <span class="fu">runif</span>(<span class="dv">8</span>, <span class="sc">-</span><span class="fl">83.6</span>, <span class="sc">-</span><span class="fl">82.9</span>),</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="at">latitude =</span> <span class="fu">runif</span>(<span class="dv">8</span>, <span class="fl">40.1</span>, <span class="fl">40.8</span>),</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="at">elevation =</span> <span class="fu">runif</span>(<span class="dv">8</span>, <span class="dv">200</span>, <span class="dv">400</span>),</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  <span class="at">avg_temp =</span> <span class="fu">runif</span>(<span class="dv">8</span>, <span class="dv">10</span>, <span class="dv">15</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>)</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>nearest_results <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>  <span class="at">source_data =</span> field_sites,</span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>  <span class="at">target_data =</span> weather_stations,</span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;nearest&quot;</span>,</span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>)</span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a></span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="co"># Check distances to nearest stations</span></span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co"># The function automatically calculates spatial relationships</span></span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a><span class="fu">head</span>(nearest_results)</span></code></pre></div>
+</div>
+</div>
+<div id="advanced-integration-techniques" class="section level2">
+<h2>Advanced Integration Techniques</h2>
+<div id="multi-dataset-integration" class="section level3">
+<h3>Multi-Dataset Integration</h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># Integrate multiple datasets to field sites</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>raster_datasets <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">elevation =</span> <span class="fu">rast</span>(<span class="at">nrows =</span> <span class="dv">30</span>, <span class="at">ncols =</span> <span class="dv">30</span>, </span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>                  <span class="at">xmin =</span> <span class="sc">-</span><span class="fl">83.5</span>, <span class="at">xmax =</span> <span class="sc">-</span><span class="fl">83.0</span>, </span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>                  <span class="at">ymin =</span> <span class="fl">40.2</span>, <span class="at">ymax =</span> <span class="fl">40.7</span>),</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="at">temperature =</span> <span class="fu">rast</span>(<span class="at">nrows =</span> <span class="dv">30</span>, <span class="at">ncols =</span> <span class="dv">30</span>, </span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>                    <span class="at">xmin =</span> <span class="sc">-</span><span class="fl">83.5</span>, <span class="at">xmax =</span> <span class="sc">-</span><span class="fl">83.0</span>, </span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>                    <span class="at">ymin =</span> <span class="fl">40.2</span>, <span class="at">ymax =</span> <span class="fl">40.7</span>),</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>  <span class="at">precipitation =</span> <span class="fu">rast</span>(<span class="at">nrows =</span> <span class="dv">30</span>, <span class="at">ncols =</span> <span class="dv">30</span>, </span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>                      <span class="at">xmin =</span> <span class="sc">-</span><span class="fl">83.5</span>, <span class="at">xmax =</span> <span class="sc">-</span><span class="fl">83.0</span>, </span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>                      <span class="at">ymin =</span> <span class="fl">40.2</span>, <span class="at">ymax =</span> <span class="fl">40.7</span>)</span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a>)</span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co"># Add random values</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="fu">values</span>(raster_datasets<span class="sc">$</span>elevation) <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">900</span>, <span class="dv">200</span>, <span class="dv">400</span>)</span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="fu">values</span>(raster_datasets<span class="sc">$</span>temperature) <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">900</span>, <span class="dv">8</span>, <span class="dv">18</span>)</span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="fu">values</span>(raster_datasets<span class="sc">$</span>precipitation) <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">900</span>, <span class="dv">800</span>, <span class="dv">1200</span>)</span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co"># Extract all environmental variables to field sites</span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a>environmental_data <span class="ot">&lt;-</span> field_sites</span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="cf">for</span> (var_name <span class="cf">in</span> <span class="fu">names</span>(raster_datasets)) {</span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a>  extraction_result <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a>    <span class="at">source_data =</span> environmental_data,</span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a>    <span class="at">target_data =</span> raster_datasets[[var_name]],</span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">&quot;extract&quot;</span>,</span>
+<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a>    <span class="at">verbose =</span> <span class="cn">FALSE</span></span>
+<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a>  )</span>
+<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a>  </span>
+<span id="cb10-29"><a href="#cb10-29" tabindex="-1"></a>  <span class="co"># Add extracted values to main dataset</span></span>
+<span id="cb10-30"><a href="#cb10-30" tabindex="-1"></a>  new_col <span class="ot">&lt;-</span> <span class="fu">names</span>(extraction_result)[<span class="sc">!</span><span class="fu">names</span>(extraction_result) <span class="sc">%in%</span> <span class="fu">names</span>(environmental_data)]</span>
+<span id="cb10-31"><a href="#cb10-31" tabindex="-1"></a>  environmental_data[[var_name]] <span class="ot">&lt;-</span> extraction_result[[new_col[<span class="dv">1</span>]]]</span>
+<span id="cb10-32"><a href="#cb10-32" tabindex="-1"></a>}</span>
+<span id="cb10-33"><a href="#cb10-33" tabindex="-1"></a></span>
+<span id="cb10-34"><a href="#cb10-34" tabindex="-1"></a><span class="co"># View integrated dataset</span></span>
+<span id="cb10-35"><a href="#cb10-35" tabindex="-1"></a><span class="fu">head</span>(environmental_data)</span></code></pre></div>
+</div>
+<div id="terrain-analysis-integration" class="section level3">
+<h3>Terrain Analysis Integration</h3>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># Create sample DEM</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>dem_raster <span class="ot">&lt;-</span> <span class="fu">rast</span>(<span class="at">nrows =</span> <span class="dv">60</span>, <span class="at">ncols =</span> <span class="dv">60</span>, </span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>                  <span class="at">xmin =</span> <span class="sc">-</span><span class="fl">83.5</span>, <span class="at">xmax =</span> <span class="sc">-</span><span class="fl">83.0</span>, </span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>                  <span class="at">ymin =</span> <span class="fl">40.2</span>, <span class="at">ymax =</span> <span class="fl">40.7</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="fu">values</span>(dem_raster) <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">3600</span>, <span class="dv">200</span>, <span class="dv">500</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="fu">names</span>(dem_raster) <span class="ot">&lt;-</span> <span class="st">&quot;elevation&quot;</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co"># Use the integrated terrain analysis function</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>terrain_results <span class="ot">&lt;-</span> <span class="fu">integrate_terrain_analysis</span>(</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>  <span class="at">vector_data =</span> field_sites,</span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a>  <span class="at">elevation_raster =</span> dem_raster,</span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>  <span class="at">terrain_vars =</span> <span class="fu">c</span>(<span class="st">&quot;slope&quot;</span>, <span class="st">&quot;aspect&quot;</span>, <span class="st">&quot;TRI&quot;</span>, <span class="st">&quot;TPI&quot;</span>),</span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>  <span class="at">extraction_method =</span> <span class="st">&quot;extract&quot;</span></span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a>)</span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a></span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="co"># View terrain-enhanced field sites</span></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a><span class="fu">head</span>(terrain_results)</span></code></pre></div>
+</div>
+</div>
+<div id="coordinate-reference-system-handling" class="section level2">
+<h2>Coordinate Reference System Handling</h2>
+<div id="automatic-crs-management" class="section level3">
+<h3>Automatic CRS Management</h3>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># Create data in different coordinate systems</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>utm_points <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="at">id =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="at">x_utm =</span> <span class="fu">runif</span>(<span class="dv">10</span>, <span class="dv">300000</span>, <span class="dv">350000</span>),  <span class="co"># UTM coordinates</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="at">y_utm =</span> <span class="fu">runif</span>(<span class="dv">10</span>, <span class="dv">4450000</span>, <span class="dv">4480000</span>)</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>)</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co"># Convert to UTM Zone 17N</span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>utm_sf <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(utm_points, <span class="at">coords =</span> <span class="fu">c</span>(<span class="st">&quot;x_utm&quot;</span>, <span class="st">&quot;y_utm&quot;</span>), <span class="at">crs =</span> <span class="dv">32617</span>)</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co"># Our raster is in WGS84 (EPSG:4326)</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>wgs84_raster <span class="ot">&lt;-</span> satellite_raster</span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a></span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="co"># Universal spatial join handles CRS conversion automatically</span></span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a>utm_extraction <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a>  <span class="at">source_data =</span> utm_sf,</span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a>  <span class="at">target_data =</span> wgs84_raster,</span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;extract&quot;</span>,</span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span>  <span class="co"># Shows CRS conversion messages</span></span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a>)</span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a></span>
+<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a><span class="co"># Check that extraction worked despite different CRS</span></span>
+<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a><span class="fu">head</span>(utm_extraction)</span></code></pre></div>
+</div>
+<div id="manual-crs-specification" class="section level3">
+<h3>Manual CRS Specification</h3>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># Force specific output CRS</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>projected_result <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="at">source_data =</span> field_sites,</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="at">target_data =</span> satellite_raster,</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;extract&quot;</span>,</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  <span class="at">crs_target =</span> <span class="dv">32617</span>,  <span class="co"># UTM Zone 17N</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>)</span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co"># Check output CRS</span></span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a><span class="fu">st_crs</span>(projected_result)</span></code></pre></div>
+</div>
+</div>
+<div id="handling-missing-data" class="section level2">
+<h2>Handling Missing Data</h2>
+<div id="na-strategy-options" class="section level3">
+<h3>NA Strategy Options</h3>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Create raster with some NA values</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>sparse_raster <span class="ot">&lt;-</span> satellite_raster</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="fu">values</span>(sparse_raster)[<span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">ncell</span>(sparse_raster), <span class="dv">500</span>)] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="fu">names</span>(sparse_raster) <span class="ot">&lt;-</span> <span class="st">&quot;sparse_data&quot;</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co"># Different strategies for handling NAs</span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>strategies <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;remove&quot;</span>, <span class="st">&quot;nearest&quot;</span>, <span class="st">&quot;zero&quot;</span>)</span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>na_handling_results <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="cf">for</span> (strategy <span class="cf">in</span> strategies) {</span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a>  result <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a>    <span class="at">source_data =</span> field_sites,</span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a>    <span class="at">target_data =</span> sparse_raster,</span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">&quot;extract&quot;</span>,</span>
+<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a>    <span class="at">na_strategy =</span> strategy,</span>
+<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a>    <span class="at">verbose =</span> <span class="cn">FALSE</span></span>
+<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a>  )</span>
+<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a>  </span>
+<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a>  extracted_col <span class="ot">&lt;-</span> <span class="fu">names</span>(result)[<span class="fu">grepl</span>(<span class="st">&quot;extracted&quot;</span>, <span class="fu">names</span>(result))]</span>
+<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a>  na_handling_results[[strategy]] <span class="ot">&lt;-</span> result[[extracted_col[<span class="dv">1</span>]]]</span>
+<span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a>}</span>
+<span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a></span>
+<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a><span class="co"># Compare different NA handling approaches</span></span>
+<span id="cb14-24"><a href="#cb14-24" tabindex="-1"></a>na_comparison <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb14-25"><a href="#cb14-25" tabindex="-1"></a>  <span class="at">site_id =</span> field_sites<span class="sc">$</span>site_id,</span>
+<span id="cb14-26"><a href="#cb14-26" tabindex="-1"></a>  <span class="at">remove_na =</span> na_handling_results<span class="sc">$</span>remove,</span>
+<span id="cb14-27"><a href="#cb14-27" tabindex="-1"></a>  <span class="at">nearest_fill =</span> na_handling_results<span class="sc">$</span>nearest,</span>
+<span id="cb14-28"><a href="#cb14-28" tabindex="-1"></a>  <span class="at">zero_fill =</span> na_handling_results<span class="sc">$</span>zero</span>
+<span id="cb14-29"><a href="#cb14-29" tabindex="-1"></a>)</span>
+<span id="cb14-30"><a href="#cb14-30" tabindex="-1"></a></span>
+<span id="cb14-31"><a href="#cb14-31" tabindex="-1"></a><span class="co"># Count NAs in each approach</span></span>
+<span id="cb14-32"><a href="#cb14-32" tabindex="-1"></a><span class="fu">sapply</span>(na_comparison[<span class="sc">-</span><span class="dv">1</span>], <span class="cf">function</span>(x) <span class="fu">sum</span>(<span class="fu">is.na</span>(x)))</span></code></pre></div>
+</div>
+</div>
+<div id="advanced-spatial-operations" class="section level2">
+<h2>Advanced Spatial Operations</h2>
+<div id="multi-scale-analysis" class="section level3">
+<h3>Multi-Scale Analysis</h3>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># Create rasters at different scales</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>scales <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">4</span>, <span class="dv">8</span>)  <span class="co"># Different aggregation levels</span></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>multi_scale_data <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>base_raster <span class="ot">&lt;-</span> satellite_raster</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="cf">for</span> (scale <span class="cf">in</span> scales) {</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>  <span class="cf">if</span> (scale <span class="sc">==</span> <span class="dv">1</span>) {</span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>    multi_scale_data[[<span class="fu">paste0</span>(<span class="st">&quot;scale_&quot;</span>, scale)]] <span class="ot">&lt;-</span> base_raster</span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a>    aggregated <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a>      <span class="at">source_data =</span> base_raster,</span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a>      <span class="at">target_data =</span> <span class="cn">NULL</span>,</span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a>      <span class="at">method =</span> <span class="st">&quot;resample&quot;</span>,</span>
+<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a>      <span class="at">scale_factor =</span> scale,</span>
+<span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a>      <span class="at">summary_function =</span> <span class="st">&quot;mean&quot;</span></span>
+<span id="cb15-16"><a href="#cb15-16" tabindex="-1"></a>    )</span>
+<span id="cb15-17"><a href="#cb15-17" tabindex="-1"></a>    multi_scale_data[[<span class="fu">paste0</span>(<span class="st">&quot;scale_&quot;</span>, scale)]] <span class="ot">&lt;-</span> aggregated</span>
+<span id="cb15-18"><a href="#cb15-18" tabindex="-1"></a>  }</span>
+<span id="cb15-19"><a href="#cb15-19" tabindex="-1"></a>}</span>
+<span id="cb15-20"><a href="#cb15-20" tabindex="-1"></a></span>
+<span id="cb15-21"><a href="#cb15-21" tabindex="-1"></a><span class="co"># Extract values at different scales</span></span>
+<span id="cb15-22"><a href="#cb15-22" tabindex="-1"></a>multi_scale_extraction <span class="ot">&lt;-</span> field_sites</span>
+<span id="cb15-23"><a href="#cb15-23" tabindex="-1"></a><span class="cf">for</span> (scale_name <span class="cf">in</span> <span class="fu">names</span>(multi_scale_data)) {</span>
+<span id="cb15-24"><a href="#cb15-24" tabindex="-1"></a>  result <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb15-25"><a href="#cb15-25" tabindex="-1"></a>    <span class="at">source_data =</span> multi_scale_extraction,</span>
+<span id="cb15-26"><a href="#cb15-26" tabindex="-1"></a>    <span class="at">target_data =</span> multi_scale_data[[scale_name]],</span>
+<span id="cb15-27"><a href="#cb15-27" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">&quot;extract&quot;</span>,</span>
+<span id="cb15-28"><a href="#cb15-28" tabindex="-1"></a>    <span class="at">verbose =</span> <span class="cn">FALSE</span></span>
+<span id="cb15-29"><a href="#cb15-29" tabindex="-1"></a>  )</span>
+<span id="cb15-30"><a href="#cb15-30" tabindex="-1"></a>  </span>
+<span id="cb15-31"><a href="#cb15-31" tabindex="-1"></a>  <span class="co"># Add to main dataset</span></span>
+<span id="cb15-32"><a href="#cb15-32" tabindex="-1"></a>  new_col <span class="ot">&lt;-</span> <span class="fu">names</span>(result)[<span class="sc">!</span><span class="fu">names</span>(result) <span class="sc">%in%</span> <span class="fu">names</span>(multi_scale_extraction)]</span>
+<span id="cb15-33"><a href="#cb15-33" tabindex="-1"></a>  multi_scale_extraction[[scale_name]] <span class="ot">&lt;-</span> result[[new_col[<span class="dv">1</span>]]]</span>
+<span id="cb15-34"><a href="#cb15-34" tabindex="-1"></a>}</span>
+<span id="cb15-35"><a href="#cb15-35" tabindex="-1"></a></span>
+<span id="cb15-36"><a href="#cb15-36" tabindex="-1"></a><span class="co"># Analyze scale effects</span></span>
+<span id="cb15-37"><a href="#cb15-37" tabindex="-1"></a>scale_columns <span class="ot">&lt;-</span> <span class="fu">names</span>(multi_scale_extraction)[<span class="fu">grepl</span>(<span class="st">&quot;scale_&quot;</span>, <span class="fu">names</span>(multi_scale_extraction))]</span>
+<span id="cb15-38"><a href="#cb15-38" tabindex="-1"></a>scale_analysis <span class="ot">&lt;-</span> multi_scale_extraction[<span class="fu">c</span>(<span class="st">&quot;site_id&quot;</span>, scale_columns)]</span>
+<span id="cb15-39"><a href="#cb15-39" tabindex="-1"></a><span class="fu">head</span>(scale_analysis)</span></code></pre></div>
+</div>
+<div id="spatial-interpolation-integration" class="section level3">
+<h3>Spatial Interpolation Integration</h3>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co"># Create sparse monitoring data</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>sparse_monitoring <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>  <span class="at">monitor_id =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>,</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>  <span class="at">longitude =</span> <span class="fu">runif</span>(<span class="dv">8</span>, <span class="sc">-</span><span class="fl">83.4</span>, <span class="sc">-</span><span class="fl">83.1</span>),</span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>  <span class="at">latitude =</span> <span class="fu">runif</span>(<span class="dv">8</span>, <span class="fl">40.3</span>, <span class="fl">40.6</span>),</span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>  <span class="at">soil_ph =</span> <span class="fu">runif</span>(<span class="dv">8</span>, <span class="fl">6.0</span>, <span class="fl">7.5</span>),</span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>  <span class="at">organic_matter =</span> <span class="fu">runif</span>(<span class="dv">8</span>, <span class="dv">2</span>, <span class="dv">6</span>)</span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>)</span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a></span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a><span class="co"># Some missing values</span></span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a>sparse_monitoring<span class="sc">$</span>soil_ph[<span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">5</span>)] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a>sparse_monitoring<span class="sc">$</span>organic_matter[<span class="fu">c</span>(<span class="dv">3</span>, <span class="dv">7</span>)] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a></span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a><span class="co"># Interpolate missing values</span></span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a>interpolated_data <span class="ot">&lt;-</span> <span class="fu">spatial_interpolation_comprehensive</span>(</span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a>  <span class="at">spatial_data =</span> sparse_monitoring,</span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a>  <span class="at">target_variables =</span> <span class="fu">c</span>(<span class="st">&quot;soil_ph&quot;</span>, <span class="st">&quot;organic_matter&quot;</span>),</span>
+<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;NN&quot;</span>,  <span class="co"># Nearest neighbor</span></span>
+<span id="cb16-19"><a href="#cb16-19" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb16-20"><a href="#cb16-20" tabindex="-1"></a>)</span>
+<span id="cb16-21"><a href="#cb16-21" tabindex="-1"></a></span>
+<span id="cb16-22"><a href="#cb16-22" tabindex="-1"></a><span class="co"># Compare before and after interpolation</span></span>
+<span id="cb16-23"><a href="#cb16-23" tabindex="-1"></a>comparison <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb16-24"><a href="#cb16-24" tabindex="-1"></a>  <span class="at">original_ph =</span> sparse_monitoring<span class="sc">$</span>soil_ph,</span>
+<span id="cb16-25"><a href="#cb16-25" tabindex="-1"></a>  <span class="at">interpolated_ph =</span> interpolated_data<span class="sc">$</span>soil_ph,</span>
+<span id="cb16-26"><a href="#cb16-26" tabindex="-1"></a>  <span class="at">original_om =</span> sparse_monitoring<span class="sc">$</span>organic_matter,</span>
+<span id="cb16-27"><a href="#cb16-27" tabindex="-1"></a>  <span class="at">interpolated_om =</span> interpolated_data<span class="sc">$</span>organic_matter</span>
+<span id="cb16-28"><a href="#cb16-28" tabindex="-1"></a>)</span>
+<span id="cb16-29"><a href="#cb16-29" tabindex="-1"></a></span>
+<span id="cb16-30"><a href="#cb16-30" tabindex="-1"></a><span class="fu">print</span>(comparison)</span></code></pre></div>
+</div>
+</div>
+<div id="working-with-large-datasets" class="section level2">
+<h2>Working with Large Datasets</h2>
+<div id="chunked-processing" class="section level3">
+<h3>Chunked Processing</h3>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="co"># Simulate large point dataset</span></span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>large_dataset <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>  <span class="at">point_id =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">5000</span>,</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>  <span class="at">x =</span> <span class="fu">runif</span>(<span class="dv">5000</span>, <span class="sc">-</span><span class="fl">83.5</span>, <span class="sc">-</span><span class="fl">83.0</span>),</span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>  <span class="at">y =</span> <span class="fu">runif</span>(<span class="dv">5000</span>, <span class="fl">40.2</span>, <span class="fl">40.7</span>),</span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a>  <span class="at">measurement =</span> <span class="fu">runif</span>(<span class="dv">5000</span>, <span class="dv">0</span>, <span class="dv">100</span>)</span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a>)</span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="co"># Process in chunks for memory efficiency</span></span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a>chunked_extraction <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a>  <span class="at">source_data =</span> large_dataset,</span>
+<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a>  <span class="at">target_data =</span> satellite_raster,</span>
+<span id="cb17-13"><a href="#cb17-13" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;extract&quot;</span>,</span>
+<span id="cb17-14"><a href="#cb17-14" tabindex="-1"></a>  <span class="at">chunk_size =</span> <span class="dv">1000</span>,  <span class="co"># Process 1000 points at a time</span></span>
+<span id="cb17-15"><a href="#cb17-15" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb17-16"><a href="#cb17-16" tabindex="-1"></a>)</span>
+<span id="cb17-17"><a href="#cb17-17" tabindex="-1"></a></span>
+<span id="cb17-18"><a href="#cb17-18" tabindex="-1"></a><span class="co"># Check processing efficiency</span></span>
+<span id="cb17-19"><a href="#cb17-19" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Processed&quot;</span>, <span class="fu">nrow</span>(chunked_extraction), <span class="st">&quot;points successfully</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+</div>
+<div id="memory-efficient-raster-operations" class="section level3">
+<h3>Memory-Efficient Raster Operations</h3>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="co"># Create multiple large rasters</span></span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>raster_list <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>) {</span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a>  r <span class="ot">&lt;-</span> <span class="fu">rast</span>(<span class="at">nrows =</span> <span class="dv">200</span>, <span class="at">ncols =</span> <span class="dv">200</span>, </span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a>           <span class="at">xmin =</span> <span class="sc">-</span><span class="dv">84</span>, <span class="at">xmax =</span> <span class="sc">-</span><span class="dv">82</span>, <span class="at">ymin =</span> <span class="dv">40</span>, <span class="at">ymax =</span> <span class="dv">42</span>)</span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a>  <span class="fu">values</span>(r) <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">40000</span>, <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a>  <span class="fu">names</span>(r) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;band_&quot;</span>, i)</span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a>  raster_list[[i]] <span class="ot">&lt;-</span> r</span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a>}</span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a></span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a><span class="co"># Efficiently combine rasters</span></span>
+<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a>combined_raster <span class="ot">&lt;-</span> <span class="fu">raster_to_raster_ops</span>(</span>
+<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a>  <span class="at">raster1 =</span> raster_list[[<span class="dv">1</span>]],</span>
+<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a>  <span class="at">raster2 =</span> raster_list[[<span class="dv">2</span>]],</span>
+<span id="cb18-15"><a href="#cb18-15" tabindex="-1"></a>  <span class="at">operation =</span> <span class="st">&quot;add&quot;</span>,</span>
+<span id="cb18-16"><a href="#cb18-16" tabindex="-1"></a>  <span class="at">handle_na =</span> <span class="st">&quot;ignore&quot;</span>,</span>
+<span id="cb18-17"><a href="#cb18-17" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb18-18"><a href="#cb18-18" tabindex="-1"></a>)</span>
+<span id="cb18-19"><a href="#cb18-19" tabindex="-1"></a></span>
+<span id="cb18-20"><a href="#cb18-20" tabindex="-1"></a><span class="co"># Multi-raster operations</span></span>
+<span id="cb18-21"><a href="#cb18-21" tabindex="-1"></a>mean_composite <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb18-22"><a href="#cb18-22" tabindex="-1"></a>  <span class="at">source_data =</span> raster_list[[<span class="dv">1</span>]],</span>
+<span id="cb18-23"><a href="#cb18-23" tabindex="-1"></a>  <span class="at">target_data =</span> raster_list[[<span class="dv">2</span>]],</span>
+<span id="cb18-24"><a href="#cb18-24" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;resample&quot;</span>,</span>
+<span id="cb18-25"><a href="#cb18-25" tabindex="-1"></a>  <span class="at">summary_function =</span> <span class="st">&quot;mean&quot;</span>,</span>
+<span id="cb18-26"><a href="#cb18-26" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb18-27"><a href="#cb18-27" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+</div>
+<div id="real-world-integration-examples" class="section level2">
+<h2>Real-World Integration Examples</h2>
+<div id="agricultural-field-analysis" class="section level3">
+<h3>Agricultural Field Analysis</h3>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="co"># Simulate complete agricultural analysis workflow</span></span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>farm_fields <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a>  <span class="at">field_id =</span> <span class="fu">paste0</span>(<span class="st">&quot;Field_&quot;</span>, LETTERS[<span class="dv">1</span><span class="sc">:</span><span class="dv">15</span>]),</span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a>  <span class="at">longitude =</span> <span class="fu">runif</span>(<span class="dv">15</span>, <span class="sc">-</span><span class="fl">83.4</span>, <span class="sc">-</span><span class="fl">83.1</span>),</span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a>  <span class="at">latitude =</span> <span class="fu">runif</span>(<span class="dv">15</span>, <span class="fl">40.3</span>, <span class="fl">40.6</span>),</span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a>  <span class="at">crop_type =</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="st">&quot;corn&quot;</span>, <span class="st">&quot;soybeans&quot;</span>), <span class="dv">15</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a>  <span class="at">planting_date =</span> <span class="fu">as.Date</span>(<span class="st">&quot;2023-05-01&quot;</span>) <span class="sc">+</span> <span class="fu">sample</span>(<span class="dv">0</span><span class="sc">:</span><span class="dv">20</span>, <span class="dv">15</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb19-8"><a href="#cb19-8" tabindex="-1"></a>)</span>
+<span id="cb19-9"><a href="#cb19-9" tabindex="-1"></a></span>
+<span id="cb19-10"><a href="#cb19-10" tabindex="-1"></a><span class="co"># Convert to polygons (field boundaries)</span></span>
+<span id="cb19-11"><a href="#cb19-11" tabindex="-1"></a>farm_sf <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(farm_fields, <span class="at">coords =</span> <span class="fu">c</span>(<span class="st">&quot;longitude&quot;</span>, <span class="st">&quot;latitude&quot;</span>), <span class="at">crs =</span> <span class="dv">4326</span>)</span>
+<span id="cb19-12"><a href="#cb19-12" tabindex="-1"></a>field_polygons <span class="ot">&lt;-</span> <span class="fu">st_buffer</span>(farm_sf, <span class="at">dist =</span> <span class="fl">0.008</span>)  <span class="co"># ~800m field size</span></span>
+<span id="cb19-13"><a href="#cb19-13" tabindex="-1"></a></span>
+<span id="cb19-14"><a href="#cb19-14" tabindex="-1"></a><span class="co"># Environmental datasets</span></span>
+<span id="cb19-15"><a href="#cb19-15" tabindex="-1"></a>environmental_rasters <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb19-16"><a href="#cb19-16" tabindex="-1"></a>  <span class="at">ndvi =</span> satellite_raster,</span>
+<span id="cb19-17"><a href="#cb19-17" tabindex="-1"></a>  <span class="at">elevation =</span> dem_raster,</span>
+<span id="cb19-18"><a href="#cb19-18" tabindex="-1"></a>  <span class="at">soil_moisture =</span> <span class="fu">rast</span>(<span class="at">nrows =</span> <span class="dv">40</span>, <span class="at">ncols =</span> <span class="dv">40</span>, </span>
+<span id="cb19-19"><a href="#cb19-19" tabindex="-1"></a>                      <span class="at">xmin =</span> <span class="sc">-</span><span class="fl">83.5</span>, <span class="at">xmax =</span> <span class="sc">-</span><span class="fl">83.0</span>, </span>
+<span id="cb19-20"><a href="#cb19-20" tabindex="-1"></a>                      <span class="at">ymin =</span> <span class="fl">40.2</span>, <span class="at">ymax =</span> <span class="fl">40.7</span>)</span>
+<span id="cb19-21"><a href="#cb19-21" tabindex="-1"></a>)</span>
+<span id="cb19-22"><a href="#cb19-22" tabindex="-1"></a><span class="fu">values</span>(environmental_rasters<span class="sc">$</span>soil_moisture) <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">1600</span>, <span class="fl">0.1</span>, <span class="fl">0.4</span>)</span>
+<span id="cb19-23"><a href="#cb19-23" tabindex="-1"></a></span>
+<span id="cb19-24"><a href="#cb19-24" tabindex="-1"></a><span class="co"># Comprehensive field characterization</span></span>
+<span id="cb19-25"><a href="#cb19-25" tabindex="-1"></a>field_analysis <span class="ot">&lt;-</span> farm_fields</span>
+<span id="cb19-26"><a href="#cb19-26" tabindex="-1"></a><span class="cf">for</span> (env_var <span class="cf">in</span> <span class="fu">names</span>(environmental_rasters)) {</span>
+<span id="cb19-27"><a href="#cb19-27" tabindex="-1"></a>  <span class="co"># Calculate field averages using zonal statistics</span></span>
+<span id="cb19-28"><a href="#cb19-28" tabindex="-1"></a>  zonal_result <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb19-29"><a href="#cb19-29" tabindex="-1"></a>    <span class="at">source_data =</span> environmental_rasters[[env_var]],</span>
+<span id="cb19-30"><a href="#cb19-30" tabindex="-1"></a>    <span class="at">target_data =</span> field_polygons,</span>
+<span id="cb19-31"><a href="#cb19-31" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">&quot;zonal&quot;</span>,</span>
+<span id="cb19-32"><a href="#cb19-32" tabindex="-1"></a>    <span class="at">summary_function =</span> <span class="st">&quot;mean&quot;</span>,</span>
+<span id="cb19-33"><a href="#cb19-33" tabindex="-1"></a>    <span class="at">verbose =</span> <span class="cn">FALSE</span></span>
+<span id="cb19-34"><a href="#cb19-34" tabindex="-1"></a>  )</span>
+<span id="cb19-35"><a href="#cb19-35" tabindex="-1"></a>  </span>
+<span id="cb19-36"><a href="#cb19-36" tabindex="-1"></a>  <span class="co"># Extract the zonal statistic</span></span>
+<span id="cb19-37"><a href="#cb19-37" tabindex="-1"></a>  stat_col <span class="ot">&lt;-</span> <span class="fu">names</span>(zonal_result)[<span class="fu">grepl</span>(<span class="st">&quot;zonal&quot;</span>, <span class="fu">names</span>(zonal_result))]</span>
+<span id="cb19-38"><a href="#cb19-38" tabindex="-1"></a>  field_analysis[[<span class="fu">paste0</span>(<span class="st">&quot;avg_&quot;</span>, env_var)]] <span class="ot">&lt;-</span> zonal_result[[stat_col[<span class="dv">1</span>]]]</span>
+<span id="cb19-39"><a href="#cb19-39" tabindex="-1"></a>}</span>
+<span id="cb19-40"><a href="#cb19-40" tabindex="-1"></a></span>
+<span id="cb19-41"><a href="#cb19-41" tabindex="-1"></a><span class="co"># View comprehensive field analysis</span></span>
+<span id="cb19-42"><a href="#cb19-42" tabindex="-1"></a><span class="fu">head</span>(field_analysis)</span></code></pre></div>
+</div>
+<div id="watershed-analysis" class="section level3">
+<h3>Watershed Analysis</h3>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="co"># Create watershed polygons</span></span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>watersheds <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a>  <span class="at">watershed_id =</span> <span class="fu">paste0</span>(<span class="st">&quot;WS_&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>),</span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a>  <span class="at">outlet_lon =</span> <span class="fu">runif</span>(<span class="dv">6</span>, <span class="sc">-</span><span class="fl">83.4</span>, <span class="sc">-</span><span class="fl">83.1</span>),</span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a>  <span class="at">outlet_lat =</span> <span class="fu">runif</span>(<span class="dv">6</span>, <span class="fl">40.3</span>, <span class="fl">40.6</span>),</span>
+<span id="cb20-6"><a href="#cb20-6" tabindex="-1"></a>  <span class="at">area_km2 =</span> <span class="fu">runif</span>(<span class="dv">6</span>, <span class="dv">10</span>, <span class="dv">100</span>)</span>
+<span id="cb20-7"><a href="#cb20-7" tabindex="-1"></a>)</span>
+<span id="cb20-8"><a href="#cb20-8" tabindex="-1"></a></span>
+<span id="cb20-9"><a href="#cb20-9" tabindex="-1"></a>watersheds_sf <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(watersheds, <span class="at">coords =</span> <span class="fu">c</span>(<span class="st">&quot;outlet_lon&quot;</span>, <span class="st">&quot;outlet_lat&quot;</span>), <span class="at">crs =</span> <span class="dv">4326</span>)</span>
+<span id="cb20-10"><a href="#cb20-10" tabindex="-1"></a><span class="co"># Create watershed polygons proportional to area</span></span>
+<span id="cb20-11"><a href="#cb20-11" tabindex="-1"></a>watersheds_polygons <span class="ot">&lt;-</span> <span class="fu">st_buffer</span>(watersheds_sf, <span class="at">dist =</span> <span class="fu">sqrt</span>(watersheds<span class="sc">$</span>area_km2) <span class="sc">*</span> <span class="fl">0.002</span>)</span>
+<span id="cb20-12"><a href="#cb20-12" tabindex="-1"></a></span>
+<span id="cb20-13"><a href="#cb20-13" tabindex="-1"></a><span class="co"># Calculate watershed statistics from multiple sources</span></span>
+<span id="cb20-14"><a href="#cb20-14" tabindex="-1"></a>watershed_stats <span class="ot">&lt;-</span> watersheds</span>
+<span id="cb20-15"><a href="#cb20-15" tabindex="-1"></a>raster_sources <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb20-16"><a href="#cb20-16" tabindex="-1"></a>  <span class="at">mean_elevation =</span> dem_raster,</span>
+<span id="cb20-17"><a href="#cb20-17" tabindex="-1"></a>  <span class="at">mean_ndvi =</span> satellite_raster,</span>
+<span id="cb20-18"><a href="#cb20-18" tabindex="-1"></a>  <span class="at">vegetation_variability =</span> satellite_raster  <span class="co"># Will calculate SD</span></span>
+<span id="cb20-19"><a href="#cb20-19" tabindex="-1"></a>)</span>
+<span id="cb20-20"><a href="#cb20-20" tabindex="-1"></a></span>
+<span id="cb20-21"><a href="#cb20-21" tabindex="-1"></a>summary_functions <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb20-22"><a href="#cb20-22" tabindex="-1"></a>  <span class="at">mean_elevation =</span> <span class="st">&quot;mean&quot;</span>,</span>
+<span id="cb20-23"><a href="#cb20-23" tabindex="-1"></a>  <span class="at">mean_ndvi =</span> <span class="st">&quot;mean&quot;</span>, </span>
+<span id="cb20-24"><a href="#cb20-24" tabindex="-1"></a>  <span class="at">vegetation_variability =</span> <span class="st">&quot;sd&quot;</span></span>
+<span id="cb20-25"><a href="#cb20-25" tabindex="-1"></a>)</span>
+<span id="cb20-26"><a href="#cb20-26" tabindex="-1"></a></span>
+<span id="cb20-27"><a href="#cb20-27" tabindex="-1"></a><span class="cf">for</span> (var_name <span class="cf">in</span> <span class="fu">names</span>(raster_sources)) {</span>
+<span id="cb20-28"><a href="#cb20-28" tabindex="-1"></a>  result <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb20-29"><a href="#cb20-29" tabindex="-1"></a>    <span class="at">source_data =</span> raster_sources[[var_name]],</span>
+<span id="cb20-30"><a href="#cb20-30" tabindex="-1"></a>    <span class="at">target_data =</span> watersheds_polygons,</span>
+<span id="cb20-31"><a href="#cb20-31" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">&quot;zonal&quot;</span>,</span>
+<span id="cb20-32"><a href="#cb20-32" tabindex="-1"></a>    <span class="at">summary_function =</span> summary_functions[[var_name]],</span>
+<span id="cb20-33"><a href="#cb20-33" tabindex="-1"></a>    <span class="at">verbose =</span> <span class="cn">FALSE</span></span>
+<span id="cb20-34"><a href="#cb20-34" tabindex="-1"></a>  )</span>
+<span id="cb20-35"><a href="#cb20-35" tabindex="-1"></a>  </span>
+<span id="cb20-36"><a href="#cb20-36" tabindex="-1"></a>  stat_col <span class="ot">&lt;-</span> <span class="fu">names</span>(result)[<span class="fu">grepl</span>(<span class="st">&quot;zonal&quot;</span>, <span class="fu">names</span>(result))]</span>
+<span id="cb20-37"><a href="#cb20-37" tabindex="-1"></a>  watershed_stats[[var_name]] <span class="ot">&lt;-</span> result[[stat_col[<span class="dv">1</span>]]]</span>
+<span id="cb20-38"><a href="#cb20-38" tabindex="-1"></a>}</span>
+<span id="cb20-39"><a href="#cb20-39" tabindex="-1"></a></span>
+<span id="cb20-40"><a href="#cb20-40" tabindex="-1"></a><span class="fu">print</span>(watershed_stats)</span></code></pre></div>
+</div>
+</div>
+<div id="error-handling-and-troubleshooting" class="section level2">
+<h2>Error Handling and Troubleshooting</h2>
+<div id="common-issues-and-solutions" class="section level3">
+<h3>Common Issues and Solutions</h3>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a><span class="co"># Handle geometry mismatches gracefully</span></span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>mismatched_raster <span class="ot">&lt;-</span> <span class="fu">rast</span>(<span class="at">nrows =</span> <span class="dv">25</span>, <span class="at">ncols =</span> <span class="dv">30</span>,  <span class="co"># Different aspect ratio</span></span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a>                         <span class="at">xmin =</span> <span class="sc">-</span><span class="fl">83.6</span>, <span class="at">xmax =</span> <span class="sc">-</span><span class="fl">82.9</span>,  <span class="co"># Slightly different extent</span></span>
+<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a>                         <span class="at">ymin =</span> <span class="fl">40.1</span>, <span class="at">ymax =</span> <span class="fl">40.8</span>)</span>
+<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a><span class="fu">values</span>(mismatched_raster) <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">750</span>, <span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb21-6"><a href="#cb21-6" tabindex="-1"></a></span>
+<span id="cb21-7"><a href="#cb21-7" tabindex="-1"></a><span class="co"># Function automatically handles alignment</span></span>
+<span id="cb21-8"><a href="#cb21-8" tabindex="-1"></a>robust_extraction <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb21-9"><a href="#cb21-9" tabindex="-1"></a>  <span class="at">source_data =</span> field_sites,</span>
+<span id="cb21-10"><a href="#cb21-10" tabindex="-1"></a>  <span class="at">target_data =</span> mismatched_raster,</span>
+<span id="cb21-11"><a href="#cb21-11" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;extract&quot;</span>,</span>
+<span id="cb21-12"><a href="#cb21-12" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span>  <span class="co"># Shows alignment messages</span></span>
+<span id="cb21-13"><a href="#cb21-13" tabindex="-1"></a>)</span>
+<span id="cb21-14"><a href="#cb21-14" tabindex="-1"></a></span>
+<span id="cb21-15"><a href="#cb21-15" tabindex="-1"></a><span class="co"># Handle empty results gracefully</span></span>
+<span id="cb21-16"><a href="#cb21-16" tabindex="-1"></a>empty_region <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb21-17"><a href="#cb21-17" tabindex="-1"></a>  <span class="at">x =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">90</span>, <span class="sc">-</span><span class="dv">89</span>),  <span class="co"># Far from our data</span></span>
+<span id="cb21-18"><a href="#cb21-18" tabindex="-1"></a>  <span class="at">y =</span> <span class="fu">c</span>(<span class="dv">35</span>, <span class="dv">36</span>)</span>
+<span id="cb21-19"><a href="#cb21-19" tabindex="-1"></a>)</span>
+<span id="cb21-20"><a href="#cb21-20" tabindex="-1"></a></span>
+<span id="cb21-21"><a href="#cb21-21" tabindex="-1"></a>empty_sf <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(empty_region, <span class="at">coords =</span> <span class="fu">c</span>(<span class="st">&quot;x&quot;</span>, <span class="st">&quot;y&quot;</span>), <span class="at">crs =</span> <span class="dv">4326</span>)</span>
+<span id="cb21-22"><a href="#cb21-22" tabindex="-1"></a></span>
+<span id="cb21-23"><a href="#cb21-23" tabindex="-1"></a><span class="co"># This will work but return NA values where appropriate</span></span>
+<span id="cb21-24"><a href="#cb21-24" tabindex="-1"></a>empty_result <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb21-25"><a href="#cb21-25" tabindex="-1"></a>  <span class="at">source_data =</span> empty_sf,</span>
+<span id="cb21-26"><a href="#cb21-26" tabindex="-1"></a>  <span class="at">target_data =</span> satellite_raster,</span>
+<span id="cb21-27"><a href="#cb21-27" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;extract&quot;</span>,</span>
+<span id="cb21-28"><a href="#cb21-28" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb21-29"><a href="#cb21-29" tabindex="-1"></a>)</span>
+<span id="cb21-30"><a href="#cb21-30" tabindex="-1"></a></span>
+<span id="cb21-31"><a href="#cb21-31" tabindex="-1"></a><span class="fu">print</span>(empty_result)</span></code></pre></div>
+</div>
+<div id="performance-monitoring" class="section level3">
+<h3>Performance Monitoring</h3>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="co"># Monitor performance for different data sizes</span></span>
+<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a>data_sizes <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">50</span>, <span class="dv">100</span>, <span class="dv">500</span>)</span>
+<span id="cb22-3"><a href="#cb22-3" tabindex="-1"></a>performance_results <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb22-4"><a href="#cb22-4" tabindex="-1"></a>  <span class="at">n_points =</span> data_sizes,</span>
+<span id="cb22-5"><a href="#cb22-5" tabindex="-1"></a>  <span class="at">processing_time =</span> <span class="fu">numeric</span>(<span class="fu">length</span>(data_sizes))</span>
+<span id="cb22-6"><a href="#cb22-6" tabindex="-1"></a>)</span>
+<span id="cb22-7"><a href="#cb22-7" tabindex="-1"></a></span>
+<span id="cb22-8"><a href="#cb22-8" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(data_sizes)) {</span>
+<span id="cb22-9"><a href="#cb22-9" tabindex="-1"></a>  n <span class="ot">&lt;-</span> data_sizes[i]</span>
+<span id="cb22-10"><a href="#cb22-10" tabindex="-1"></a>  test_points <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb22-11"><a href="#cb22-11" tabindex="-1"></a>    <span class="at">id =</span> <span class="dv">1</span><span class="sc">:</span>n,</span>
+<span id="cb22-12"><a href="#cb22-12" tabindex="-1"></a>    <span class="at">lon =</span> <span class="fu">runif</span>(n, <span class="sc">-</span><span class="fl">83.4</span>, <span class="sc">-</span><span class="fl">83.1</span>),</span>
+<span id="cb22-13"><a href="#cb22-13" tabindex="-1"></a>    <span class="at">lat =</span> <span class="fu">runif</span>(n, <span class="fl">40.3</span>, <span class="fl">40.6</span>)</span>
+<span id="cb22-14"><a href="#cb22-14" tabindex="-1"></a>  )</span>
+<span id="cb22-15"><a href="#cb22-15" tabindex="-1"></a>  </span>
+<span id="cb22-16"><a href="#cb22-16" tabindex="-1"></a>  start_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb22-17"><a href="#cb22-17" tabindex="-1"></a>  result <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb22-18"><a href="#cb22-18" tabindex="-1"></a>    <span class="at">source_data =</span> test_points,</span>
+<span id="cb22-19"><a href="#cb22-19" tabindex="-1"></a>    <span class="at">target_data =</span> satellite_raster,</span>
+<span id="cb22-20"><a href="#cb22-20" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">&quot;extract&quot;</span>,</span>
+<span id="cb22-21"><a href="#cb22-21" tabindex="-1"></a>    <span class="at">verbose =</span> <span class="cn">FALSE</span></span>
+<span id="cb22-22"><a href="#cb22-22" tabindex="-1"></a>  )</span>
+<span id="cb22-23"><a href="#cb22-23" tabindex="-1"></a>  end_time <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb22-24"><a href="#cb22-24" tabindex="-1"></a>  </span>
+<span id="cb22-25"><a href="#cb22-25" tabindex="-1"></a>  performance_results<span class="sc">$</span>processing_time[i] <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(end_time <span class="sc">-</span> start_time)</span>
+<span id="cb22-26"><a href="#cb22-26" tabindex="-1"></a>}</span>
+<span id="cb22-27"><a href="#cb22-27" tabindex="-1"></a></span>
+<span id="cb22-28"><a href="#cb22-28" tabindex="-1"></a><span class="fu">print</span>(performance_results)</span></code></pre></div>
+</div>
+</div>
+<div id="integration-with-other-package-functions" class="section level2">
+<h2>Integration with Other Package Functions</h2>
+<div id="combining-with-vegetation-analysis" class="section level3">
+<h3>Combining with Vegetation Analysis</h3>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a><span class="co"># Extract vegetation indices to management zones</span></span>
+<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a>vegetation_stack <span class="ot">&lt;-</span> <span class="fu">calculate_multiple_indices</span>(</span>
+<span id="cb23-3"><a href="#cb23-3" tabindex="-1"></a>  <span class="at">red =</span> satellite_raster <span class="sc">*</span> <span class="fl">0.7</span>,  <span class="co"># Simulate red band</span></span>
+<span id="cb23-4"><a href="#cb23-4" tabindex="-1"></a>  <span class="at">nir =</span> satellite_raster,</span>
+<span id="cb23-5"><a href="#cb23-5" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;DVI&quot;</span>, <span class="st">&quot;RVI&quot;</span>),</span>
+<span id="cb23-6"><a href="#cb23-6" tabindex="-1"></a>  <span class="at">output_stack =</span> <span class="cn">TRUE</span></span>
+<span id="cb23-7"><a href="#cb23-7" tabindex="-1"></a>)</span>
+<span id="cb23-8"><a href="#cb23-8" tabindex="-1"></a></span>
+<span id="cb23-9"><a href="#cb23-9" tabindex="-1"></a><span class="co"># Extract all vegetation indices to zones</span></span>
+<span id="cb23-10"><a href="#cb23-10" tabindex="-1"></a>vegetation_by_zone <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb23-11"><a href="#cb23-11" tabindex="-1"></a>  <span class="at">source_data =</span> zones_polygons,</span>
+<span id="cb23-12"><a href="#cb23-12" tabindex="-1"></a>  <span class="at">target_data =</span> vegetation_stack,</span>
+<span id="cb23-13"><a href="#cb23-13" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;extract&quot;</span>,</span>
+<span id="cb23-14"><a href="#cb23-14" tabindex="-1"></a>  <span class="at">buffer_distance =</span> <span class="dv">0</span>,  <span class="co"># No buffer for polygon extraction</span></span>
+<span id="cb23-15"><a href="#cb23-15" tabindex="-1"></a>  <span class="at">summary_function =</span> <span class="st">&quot;mean&quot;</span>,</span>
+<span id="cb23-16"><a href="#cb23-16" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb23-17"><a href="#cb23-17" tabindex="-1"></a>)</span>
+<span id="cb23-18"><a href="#cb23-18" tabindex="-1"></a></span>
+<span id="cb23-19"><a href="#cb23-19" tabindex="-1"></a><span class="co"># Analyze vegetation patterns by zone type</span></span>
+<span id="cb23-20"><a href="#cb23-20" tabindex="-1"></a>zone_veg_summary <span class="ot">&lt;-</span> <span class="fu">aggregate</span>(</span>
+<span id="cb23-21"><a href="#cb23-21" tabindex="-1"></a>  vegetation_by_zone[<span class="fu">grepl</span>(<span class="st">&quot;extracted&quot;</span>, <span class="fu">names</span>(vegetation_by_zone))],</span>
+<span id="cb23-22"><a href="#cb23-22" tabindex="-1"></a>  <span class="at">by =</span> <span class="fu">list</span>(<span class="at">zone_type =</span> vegetation_by_zone<span class="sc">$</span>zone_type),</span>
+<span id="cb23-23"><a href="#cb23-23" tabindex="-1"></a>  <span class="at">FUN =</span> mean,</span>
+<span id="cb23-24"><a href="#cb23-24" tabindex="-1"></a>  <span class="at">na.rm =</span> <span class="cn">TRUE</span></span>
+<span id="cb23-25"><a href="#cb23-25" tabindex="-1"></a>)</span>
+<span id="cb23-26"><a href="#cb23-26" tabindex="-1"></a></span>
+<span id="cb23-27"><a href="#cb23-27" tabindex="-1"></a><span class="fu">print</span>(zone_veg_summary)</span></code></pre></div>
+</div>
+<div id="integration-with-water-quality" class="section level3">
+<h3>Integration with Water Quality</h3>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="co"># Combine water indices with field water quality measurements</span></span>
+<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a>water_index_stack <span class="ot">&lt;-</span> <span class="fu">calculate_multiple_water_indices</span>(</span>
+<span id="cb24-3"><a href="#cb24-3" tabindex="-1"></a>  <span class="at">green =</span> satellite_raster <span class="sc">*</span> <span class="fl">0.8</span>,  <span class="co"># Simulate green band</span></span>
+<span id="cb24-4"><a href="#cb24-4" tabindex="-1"></a>  <span class="at">nir =</span> satellite_raster,</span>
+<span id="cb24-5"><a href="#cb24-5" tabindex="-1"></a>  <span class="at">swir1 =</span> satellite_raster <span class="sc">*</span> <span class="fl">0.5</span>,  <span class="co"># Simulate SWIR1</span></span>
+<span id="cb24-6"><a href="#cb24-6" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDWI&quot;</span>, <span class="st">&quot;MNDWI&quot;</span>, <span class="st">&quot;NDMI&quot;</span>),</span>
+<span id="cb24-7"><a href="#cb24-7" tabindex="-1"></a>  <span class="at">output_stack =</span> <span class="cn">TRUE</span></span>
+<span id="cb24-8"><a href="#cb24-8" tabindex="-1"></a>)</span>
+<span id="cb24-9"><a href="#cb24-9" tabindex="-1"></a></span>
+<span id="cb24-10"><a href="#cb24-10" tabindex="-1"></a><span class="co"># Extract to water quality monitoring sites</span></span>
+<span id="cb24-11"><a href="#cb24-11" tabindex="-1"></a>water_sites <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb24-12"><a href="#cb24-12" tabindex="-1"></a>  <span class="at">site_id =</span> <span class="fu">paste0</span>(<span class="st">&quot;WQ_&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">12</span>),</span>
+<span id="cb24-13"><a href="#cb24-13" tabindex="-1"></a>  <span class="at">longitude =</span> <span class="fu">runif</span>(<span class="dv">12</span>, <span class="sc">-</span><span class="fl">83.4</span>, <span class="sc">-</span><span class="fl">83.1</span>),</span>
+<span id="cb24-14"><a href="#cb24-14" tabindex="-1"></a>  <span class="at">latitude =</span> <span class="fu">runif</span>(<span class="dv">12</span>, <span class="fl">40.3</span>, <span class="fl">40.6</span>),</span>
+<span id="cb24-15"><a href="#cb24-15" tabindex="-1"></a>  <span class="at">measured_turbidity =</span> <span class="fu">runif</span>(<span class="dv">12</span>, <span class="dv">5</span>, <span class="dv">25</span>),</span>
+<span id="cb24-16"><a href="#cb24-16" tabindex="-1"></a>  <span class="at">measured_chlorophyll =</span> <span class="fu">runif</span>(<span class="dv">12</span>, <span class="dv">8</span>, <span class="dv">35</span>)</span>
+<span id="cb24-17"><a href="#cb24-17" tabindex="-1"></a>)</span>
+<span id="cb24-18"><a href="#cb24-18" tabindex="-1"></a></span>
+<span id="cb24-19"><a href="#cb24-19" tabindex="-1"></a>remote_vs_field <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb24-20"><a href="#cb24-20" tabindex="-1"></a>  <span class="at">source_data =</span> water_sites,</span>
+<span id="cb24-21"><a href="#cb24-21" tabindex="-1"></a>  <span class="at">target_data =</span> water_index_stack,</span>
+<span id="cb24-22"><a href="#cb24-22" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;extract&quot;</span>,</span>
+<span id="cb24-23"><a href="#cb24-23" tabindex="-1"></a>  <span class="at">buffer_distance =</span> <span class="fl">0.002</span>,  <span class="co"># 200m buffer</span></span>
+<span id="cb24-24"><a href="#cb24-24" tabindex="-1"></a>  <span class="at">summary_function =</span> <span class="st">&quot;mean&quot;</span>,</span>
+<span id="cb24-25"><a href="#cb24-25" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb24-26"><a href="#cb24-26" tabindex="-1"></a>)</span>
+<span id="cb24-27"><a href="#cb24-27" tabindex="-1"></a></span>
+<span id="cb24-28"><a href="#cb24-28" tabindex="-1"></a><span class="co"># Analyze relationships between remote sensing and field data</span></span>
+<span id="cb24-29"><a href="#cb24-29" tabindex="-1"></a>correlations <span class="ot">&lt;-</span> <span class="fu">cor</span>(</span>
+<span id="cb24-30"><a href="#cb24-30" tabindex="-1"></a>  remote_vs_field[<span class="fu">c</span>(<span class="st">&quot;measured_turbidity&quot;</span>, <span class="st">&quot;measured_chlorophyll&quot;</span>)],</span>
+<span id="cb24-31"><a href="#cb24-31" tabindex="-1"></a>  remote_vs_field[<span class="fu">grepl</span>(<span class="st">&quot;extracted&quot;</span>, <span class="fu">names</span>(remote_vs_field))],</span>
+<span id="cb24-32"><a href="#cb24-32" tabindex="-1"></a>  <span class="at">use =</span> <span class="st">&quot;complete.obs&quot;</span></span>
+<span id="cb24-33"><a href="#cb24-33" tabindex="-1"></a>)</span>
+<span id="cb24-34"><a href="#cb24-34" tabindex="-1"></a></span>
+<span id="cb24-35"><a href="#cb24-35" tabindex="-1"></a><span class="fu">print</span>(correlations)</span></code></pre></div>
+</div>
+</div>
+<div id="specialized-integration-functions" class="section level2">
+<h2>Specialized Integration Functions</h2>
+<div id="multi-scale-operations" class="section level3">
+<h3>Multi-Scale Operations</h3>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a><span class="co"># Use the specialized multi-scale function</span></span>
+<span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a>multi_scale_analysis <span class="ot">&lt;-</span> <span class="fu">multiscale_operations</span>(</span>
+<span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a>  <span class="at">spatial_data =</span> satellite_raster,</span>
+<span id="cb25-4"><a href="#cb25-4" tabindex="-1"></a>  <span class="at">target_scales =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">4</span>, <span class="dv">8</span>),</span>
+<span id="cb25-5"><a href="#cb25-5" tabindex="-1"></a>  <span class="at">operation =</span> <span class="st">&quot;mean&quot;</span>,</span>
+<span id="cb25-6"><a href="#cb25-6" tabindex="-1"></a>  <span class="at">pyramid =</span> <span class="cn">TRUE</span></span>
+<span id="cb25-7"><a href="#cb25-7" tabindex="-1"></a>)</span>
+<span id="cb25-8"><a href="#cb25-8" tabindex="-1"></a></span>
+<span id="cb25-9"><a href="#cb25-9" tabindex="-1"></a><span class="co"># Extract at multiple scales to compare spatial patterns</span></span>
+<span id="cb25-10"><a href="#cb25-10" tabindex="-1"></a>scale_comparison <span class="ot">&lt;-</span> field_sites</span>
+<span id="cb25-11"><a href="#cb25-11" tabindex="-1"></a><span class="cf">for</span> (scale_name <span class="cf">in</span> <span class="fu">names</span>(multi_scale_analysis)) {</span>
+<span id="cb25-12"><a href="#cb25-12" tabindex="-1"></a>  result <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb25-13"><a href="#cb25-13" tabindex="-1"></a>    <span class="at">source_data =</span> scale_comparison,</span>
+<span id="cb25-14"><a href="#cb25-14" tabindex="-1"></a>    <span class="at">target_data =</span> multi_scale_analysis[[scale_name]],</span>
+<span id="cb25-15"><a href="#cb25-15" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">&quot;extract&quot;</span>,</span>
+<span id="cb25-16"><a href="#cb25-16" tabindex="-1"></a>    <span class="at">verbose =</span> <span class="cn">FALSE</span></span>
+<span id="cb25-17"><a href="#cb25-17" tabindex="-1"></a>  )</span>
+<span id="cb25-18"><a href="#cb25-18" tabindex="-1"></a>  </span>
+<span id="cb25-19"><a href="#cb25-19" tabindex="-1"></a>  new_col <span class="ot">&lt;-</span> <span class="fu">names</span>(result)[<span class="sc">!</span><span class="fu">names</span>(result) <span class="sc">%in%</span> <span class="fu">names</span>(scale_comparison)]</span>
+<span id="cb25-20"><a href="#cb25-20" tabindex="-1"></a>  scale_comparison[[scale_name]] <span class="ot">&lt;-</span> result[[new_col[<span class="dv">1</span>]]]</span>
+<span id="cb25-21"><a href="#cb25-21" tabindex="-1"></a>}</span>
+<span id="cb25-22"><a href="#cb25-22" tabindex="-1"></a></span>
+<span id="cb25-23"><a href="#cb25-23" tabindex="-1"></a><span class="co"># Analyze scale effects</span></span>
+<span id="cb25-24"><a href="#cb25-24" tabindex="-1"></a>scale_vars <span class="ot">&lt;-</span> <span class="fu">names</span>(scale_comparison)[<span class="fu">grepl</span>(<span class="st">&quot;scale_&quot;</span>, <span class="fu">names</span>(scale_comparison))]</span>
+<span id="cb25-25"><a href="#cb25-25" tabindex="-1"></a>scale_effects <span class="ot">&lt;-</span> scale_comparison[<span class="fu">c</span>(<span class="st">&quot;site_id&quot;</span>, scale_vars)]</span>
+<span id="cb25-26"><a href="#cb25-26" tabindex="-1"></a><span class="fu">head</span>(scale_effects)</span></code></pre></div>
+</div>
+<div id="raster-mathematical-operations" class="section level3">
+<h3>Raster Mathematical Operations</h3>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a><span class="co"># Create two related rasters for mathematical operations</span></span>
+<span id="cb26-2"><a href="#cb26-2" tabindex="-1"></a>raster_a <span class="ot">&lt;-</span> satellite_raster</span>
+<span id="cb26-3"><a href="#cb26-3" tabindex="-1"></a>raster_b <span class="ot">&lt;-</span> <span class="fu">rast</span>(<span class="at">nrows =</span> <span class="dv">50</span>, <span class="at">ncols =</span> <span class="dv">50</span>, </span>
+<span id="cb26-4"><a href="#cb26-4" tabindex="-1"></a>                <span class="at">xmin =</span> <span class="sc">-</span><span class="fl">83.5</span>, <span class="at">xmax =</span> <span class="sc">-</span><span class="fl">83.0</span>, </span>
+<span id="cb26-5"><a href="#cb26-5" tabindex="-1"></a>                <span class="at">ymin =</span> <span class="fl">40.2</span>, <span class="at">ymax =</span> <span class="fl">40.7</span>)</span>
+<span id="cb26-6"><a href="#cb26-6" tabindex="-1"></a><span class="fu">values</span>(raster_b) <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">2500</span>, <span class="fl">0.1</span>, <span class="fl">0.7</span>)</span>
+<span id="cb26-7"><a href="#cb26-7" tabindex="-1"></a></span>
+<span id="cb26-8"><a href="#cb26-8" tabindex="-1"></a><span class="co"># Mathematical operations between rasters</span></span>
+<span id="cb26-9"><a href="#cb26-9" tabindex="-1"></a>addition_result <span class="ot">&lt;-</span> <span class="fu">raster_to_raster_ops</span>(</span>
+<span id="cb26-10"><a href="#cb26-10" tabindex="-1"></a>  <span class="at">raster1 =</span> raster_a,</span>
+<span id="cb26-11"><a href="#cb26-11" tabindex="-1"></a>  <span class="at">raster2 =</span> raster_b,</span>
+<span id="cb26-12"><a href="#cb26-12" tabindex="-1"></a>  <span class="at">operation =</span> <span class="st">&quot;add&quot;</span>,</span>
+<span id="cb26-13"><a href="#cb26-13" tabindex="-1"></a>  <span class="at">align_method =</span> <span class="st">&quot;resample&quot;</span>,</span>
+<span id="cb26-14"><a href="#cb26-14" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb26-15"><a href="#cb26-15" tabindex="-1"></a>)</span>
+<span id="cb26-16"><a href="#cb26-16" tabindex="-1"></a></span>
+<span id="cb26-17"><a href="#cb26-17" tabindex="-1"></a>difference_result <span class="ot">&lt;-</span> <span class="fu">raster_to_raster_ops</span>(</span>
+<span id="cb26-18"><a href="#cb26-18" tabindex="-1"></a>  <span class="at">raster1 =</span> raster_a,</span>
+<span id="cb26-19"><a href="#cb26-19" tabindex="-1"></a>  <span class="at">raster2 =</span> raster_b,</span>
+<span id="cb26-20"><a href="#cb26-20" tabindex="-1"></a>  <span class="at">operation =</span> <span class="st">&quot;subtract&quot;</span>,</span>
+<span id="cb26-21"><a href="#cb26-21" tabindex="-1"></a>  <span class="at">handle_na =</span> <span class="st">&quot;ignore&quot;</span>,</span>
+<span id="cb26-22"><a href="#cb26-22" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb26-23"><a href="#cb26-23" tabindex="-1"></a>)</span>
+<span id="cb26-24"><a href="#cb26-24" tabindex="-1"></a></span>
+<span id="cb26-25"><a href="#cb26-25" tabindex="-1"></a>ratio_result <span class="ot">&lt;-</span> <span class="fu">raster_to_raster_ops</span>(</span>
+<span id="cb26-26"><a href="#cb26-26" tabindex="-1"></a>  <span class="at">raster1 =</span> raster_a,</span>
+<span id="cb26-27"><a href="#cb26-27" tabindex="-1"></a>  <span class="at">raster2 =</span> raster_b,</span>
+<span id="cb26-28"><a href="#cb26-28" tabindex="-1"></a>  <span class="at">operation =</span> <span class="st">&quot;ratio&quot;</span>,</span>
+<span id="cb26-29"><a href="#cb26-29" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb26-30"><a href="#cb26-30" tabindex="-1"></a>)</span>
+<span id="cb26-31"><a href="#cb26-31" tabindex="-1"></a></span>
+<span id="cb26-32"><a href="#cb26-32" tabindex="-1"></a><span class="co"># Extract mathematical results to points</span></span>
+<span id="cb26-33"><a href="#cb26-33" tabindex="-1"></a>math_results <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb26-34"><a href="#cb26-34" tabindex="-1"></a>  <span class="at">source_data =</span> field_sites,</span>
+<span id="cb26-35"><a href="#cb26-35" tabindex="-1"></a>  <span class="at">target_data =</span> <span class="fu">c</span>(addition_result, difference_result, ratio_result),</span>
+<span id="cb26-36"><a href="#cb26-36" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;extract&quot;</span>,</span>
+<span id="cb26-37"><a href="#cb26-37" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb26-38"><a href="#cb26-38" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+</div>
+<div id="visualization-of-integration-results" class="section level2">
+<h2>Visualization of Integration Results</h2>
+<div id="mapping-integrated-data" class="section level3">
+<h3>Mapping Integrated Data</h3>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a><span class="co"># Create comprehensive visualization of integrated results</span></span>
+<span id="cb27-2"><a href="#cb27-2" tabindex="-1"></a>integrated_map <span class="ot">&lt;-</span> <span class="fu">create_spatial_map</span>(</span>
+<span id="cb27-3"><a href="#cb27-3" tabindex="-1"></a>  <span class="at">spatial_data =</span> environmental_data,</span>
+<span id="cb27-4"><a href="#cb27-4" tabindex="-1"></a>  <span class="at">fill_variable =</span> <span class="st">&quot;elevation&quot;</span>,</span>
+<span id="cb27-5"><a href="#cb27-5" tabindex="-1"></a>  <span class="at">color_scheme =</span> <span class="st">&quot;terrain&quot;</span>,</span>
+<span id="cb27-6"><a href="#cb27-6" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">&quot;Field Sites with Environmental Data&quot;</span>,</span>
+<span id="cb27-7"><a href="#cb27-7" tabindex="-1"></a>  <span class="at">point_size =</span> <span class="dv">5</span></span>
+<span id="cb27-8"><a href="#cb27-8" tabindex="-1"></a>)</span>
+<span id="cb27-9"><a href="#cb27-9" tabindex="-1"></a></span>
+<span id="cb27-10"><a href="#cb27-10" tabindex="-1"></a><span class="co"># Quick visualization of zonal results</span></span>
+<span id="cb27-11"><a href="#cb27-11" tabindex="-1"></a>zonal_map <span class="ot">&lt;-</span> <span class="fu">create_spatial_map</span>(</span>
+<span id="cb27-12"><a href="#cb27-12" tabindex="-1"></a>  <span class="at">spatial_data =</span> zonal_results,</span>
+<span id="cb27-13"><a href="#cb27-13" tabindex="-1"></a>  <span class="at">fill_variable =</span> <span class="fu">names</span>(zonal_results)[<span class="fu">grepl</span>(<span class="st">&quot;zonal&quot;</span>, <span class="fu">names</span>(zonal_results))][<span class="dv">1</span>],</span>
+<span id="cb27-14"><a href="#cb27-14" tabindex="-1"></a>  <span class="at">map_type =</span> <span class="st">&quot;polygons&quot;</span>,</span>
+<span id="cb27-15"><a href="#cb27-15" tabindex="-1"></a>  <span class="at">color_scheme =</span> <span class="st">&quot;viridis&quot;</span>,</span>
+<span id="cb27-16"><a href="#cb27-16" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">&quot;Management Zones - Mean NDVI&quot;</span></span>
+<span id="cb27-17"><a href="#cb27-17" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="comparison-visualizations" class="section level3">
+<h3>Comparison Visualizations</h3>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a><span class="co"># Compare extraction methods</span></span>
+<span id="cb28-2"><a href="#cb28-2" tabindex="-1"></a>comparison_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb28-3"><a href="#cb28-3" tabindex="-1"></a>  <span class="at">site_id =</span> field_sites<span class="sc">$</span>site_id,</span>
+<span id="cb28-4"><a href="#cb28-4" tabindex="-1"></a>  <span class="at">point_extraction =</span> extracted_results<span class="sc">$</span>extracted_ndvi,</span>
+<span id="cb28-5"><a href="#cb28-5" tabindex="-1"></a>  <span class="at">buffer_extraction =</span> buffered_extraction<span class="sc">$</span>extracted_ndvi,</span>
+<span id="cb28-6"><a href="#cb28-6" tabindex="-1"></a>  <span class="at">difference =</span> <span class="fu">abs</span>(extracted_results<span class="sc">$</span>extracted_ndvi <span class="sc">-</span> buffered_extraction<span class="sc">$</span>extracted_ndvi)</span>
+<span id="cb28-7"><a href="#cb28-7" tabindex="-1"></a>)</span>
+<span id="cb28-8"><a href="#cb28-8" tabindex="-1"></a></span>
+<span id="cb28-9"><a href="#cb28-9" tabindex="-1"></a><span class="co"># Plot comparison</span></span>
+<span id="cb28-10"><a href="#cb28-10" tabindex="-1"></a><span class="fu">plot</span>(comparison_data<span class="sc">$</span>point_extraction, comparison_data<span class="sc">$</span>buffer_extraction,</span>
+<span id="cb28-11"><a href="#cb28-11" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;Point Extraction&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Buffer Extraction&quot;</span>,</span>
+<span id="cb28-12"><a href="#cb28-12" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">&quot;Point vs Buffer Extraction Comparison&quot;</span>)</span>
+<span id="cb28-13"><a href="#cb28-13" tabindex="-1"></a><span class="fu">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">col =</span> <span class="st">&quot;red&quot;</span>, <span class="at">lty =</span> <span class="dv">2</span>)  <span class="co"># 1:1 line</span></span></code></pre></div>
+</div>
+</div>
+<div id="best-practices" class="section level2">
+<h2>Best Practices</h2>
+<div id="data-preparation" class="section level3">
+<h3>Data Preparation</h3>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" tabindex="-1"></a><span class="co"># Always validate inputs before processing</span></span>
+<span id="cb29-2"><a href="#cb29-2" tabindex="-1"></a>validate_spatial_data <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
+<span id="cb29-3"><a href="#cb29-3" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">inherits</span>(data, <span class="st">&quot;sf&quot;</span>)) {</span>
+<span id="cb29-4"><a href="#cb29-4" tabindex="-1"></a>    <span class="co"># Check for valid geometries</span></span>
+<span id="cb29-5"><a href="#cb29-5" tabindex="-1"></a>    invalid_geoms <span class="ot">&lt;-</span> <span class="sc">!</span><span class="fu">st_is_valid</span>(data)</span>
+<span id="cb29-6"><a href="#cb29-6" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">any</span>(invalid_geoms)) {</span>
+<span id="cb29-7"><a href="#cb29-7" tabindex="-1"></a>      <span class="fu">warning</span>(<span class="fu">paste</span>(<span class="st">&quot;Found&quot;</span>, <span class="fu">sum</span>(invalid_geoms), <span class="st">&quot;invalid geometries&quot;</span>))</span>
+<span id="cb29-8"><a href="#cb29-8" tabindex="-1"></a>      data <span class="ot">&lt;-</span> <span class="fu">st_make_valid</span>(data)</span>
+<span id="cb29-9"><a href="#cb29-9" tabindex="-1"></a>    }</span>
+<span id="cb29-10"><a href="#cb29-10" tabindex="-1"></a>  }</span>
+<span id="cb29-11"><a href="#cb29-11" tabindex="-1"></a>  </span>
+<span id="cb29-12"><a href="#cb29-12" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">inherits</span>(data, <span class="st">&quot;SpatRaster&quot;</span>)) {</span>
+<span id="cb29-13"><a href="#cb29-13" tabindex="-1"></a>    <span class="co"># Check for data coverage</span></span>
+<span id="cb29-14"><a href="#cb29-14" tabindex="-1"></a>    valid_cells <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.na</span>(<span class="fu">values</span>(data, <span class="at">mat =</span> <span class="cn">FALSE</span>)))</span>
+<span id="cb29-15"><a href="#cb29-15" tabindex="-1"></a>    total_cells <span class="ot">&lt;-</span> <span class="fu">ncell</span>(data)</span>
+<span id="cb29-16"><a href="#cb29-16" tabindex="-1"></a>    coverage <span class="ot">&lt;-</span> (valid_cells <span class="sc">/</span> total_cells) <span class="sc">*</span> <span class="dv">100</span></span>
+<span id="cb29-17"><a href="#cb29-17" tabindex="-1"></a>    </span>
+<span id="cb29-18"><a href="#cb29-18" tabindex="-1"></a>    <span class="cf">if</span> (coverage <span class="sc">&lt;</span> <span class="dv">10</span>) {</span>
+<span id="cb29-19"><a href="#cb29-19" tabindex="-1"></a>      <span class="fu">warning</span>(<span class="fu">paste</span>(<span class="st">&quot;Low data coverage:&quot;</span>, <span class="fu">round</span>(coverage, <span class="dv">1</span>), <span class="st">&quot;%&quot;</span>))</span>
+<span id="cb29-20"><a href="#cb29-20" tabindex="-1"></a>    }</span>
+<span id="cb29-21"><a href="#cb29-21" tabindex="-1"></a>  }</span>
+<span id="cb29-22"><a href="#cb29-22" tabindex="-1"></a>  </span>
+<span id="cb29-23"><a href="#cb29-23" tabindex="-1"></a>  <span class="fu">return</span>(data)</span>
+<span id="cb29-24"><a href="#cb29-24" tabindex="-1"></a>}</span>
+<span id="cb29-25"><a href="#cb29-25" tabindex="-1"></a></span>
+<span id="cb29-26"><a href="#cb29-26" tabindex="-1"></a><span class="co"># Use validation in workflows</span></span>
+<span id="cb29-27"><a href="#cb29-27" tabindex="-1"></a>validated_sites <span class="ot">&lt;-</span> <span class="fu">validate_spatial_data</span>(</span>
+<span id="cb29-28"><a href="#cb29-28" tabindex="-1"></a>  <span class="fu">st_as_sf</span>(field_sites, <span class="at">coords =</span> <span class="fu">c</span>(<span class="st">&quot;lon&quot;</span>, <span class="st">&quot;lat&quot;</span>), <span class="at">crs =</span> <span class="dv">4326</span>)</span>
+<span id="cb29-29"><a href="#cb29-29" tabindex="-1"></a>)</span>
+<span id="cb29-30"><a href="#cb29-30" tabindex="-1"></a>validated_raster <span class="ot">&lt;-</span> <span class="fu">validate_spatial_data</span>(satellite_raster)</span></code></pre></div>
+</div>
+<div id="method-selection-guidelines" class="section level3">
+<h3>Method Selection Guidelines</h3>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" tabindex="-1"></a><span class="co"># Guidelines for choosing spatial join methods</span></span>
+<span id="cb30-2"><a href="#cb30-2" tabindex="-1"></a>method_guide <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb30-3"><a href="#cb30-3" tabindex="-1"></a>  <span class="at">Source_Type =</span> <span class="fu">c</span>(<span class="st">&quot;Points&quot;</span>, <span class="st">&quot;Polygons&quot;</span>, <span class="st">&quot;Raster&quot;</span>, <span class="st">&quot;Raster&quot;</span>, <span class="st">&quot;Points&quot;</span>),</span>
+<span id="cb30-4"><a href="#cb30-4" tabindex="-1"></a>  <span class="at">Target_Type =</span> <span class="fu">c</span>(<span class="st">&quot;Raster&quot;</span>, <span class="st">&quot;Raster&quot;</span>, <span class="st">&quot;Polygons&quot;</span>, <span class="st">&quot;Raster&quot;</span>, <span class="st">&quot;Points&quot;</span>),</span>
+<span id="cb30-5"><a href="#cb30-5" tabindex="-1"></a>  <span class="at">Recommended_Method =</span> <span class="fu">c</span>(<span class="st">&quot;extract&quot;</span>, <span class="st">&quot;extract&quot;</span>, <span class="st">&quot;zonal&quot;</span>, <span class="st">&quot;resample&quot;</span>, <span class="st">&quot;nearest&quot;</span>),</span>
+<span id="cb30-6"><a href="#cb30-6" tabindex="-1"></a>  <span class="at">Use_Case =</span> <span class="fu">c</span>(<span class="st">&quot;Sample at locations&quot;</span>, <span class="st">&quot;Area averages&quot;</span>, <span class="st">&quot;Regional stats&quot;</span>, <span class="st">&quot;Align data&quot;</span>, <span class="st">&quot;Find closest&quot;</span>),</span>
+<span id="cb30-7"><a href="#cb30-7" tabindex="-1"></a>  <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span></span>
+<span id="cb30-8"><a href="#cb30-8" tabindex="-1"></a>)</span>
+<span id="cb30-9"><a href="#cb30-9" tabindex="-1"></a></span>
+<span id="cb30-10"><a href="#cb30-10" tabindex="-1"></a><span class="fu">print</span>(method_guide)</span></code></pre></div>
+</div>
+<div id="performance-optimization" class="section level3">
+<h3>Performance Optimization</h3>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" tabindex="-1"></a><span class="co"># Optimize for different scenarios</span></span>
+<span id="cb31-2"><a href="#cb31-2" tabindex="-1"></a>optimization_tips <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb31-3"><a href="#cb31-3" tabindex="-1"></a>  <span class="at">large_datasets =</span> <span class="st">&quot;Use chunk_size parameter to control memory usage&quot;</span>,</span>
+<span id="cb31-4"><a href="#cb31-4" tabindex="-1"></a>  <span class="at">different_crs =</span> <span class="st">&quot;Let the function handle CRS conversion automatically&quot;</span>, </span>
+<span id="cb31-5"><a href="#cb31-5" tabindex="-1"></a>  <span class="at">missing_data =</span> <span class="st">&quot;Choose appropriate na_strategy for your analysis needs&quot;</span>,</span>
+<span id="cb31-6"><a href="#cb31-6" tabindex="-1"></a>  <span class="at">multiple_variables =</span> <span class="st">&quot;Process variables separately for better error handling&quot;</span>,</span>
+<span id="cb31-7"><a href="#cb31-7" tabindex="-1"></a>  <span class="at">visualization =</span> <span class="st">&quot;Use quick_map() for fast preliminary visualization&quot;</span></span>
+<span id="cb31-8"><a href="#cb31-8" tabindex="-1"></a>)</span>
+<span id="cb31-9"><a href="#cb31-9" tabindex="-1"></a></span>
+<span id="cb31-10"><a href="#cb31-10" tabindex="-1"></a><span class="cf">for</span> (tip_name <span class="cf">in</span> <span class="fu">names</span>(optimization_tips)) {</span>
+<span id="cb31-11"><a href="#cb31-11" tabindex="-1"></a>  <span class="fu">cat</span>(tip_name, <span class="st">&quot;:&quot;</span>, optimization_tips[[tip_name]], <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb31-12"><a href="#cb31-12" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+</div>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<p>This vignette demonstrated comprehensive spatial data integration
+using GeoSpatialSuite:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Universal Spatial Joins</strong>: Automatic method detection
+for any data combination</li>
+<li><strong>Vector-Raster Integration</strong>: Extracting values and
+calculating zonal statistics<br />
+</li>
+<li><strong>Raster Operations</strong>: Resampling, alignment, and
+mathematical operations</li>
+<li><strong>Multi-Scale Analysis</strong>: Working with data at
+different resolutions</li>
+<li><strong>Error Handling</strong>: Robust processing with automatic
+CRS and geometry management</li>
+<li><strong>Real-World Applications</strong>: Agricultural and
+environmental analysis examples</li>
+</ol>
+<div id="key-functions-used" class="section level3">
+<h3>Key Functions Used</h3>
+<ul>
+<li><code>universal_spatial_join()</code> - Core integration function
+with auto-detection</li>
+<li><code>raster_to_raster_ops()</code> - Mathematical operations
+between rasters</li>
+<li><code>multiscale_operations()</code> - Multi-scale analysis
+capabilities</li>
+<li><code>spatial_interpolation_comprehensive()</code> - Fill missing
+data spatially</li>
+<li><code>integrate_terrain_analysis()</code> - Specialized terrain
+integration</li>
+</ul>
+</div>
+</div>
+<div id="acknowledgments" class="section level2">
+<h2>Acknowledgments</h2>
+<p>This work was developed by the GeoSpatialSuite team with
+contributions from: Olatunde D. Akanbi, Erika I. Barcelos, and Roger H.
+French.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

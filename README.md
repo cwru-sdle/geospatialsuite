@@ -5,16 +5,45 @@
 
 <!-- badges: start -->
 
+[![CRAN
+status](https://www.r-pkg.org/badges/version/geospatialsuite)](https://CRAN.R-project.org/package=geospatialsuite)
+[![Downloads](https://cranlogs.r-pkg.org/badges/geospatialsuite)](https://cran.r-project.org/package=geospatialsuite)
+[![License:
+MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 <!-- badges: end -->
 
-> **Comprehensive Geospatial Analysis and Advanced Visualization
-> Toolkit**
+> **Comprehensive Geospatiotemporal Analysis and Multimodal Integration
+> Toolkit for R**
 
 GeoSpatialSuite is a powerful R package for geospatial analysis
 featuring **60+ vegetation indices**, **universal spatial analysis**,
 **efficient raster visualization**, and **comprehensive workflows** for
 agricultural research, environmental monitoring, and remote sensing
 applications.
+
+## 📋 Table of Contents
+
+- [Key Features](#-key-features)
+- [Quick Links](#-quick-links)
+- [Installation](#-installation)
+- [Quick Start](#-quick-start)
+- [Documentation](#-documentation)
+- [Real-World Examples](#-real-world-examples)
+- [What Makes GeoSpatialSuite
+  Special](#-what-makes-geospatialsuite-special)
+- [Supported Vegetation Indices](#-supported-vegetation-indices)
+- [Performance](#-performance)
+- [System Requirements](#️-system-requirements)
+- [Citation](#-citation)
+- [Contact](#-contact)
+- [License](#-license)
+- [Acknowledgments](#-acknowledgments)
+
+## 🔗 Quick Links
+
+- **CRAN**: <https://cran.r-project.org/package=geospatialsuite>
+- **GitHub**: <https://github.com/cwru-sdle/geospatialsuite>
+- **Bug Reports**: <https://github.com/cwru-sdle/geospatialsuite/issues>
 
 ## ✨ Key Features
 
@@ -57,65 +86,101 @@ applications.
 - **Efficient memory usage** optimized for large datasets
 - **Robust error handling** with informative messages
 
-## 🚀 Quick Start
+## 📦 Installation
 
-### Installation
+### From CRAN (Recommended)
 
 ``` r
+# Install the stable version from CRAN
+install.packages("geospatialsuite")
+```
 
-# Install recommended packages for best performance
+### Development Version from GitHub
+
+``` r
+# Install development version with latest features
+# install.packages("devtools")
+devtools::install_github("cwru-sdle/geospatialsuite")
+```
+
+### Install Recommended Packages for Best Performance
+
+``` r
+# Enhanced visualization and functionality
 install.packages(c("tidyterra", "RStoolbox", "leaflet", "patchwork"))
 ```
 
-### Basic Usage
+## 🚀 Quick Start
+
+### Load Package and Test Installation
 
 ``` r
 library(geospatialsuite)
 
+# Test your installation
+test_geospatialsuite_package_simple()
+
+# Check function availability
+test_function_availability(verbose = TRUE)
+```
+
+### Basic Usage Examples
+
+``` r
 # 1. One-line mapping (auto-detects everything!)
 quick_map("mydata.shp")
 
-# 2. Universal spatial analysis
-result <- spatial_join_universal(
-  vector_data = "study_sites.csv",
-  raster_data = "elevation.tif"
+# 2. Universal spatial join (most common operation)
+result <- universal_spatial_join(
+  source_data = "study_sites.csv",
+  target_data = "elevation.tif",
+  method = "extract"
 )
 
-# 3. Calculate multiple vegetation indices
+# 3. Calculate vegetation indices
+ndvi <- calculate_vegetation_index(
+  red = red_band, 
+  nir = nir_band, 
+  index_type = "NDVI",
+  verbose = TRUE
+)
+
+# 4. Enhanced NDVI with quality filtering
+enhanced_ndvi <- calculate_ndvi_enhanced(
+  red = red_band,
+  nir = nir_band,
+  quality_filter = TRUE,
+  mask_invalid = TRUE
+)
+
+# 5. Multiple indices at once
 indices <- calculate_multiple_indices(
-  red = red_band, nir = nir_band, blue = blue_band,
-  indices = c("NDVI", "EVI", "SAVI", "PRI"),
-  auto_detect_bands = TRUE
+  red = red_band, 
+  nir = nir_band, 
+  blue = blue_band,
+  indices = c("NDVI", "EVI", "SAVI"),
+  output_stack = TRUE
 )
-
-# 4. Run comprehensive workflow
-config <- list(
-  analysis_type = "ndvi_crop_analysis",
-  input_data = list(red = "red_bands/", nir = "nir_bands/"),
-  region_boundary = "Iowa",
-  crop_codes = get_comprehensive_cdl_codes("corn")
-)
-results <- run_comprehensive_geospatial_workflow(config)
 ```
 
 ## 📖 Documentation
 
-### Vignettes
+### Vignettes and Tutorials
 
 - [**Getting
-  Started**](https://yourusername.github.io/geospatialsuite/articles/getting-started.html) -
+  Started**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/getting-started.html) -
   Package overview and quick start examples
 - [**Universal Spatial
-  Analysis**](https://yourusername.github.io/geospatialsuite/articles/spatial-analysis.html) -
+  Analysis**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/spatial-analysis.html) -
   Core spatial join capabilities
 - [**Vegetation
-  Analysis**](https://yourusername.github.io/geospatialsuite/articles/vegetation-analysis.html) -
+  Analysis**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/vegetation-indices.html) -
   60+ vegetation indices and crop analysis
-- [**Advanced
-  Visualization**](https://yourusername.github.io/geospatialsuite/articles/visualization.html) -
-  Efficient plotting and interactive maps
+- [**Agricultural
+  Analysis**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/agricultural-analysis.html) -
+  Efficient domain-specific analysis
 - [**Comprehensive
-  Workflows**](https://yourusername.github.io/geospatialsuite/articles/workflows.html) -
+  Workflows**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/workflows-case-studies.html) -
   End-to-end analysis pipelines
 
 ### Function Reference
@@ -124,14 +189,14 @@ results <- run_comprehensive_geospatial_workflow(config)
 # View all available functions
 help(package = "geospatialsuite")
 
-# Test your installation
-test_geospatialsuite_package()
+# Test function availability
+test_function_availability()
 
-# Check package health
-enhanced_health_check()
+# Run basic package tests
+test_geospatialsuite_package_simple()
 
-# Performance tips
-raster_plot_performance_tips()
+# Run minimal functionality test
+test_package_minimal(verbose = TRUE)
 ```
 
 ## 🎯 Real-World Examples
@@ -139,7 +204,7 @@ raster_plot_performance_tips()
 ### Agricultural Monitoring
 
 ``` r
-# Comprehensive crop analysis with NDVI time series
+# Comprehensive crop analysis workflow
 crop_analysis <- run_enhanced_ndvi_crop_workflow(
   config = list(
     red_data = "satellite/red_bands/",
@@ -150,26 +215,34 @@ crop_analysis <- run_enhanced_ndvi_crop_workflow(
     temporal_smoothing = TRUE,
     visualization_config = list(
       interactive = TRUE,
-      animation = TRUE
+      create_maps = TRUE
     )
-  )
+  ),
+  output_folder = "results/"
 )
+
+# Get crop codes for analysis
+corn_codes <- get_comprehensive_cdl_codes("corn")
+grain_codes <- get_comprehensive_cdl_codes("grains")
 ```
 
 ### Environmental Monitoring
 
 ``` r
 # Multi-dataset environmental integration
-environmental_data <- integrate_multiple_datasets(
-  vector_data = "monitoring_stations.csv",
-  raster_datasets = list(
-    vegetation = "satellite/ndvi.tif",
-    soil_nitrogen = "soil/nitrogen.tif", 
-    elevation = "terrain/dem.tif",
-    precipitation = "climate/precip.tif"
-  ),
-  extraction_method = "buffer",
-  buffer_size = 1000
+environmental_data <- universal_spatial_join(
+  source_data = "monitoring_stations.csv",
+  target_data = "satellite_ndvi.tif",
+  method = "extract",
+  buffer_distance = 1000,
+  summary_function = "mean"
+)
+
+# Process additional raster data
+soil_data <- universal_spatial_join(
+  source_data = environmental_data,
+  target_data = "soil_nitrogen.tif",
+  method = "extract"
 )
 ```
 
@@ -181,8 +254,41 @@ water_results <- analyze_water_quality_comprehensive(
   water_data = "water_stations.csv",
   variable = "nitrate_nitrite",
   region_boundary = "Ohio",
-  thresholds = list(Normal = c(0, 4), High = c(4, 10))
+  thresholds = list(
+    Normal = c(0, 4), 
+    High = c(4, 10),
+    Critical = c(10, Inf)
+  ),
+  verbose = TRUE
 )
+
+# Calculate water indices for drought monitoring
+water_indices <- calculate_water_index(
+  green = "landsat_green.tif",
+  nir = "landsat_nir.tif",
+  swir1 = "landsat_swir1.tif",
+  index_type = "MNDWI",
+  mask_invalid = TRUE,
+  verbose = TRUE
+)
+```
+
+### Remote Sensing Applications
+
+``` r
+# Run comprehensive geospatial workflow
+config <- list(
+  analysis_type = "vegetation_comprehensive",
+  input_data = satellite_data,
+  region_boundary = "study_area.shp",
+  indices = c("NDVI", "EVI", "SAVI", "GNDVI"),
+  output_folder = "analysis_results/"
+)
+
+results <- run_comprehensive_geospatial_workflow(config)
+
+# Quick visualization of results
+quick_map(results$vegetation_data, title = "Vegetation Analysis Results")
 ```
 
 ## 🌟 What Makes GeoSpatialSuite Special
@@ -190,31 +296,76 @@ water_results <- analyze_water_quality_comprehensive(
 ### 1. **Universal Design**
 
 Works with any spatial data combination - no need to learn different
-functions for different data types.
+functions for different data types. The `universal_spatial_join()`
+function automatically handles: - Vector-to-vector joins -
+Vector-to-raster extractions  
+- Raster-to-raster operations - Multi-dataset integrations
 
 ### 2. **Intelligent Automation**
 
-- Auto-detects coordinate columns, band names, and data types
-- Automatically handles coordinate system transformations
-- Smart method selection for optimal performance
+- **Auto-detects coordinate columns** (lat/lng, x/y, longitude/latitude)
+- **Automatically identifies satellite bands** across Landsat,
+  Sentinel-2, MODIS
+- **Smart coordinate system transformations** with validation
+- **Optimal method selection** for performance and accuracy
 
 ### 3. **Efficient Visualization**
 
-- No unnecessary data frame conversions for large rasters
-- Uses the best available visualization package (tidyterra → RStoolbox →
-  terra)
-- Creates publication-quality graphics with minimal code
+- **Terra-based plotting** using reliable `terra::plot()` and
+  `terra::plotRGB()`
+- **Quick mapping** with `quick_map()` function for instant
+  visualization
+- **Multiple color schemes**: viridis, plasma, ndvi, terrain,
+  categorical
+- **Interactive mapping** with automatic leaflet integration when
+  available
 
 ### 4. **Comprehensive Coverage**
 
-- 60+ vegetation indices including latest research developments
-- Complete workflows for common analysis tasks
-- Robust error handling and validation throughout
+- **60+ vegetation indices** including latest research developments
+- **Complete spatial operations** through `universal_spatial_join()`
+- **Robust error handling** with informative messages and recovery
+  strategies
+- **Cross-platform compatibility** (Windows, macOS, Linux)
 
 ### 5. **Research-Ready**
 
-Designed for agricultural research, environmental monitoring, and remote
-sensing applications with proper documentation and validation.
+Designed specifically for reproducible research with: - Comprehensive
+testing suite (`test_geospatialsuite_package_simple()`) - Function
+availability checking (`test_function_availability()`) - Quality control
+and filtering options - Integration with modern R spatial ecosystem
+
+## ⚡ Performance
+
+GeoSpatialSuite is optimized for:
+
+- **Large rasters**: Efficient memory usage with terra backend
+- **Multiple datasets**: Parallel processing capabilities for vegetation
+  indices
+- **Cross-platform**: Tested on Windows, macOS, and Linux
+- **Any geographic region**: Universal coordinate system handling
+- **Big data**: Streaming and chunked processing for large satellite
+  imagery
+- **Interactive analysis**: Fast visualization without data conversion
+  overhead
+
+### Performance Tips
+
+``` r
+# Test basic functionality
+test_package_minimal(verbose = TRUE)
+
+# Check which functions are available
+test_function_availability(verbose = TRUE)
+
+# Use efficient spatial operations
+result <- universal_spatial_join(
+  source_data = "points.csv",
+  target_data = "large_raster.tif",
+  method = "extract",
+  chunk_size = 1000000  # Process in chunks for large data
+)
+```
 
 ## 📊 Supported Vegetation Indices
 
@@ -227,43 +378,66 @@ sensing applications with proper documentation and validation.
 
 ### Basic Vegetation Indices
 
-- **NDVI** - Normalized Difference Vegetation Index
-- **EVI** - Enhanced Vegetation Index  
-- **SAVI** - Soil Adjusted Vegetation Index
-- **MSAVI** - Modified Soil Adjusted Vegetation Index
-- **OSAVI** - Optimized Soil Adjusted Vegetation Index
+- **NDVI** - Normalized Difference Vegetation Index (Rouse et al. 1974)
+- **EVI** - Enhanced Vegetation Index (Huete et al. 2002)
+- **SAVI** - Soil Adjusted Vegetation Index (Huete 1988)
+- **MSAVI** - Modified Soil Adjusted Vegetation Index (Qi et al. 1994)
+- **OSAVI** - Optimized Soil Adjusted Vegetation Index (Rondeaux et
+  al. 1996)
 - **GNDVI** - Green Normalized Difference Vegetation Index
 
-### Enhanced Indices
+### Atmospheric Correction Indices
 
-- **ARVI** - Atmospherically Resistant Vegetation Index
+- **ARVI** - Atmospherically Resistant Vegetation Index (Kaufman & Tanré
+  1992)
 - **RDVI** - Renormalized Difference Vegetation Index
 - **WDVI** - Weighted Difference Vegetation Index
 - **PVI** - Perpendicular Vegetation Index
 - **VARI** - Visible Atmospherically Resistant Index
 
-### Red-Edge Indices (Sentinel-2)
+### Red-Edge Indices (Sentinel-2/Hyperspectral)
 
 - **NDRE** - Normalized Difference Red Edge
 - **MTCI** - MERIS Terrestrial Chlorophyll Index
 - **IRECI** - Inverted Red-Edge Chlorophyll Index
 - **S2REP** - Sentinel-2 Red-Edge Position
+- **CIred-edge** - Chlorophyll Index Red-Edge
 
-### Stress Detection Indices
+### Stress Detection and Pigment Indices
 
 - **PRI** - Photochemical Reflectance Index
 - **SIPI** - Structure Insensitive Pigment Index
 - **PSRI** - Plant Senescence Reflectance Index
 - **CCI** - Canopy Chlorophyll Index
+- **ARI** - Anthocyanin Reflectance Index
 
 ### Water and Moisture Indices
 
-- **NDWI** - Normalized Difference Water Index
-- **MNDWI** - Modified Normalized Difference Water Index
-- **NDMI** - Normalized Difference Moisture Index
+- **NDWI** - Normalized Difference Water Index (McFeeters 1996)
+- **MNDWI** - Modified Normalized Difference Water Index (Xu 2006)
+- **NDMI** - Normalized Difference Moisture Index (Gao 1996)
 - **MSI** - Moisture Stress Index
+- **WI** - Water Index
+- **LSWI** - Land Surface Water Index
 
-*And many more specialized indices for specific applications…*
+### Specialized Agricultural Indices
+
+- **GCCI** - Green Crop Coverage Index
+- **NGRDI** - Normalized Green-Red Difference Index  
+- **GLI** - Green Leaf Index
+- **VDVI** - Visible-band Difference Vegetation Index
+- **TGI** - Triangular Greenness Index
+
+### Advanced Biophysical Indices
+
+- **LAI** - Leaf Area Index estimators
+- **FAPAR** - Fraction of Absorbed PAR
+- **MTVI1/MTVI2** - Modified Triangular Vegetation Index
+- **TCARI** - Transformed Chlorophyll Absorption Ratio Index
+- **OSAVI2** - Second Optimized SAVI
+
+*Total: 60+ indices with automatic band detection across satellite
+platforms*
 
 </details>
 
@@ -272,30 +446,61 @@ sensing applications with proper documentation and validation.
 ### Required Dependencies
 
 ``` r
-# Core dependencies (automatically installed)
-terra, sf, dplyr, ggplot2, magrittr, viridis
+# Core dependencies (automatically installed with geospatialsuite)
+terra (>= 1.6-17)
+sf (>= 1.0-0)
+dplyr (>= 1.0.0)
+ggplot2 (>= 3.3.0)
+magrittr
+viridis
 ```
 
-### Recommended Packages
+### Recommended Packages for Enhanced Functionality
 
 ``` r
-# For best performance (install separately)
+# Install these for optimal performance and features
 install.packages(c(
-  "tidyterra",    # Efficient raster visualization
-  "RStoolbox",    # Remote sensing tools
-  "leaflet",      # Interactive mapping
-  "patchwork",    # Multi-panel figures
-  "gganimate",    # Animations
-  "rnaturalearth", # Country boundaries
-  "tigris"        # US boundaries
+  "tidyterra",    # Efficient raster visualization with ggplot2
+  "RStoolbox",    # Remote sensing tools and visualization
+  "leaflet",      # Interactive web mapping
+  "patchwork",    # Multi-panel figures and layouts
+  "gganimate",    # Animated visualizations
+  "rnaturalearth", # Natural Earth country boundaries
+  "tigris"        # US administrative boundaries
 ))
+```
+
+### Optional Packages
+
+``` r
+# Additional packages for specialized functions
+install.packages(c(
+  "htmlwidgets", # Interactive widgets
+  "mice",        # Multiple imputation
+  "RColorBrewer", # Color palettes
+  "parallel"     # Parallel processing
+))
+```
+
+### Minimum R Version
+
+- **R \>= 3.5.0** (recommended: R \>= 4.0.0)
+
+## 📄 Citation
+
+If you use GeoSpatialSuite in your research, please cite:
+
+``` r
+citation("geospatialsuite")
 ```
 
 ## 📧 Contact
 
-- **Maintainer**: Olatunde D. Akanbi (<olatunde.akanbi@case.edu>),
-  Roger H. French (<roger.french@case.edu>)
+- **Maintainer**: Olatunde D. Akanbi (<olatunde.akanbi@case.edu>)
+- **Senior Maintainer**: Roger H. French (<roger.french@case.edu>)
 - **Lead Developer**: Olatunde D. Akanbi (<olatunde.akanbi@case.edu>)
+- **Issues & Bug Reports**:
+  <https://github.com/cwru-sdle/geospatialsuite/issues>
 
 ## 📝 License
 
@@ -303,15 +508,32 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
-- Developed at the Solar Durability and Lifetime Extension (SDLE)
-  Center, Case Western Reserve University, Cleveland, Ohio, U.S.A.
+- **Development Institution**: Solar Durability and Lifetime Extension
+  (SDLE) Center, Case Western Reserve University, Cleveland, Ohio,
+  U.S.A.
+- **Built on**: The excellent work of the `terra`, `sf`, `ggplot2`, and
+  broader R spatial community
+- **Funding**: This material is based upon financial support by the
+  National Science Foundation, EEC Division of Engineering Education and
+  Centers, NSF Engineering Research Center for Advancing Sustainable and
+  Distributed Fertilizer production (CASFER), NSF 20-553 Gen-4
+  Engineering Research Centers award 2133576.
 
-- Built on the excellent work of the terra, sf, and ggplot2 communities
+### Contributing Institutions
 
-- This material is based upon financial support by the National Science
-  Foundation, EEC Division of Engineering Education and Centers, NSF
-  Engineering Research Center for Advancing Sustainable and Distributed
-  Fertilizer production (CASFER), NSF 20-553 Gen-4 Engineering Research
-  Centers award 2133576.
+- Case Western Reserve University
+- NSF Engineering Research Center for Advancing Sustainable and
+  Distributed Fertilizer production (CASFER)
+
+### Special Thanks
+
+- R Core Team and CRAN maintainers
+- `terra` package developers (Robert J. Hijmans et al.)
+- `sf` package developers (Edzer Pebesma et al.)
+- Remote sensing and geospatial R community
 
 ------------------------------------------------------------------------
+
+**Ready to get started?** Install from CRAN with
+`install.packages("geospatialsuite")` and check out the [Getting Started
+vignette](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/getting-started.html)!

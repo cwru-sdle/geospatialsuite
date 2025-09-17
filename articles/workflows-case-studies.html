@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="GeoSpatialSuite Development Team" />
+
+
+<title>Complete Workflows and Case Studies</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Complete Workflows and Case Studies</h1>
+<h4 class="author">GeoSpatialSuite Development Team</h4>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>The GeoSpatialSuite package provides comprehensive workflow functions
+that integrate multiple analysis types into complete, automated
+pipelines. This vignette demonstrates how to build and execute advanced
+workflows for real-world geospatial analysis scenarios.</p>
+</div>
+<div id="learning-objectives" class="section level2">
+<h2>Learning Objectives</h2>
+<p>By the end of this vignette, you will be able to:</p>
+<ul>
+<li>Execute complete analysis pipelines with minimal code</li>
+<li>Build custom workflows for specific applications</li>
+<li>Integrate multiple data sources automatically</li>
+<li>Handle complex multi-step analysis scenarios</li>
+<li>Optimize workflows for performance and reliability</li>
+<li>Generate comprehensive reports and outputs</li>
+</ul>
+</div>
+<div id="prerequisites" class="section level2">
+<h2>Prerequisites</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># Load required packages</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(geospatialsuite)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(terra)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">library</span>(sf)</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co"># Verify package functionality</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="fu">test_geospatialsuite_package_simple</span>(<span class="at">verbose =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+</div>
+<div id="comprehensive-workflow-architecture" class="section level2">
+<h2>Comprehensive Workflow Architecture</h2>
+<p>The package includes pre-built workflows for common analysis
+scenarios:</p>
+<ul>
+<li><strong>NDVI Crop Analysis</strong>: Enhanced vegetation monitoring
+with quality control</li>
+<li><strong>Vegetation Comprehensive</strong>: Multi-index vegetation
+assessment</li>
+<li><strong>Water Quality Analysis</strong>: Complete water parameter
+assessment</li>
+<li><strong>Terrain Analysis</strong>: Topographic characterization
+workflows</li>
+<li><strong>Temporal Analysis</strong>: Time series change
+detection</li>
+<li><strong>Interactive Mapping</strong>: Multi-layer interactive
+visualization</li>
+<li><strong>Multi-Dataset Integration</strong>: Combining diverse
+spatial datasets</li>
+</ul>
+</div>
+<div id="ndvi-crop-analysis-workflow" class="section level2">
+<h2>NDVI Crop Analysis Workflow</h2>
+<div id="basic-enhanced-ndvi-workflow" class="section level3">
+<h3>Basic Enhanced NDVI Workflow</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># Create sample multi-temporal data</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>red_raster <span class="ot">&lt;-</span> <span class="fu">rast</span>(<span class="at">nrows =</span> <span class="dv">80</span>, <span class="at">ncols =</span> <span class="dv">80</span>, </span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>                  <span class="at">xmin =</span> <span class="sc">-</span><span class="fl">83.5</span>, <span class="at">xmax =</span> <span class="sc">-</span><span class="fl">83.0</span>, </span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>                  <span class="at">ymin =</span> <span class="fl">40.2</span>, <span class="at">ymax =</span> <span class="fl">40.7</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="fu">values</span>(red_raster) <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">6400</span>, <span class="fl">0.1</span>, <span class="fl">0.3</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>nir_raster <span class="ot">&lt;-</span> <span class="fu">rast</span>(<span class="at">nrows =</span> <span class="dv">80</span>, <span class="at">ncols =</span> <span class="dv">80</span>, </span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>                  <span class="at">xmin =</span> <span class="sc">-</span><span class="fl">83.5</span>, <span class="at">xmax =</span> <span class="sc">-</span><span class="fl">83.0</span>, </span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>                  <span class="at">ymin =</span> <span class="fl">40.2</span>, <span class="at">ymax =</span> <span class="fl">40.7</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="fu">values</span>(nir_raster) <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">6400</span>, <span class="fl">0.4</span>, <span class="fl">0.8</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co"># Configure comprehensive NDVI analysis</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>ndvi_config <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>  <span class="at">analysis_type =</span> <span class="st">&quot;ndvi_crop_analysis&quot;</span>,</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>  <span class="at">input_data =</span> <span class="fu">list</span>(<span class="at">red =</span> red_raster, <span class="at">nir =</span> nir_raster),</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>  <span class="at">region_boundary =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">83.5</span>, <span class="fl">40.2</span>, <span class="sc">-</span><span class="fl">83.0</span>, <span class="fl">40.7</span>),  <span class="co"># Bounding box</span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;EVI2&quot;</span>, <span class="st">&quot;SAVI&quot;</span>),</span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>  <span class="at">quality_filter =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a>  <span class="at">temporal_smoothing =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a>  <span class="at">visualization_config =</span> <span class="fu">list</span>(</span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a>    <span class="at">create_maps =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a>    <span class="at">ndvi_classes =</span> <span class="st">&quot;none&quot;</span>,</span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a>    <span class="at">interactive =</span> <span class="cn">FALSE</span></span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a>  )</span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a>)</span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a></span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a><span class="co"># Execute comprehensive workflow</span></span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a>ndvi_workflow_results <span class="ot">&lt;-</span> <span class="fu">run_comprehensive_geospatial_workflow</span>(ndvi_config)</span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a></span>
+<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a><span class="co"># Access results</span></span>
+<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a>ndvi_data <span class="ot">&lt;-</span> ndvi_workflow_results<span class="sc">$</span>results<span class="sc">$</span>vegetation_data</span>
+<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a>ndvi_stats <span class="ot">&lt;-</span> ndvi_workflow_results<span class="sc">$</span>results<span class="sc">$</span>statistics</span>
+<span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a>ndvi_maps <span class="ot">&lt;-</span> ndvi_workflow_results<span class="sc">$</span>results<span class="sc">$</span>visualizations</span></code></pre></div>
+</div>
+<div id="enhanced-ndvi-with-crop-masking" class="section level3">
+<h3>Enhanced NDVI with Crop Masking</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Simulate CDL crop data</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>cdl_raster <span class="ot">&lt;-</span> <span class="fu">rast</span>(<span class="at">nrows =</span> <span class="dv">80</span>, <span class="at">ncols =</span> <span class="dv">80</span>, </span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>                  <span class="at">xmin =</span> <span class="sc">-</span><span class="fl">83.5</span>, <span class="at">xmax =</span> <span class="sc">-</span><span class="fl">83.0</span>, </span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>                  <span class="at">ymin =</span> <span class="fl">40.2</span>, <span class="at">ymax =</span> <span class="fl">40.7</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="fu">values</span>(cdl_raster) <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">5</span>, <span class="dv">24</span>, <span class="dv">36</span>, <span class="dv">61</span>), <span class="dv">6400</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>)  <span class="co"># Corn, soybeans, wheat, alfalfa, fallow</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co"># Enhanced configuration with crop masking</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>enhanced_ndvi_config <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">analysis_type =</span> <span class="st">&quot;ndvi_crop_analysis&quot;</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  <span class="at">input_data =</span> <span class="fu">list</span>(<span class="at">red =</span> red_raster, <span class="at">nir =</span> nir_raster),</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  <span class="at">region_boundary =</span> <span class="st">&quot;custom&quot;</span>,</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>  <span class="at">cdl_data =</span> cdl_raster,</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>  <span class="at">crop_codes =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">5</span>),  <span class="co"># Corn and soybeans only</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;SAVI&quot;</span>, <span class="st">&quot;DVI&quot;</span>),</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>  <span class="at">quality_filter =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>  <span class="at">visualization_config =</span> <span class="fu">list</span>(</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>    <span class="at">create_maps =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>    <span class="at">interactive =</span> <span class="cn">FALSE</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>  )</span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>)</span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co"># Run enhanced workflow</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a>enhanced_results <span class="ot">&lt;-</span> <span class="fu">run_comprehensive_geospatial_workflow</span>(enhanced_ndvi_config)</span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co"># Compare masked vs unmasked results</span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Original NDVI stats:&quot;</span>)</span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">global</span>(ndvi_data, <span class="st">&quot;mean&quot;</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Crop-masked NDVI stats:&quot;</span>)</span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">global</span>(enhanced_results<span class="sc">$</span>results<span class="sc">$</span>vegetation_data, <span class="st">&quot;mean&quot;</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span></code></pre></div>
+</div>
+</div>
+<div id="comprehensive-vegetation-analysis-workflow" class="section level2">
+<h2>Comprehensive Vegetation Analysis Workflow</h2>
+<div id="multi-index-vegetation-assessment" class="section level3">
+<h3>Multi-Index Vegetation Assessment</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># Create multi-band spectral data</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>spectral_stack <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  red_raster,                    <span class="co"># Band 1: Red</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  red_raster <span class="sc">*</span> <span class="fl">1.2</span>,             <span class="co"># Band 2: Green (simulated)</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  red_raster <span class="sc">*</span> <span class="fl">0.8</span>,             <span class="co"># Band 3: Blue (simulated)</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  nir_raster                     <span class="co"># Band 4: NIR</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>)</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="fu">names</span>(spectral_stack) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;red&quot;</span>, <span class="st">&quot;green&quot;</span>, <span class="st">&quot;blue&quot;</span>, <span class="st">&quot;nir&quot;</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co"># Configure comprehensive vegetation analysis</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>vegetation_config <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>  <span class="at">analysis_type =</span> <span class="st">&quot;vegetation_comprehensive&quot;</span>,</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>  <span class="at">input_data =</span> spectral_stack,</span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;EVI2&quot;</span>, <span class="st">&quot;SAVI&quot;</span>, <span class="st">&quot;GNDVI&quot;</span>, <span class="st">&quot;DVI&quot;</span>, <span class="st">&quot;RVI&quot;</span>),</span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>  <span class="at">crop_type =</span> <span class="st">&quot;general&quot;</span>,</span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>  <span class="at">analysis_type_detail =</span> <span class="st">&quot;comprehensive&quot;</span>,</span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>  <span class="at">region_boundary =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">83.5</span>, <span class="fl">40.2</span>, <span class="sc">-</span><span class="fl">83.0</span>, <span class="fl">40.7</span>),</span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>  <span class="at">visualization_config =</span> <span class="fu">list</span>(</span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a>    <span class="at">create_maps =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a>    <span class="at">comparison_plots =</span> <span class="cn">TRUE</span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a>  )</span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a>)</span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co"># Execute comprehensive vegetation workflow</span></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a>vegetation_results <span class="ot">&lt;-</span> <span class="fu">run_comprehensive_geospatial_workflow</span>(vegetation_config)</span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a></span>
+<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a><span class="co"># Access detailed results</span></span>
+<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a>vegetation_indices <span class="ot">&lt;-</span> vegetation_results<span class="sc">$</span>results<span class="sc">$</span>vegetation_analysis<span class="sc">$</span>vegetation_indices</span>
+<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a>analysis_details <span class="ot">&lt;-</span> vegetation_results<span class="sc">$</span>results<span class="sc">$</span>vegetation_analysis<span class="sc">$</span>analysis_results</span>
+<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a>metadata <span class="ot">&lt;-</span> vegetation_results<span class="sc">$</span>results<span class="sc">$</span>vegetation_analysis<span class="sc">$</span>metadata</span>
+<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a></span>
+<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Vegetation indices calculated:&quot;</span>)</span>
+<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">names</span>(vegetation_indices))</span>
+<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Analysis metadata:&quot;</span>)</span>
+<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a><span class="fu">print</span>(metadata<span class="sc">$</span>indices_used)</span></code></pre></div>
+</div>
+<div id="crop-specific-analysis-workflow" class="section level3">
+<h3>Crop-Specific Analysis Workflow</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Corn-specific analysis workflow</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>corn_config <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">analysis_type =</span> <span class="st">&quot;vegetation_comprehensive&quot;</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">input_data =</span> spectral_stack,</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">crop_type =</span> <span class="st">&quot;corn&quot;</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">analysis_type_detail =</span> <span class="st">&quot;comprehensive&quot;</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  <span class="at">cdl_mask =</span> cdl_raster <span class="sc">==</span> <span class="dv">1</span>,  <span class="co"># Corn mask</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;EVI2&quot;</span>, <span class="st">&quot;GNDVI&quot;</span>),  <span class="co"># Corn-appropriate indices</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>  <span class="at">visualization_config =</span> <span class="fu">list</span>(<span class="at">create_maps =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>)</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>corn_results <span class="ot">&lt;-</span> <span class="fu">run_comprehensive_geospatial_workflow</span>(corn_config)</span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co"># Extract corn-specific insights</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="cf">if</span> (<span class="st">&quot;stress_analysis&quot;</span> <span class="sc">%in%</span> <span class="fu">names</span>(corn_results<span class="sc">$</span>results<span class="sc">$</span>vegetation_analysis<span class="sc">$</span>analysis_results)) {</span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a>  stress_results <span class="ot">&lt;-</span> corn_results<span class="sc">$</span>results<span class="sc">$</span>vegetation_analysis<span class="sc">$</span>analysis_results<span class="sc">$</span>stress_analysis</span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a>  <span class="fu">print</span>(<span class="st">&quot;Corn stress analysis:&quot;</span>)</span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a>  <span class="fu">print</span>(stress_results)</span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+</div>
+<div id="water-quality-assessment-workflow" class="section level2">
+<h2>Water Quality Assessment Workflow</h2>
+<div id="comprehensive-water-quality-pipeline" class="section level3">
+<h3>Comprehensive Water Quality Pipeline</h3>
+</div>
+</div>
+<div id="case-study-2-environmental-monitoring-and-water-quality-assessment" class="section level2">
+<h2>Case Study 2: Environmental Monitoring and Water Quality
+Assessment</h2>
+<p><strong>Objective</strong>: Monitor environmental conditions around
+water bodies, assess agricultural impacts on water quality, and identify
+priority areas for conservation.</p>
+<div id="step-1-environmental-monitoring-setup" class="section level3">
+<h3>Step 1: Environmental Monitoring Setup</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># Create environmental monitoring scenario</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>monitoring_extent <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">82.8</span>, <span class="fl">39.5</span>, <span class="sc">-</span><span class="fl">81.8</span>, <span class="fl">40.5</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co"># Water quality monitoring stations</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>water_stations <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="at">station_id =</span> <span class="fu">paste0</span>(<span class="st">&quot;WQ_&quot;</span>, <span class="fu">sprintf</span>(<span class="st">&quot;%03d&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">18</span>)),</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>  <span class="at">lon =</span> <span class="fu">runif</span>(<span class="dv">18</span>, monitoring_extent[<span class="dv">1</span>] <span class="sc">+</span> <span class="fl">0.1</span>, monitoring_extent[<span class="dv">3</span>] <span class="sc">-</span> <span class="fl">0.1</span>),</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>  <span class="at">lat =</span> <span class="fu">runif</span>(<span class="dv">18</span>, monitoring_extent[<span class="dv">2</span>] <span class="sc">+</span> <span class="fl">0.1</span>, monitoring_extent[<span class="dv">4</span>] <span class="sc">-</span> <span class="fl">0.1</span>),</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>  <span class="at">nitrate_mg_l =</span> <span class="fu">runif</span>(<span class="dv">18</span>, <span class="fl">0.5</span>, <span class="fl">15.0</span>),</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>  <span class="at">phosphorus_mg_l =</span> <span class="fu">runif</span>(<span class="dv">18</span>, <span class="fl">0.02</span>, <span class="fl">2.5</span>),</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>  <span class="at">turbidity_ntu =</span> <span class="fu">runif</span>(<span class="dv">18</span>, <span class="dv">1</span>, <span class="dv">45</span>),</span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>  <span class="at">dissolved_oxygen_mg_l =</span> <span class="fu">runif</span>(<span class="dv">18</span>, <span class="dv">4</span>, <span class="dv">12</span>),</span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>  <span class="at">ph =</span> <span class="fu">runif</span>(<span class="dv">18</span>, <span class="fl">6.8</span>, <span class="fl">8.4</span>),</span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a>  <span class="at">sampling_date =</span> <span class="fu">sample</span>(<span class="fu">seq</span>(<span class="fu">as.Date</span>(<span class="st">&quot;2024-05-01&quot;</span>), <span class="fu">as.Date</span>(<span class="st">&quot;2024-09-30&quot;</span>), <span class="at">by =</span> <span class="st">&quot;day&quot;</span>), <span class="dv">18</span>),</span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a>  <span class="at">watershed =</span> <span class="fu">sample</span>(<span class="fu">c</span>(<span class="st">&quot;Upper_Creek&quot;</span>, <span class="st">&quot;Lower_Creek&quot;</span>, <span class="st">&quot;Tributary_A&quot;</span>), <span class="dv">18</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a>)</span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co"># Land use/land cover data</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a>lulc_raster <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">rast</span>(<span class="at">nrows =</span> <span class="dv">150</span>, <span class="at">ncols =</span> <span class="dv">150</span>,</span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a>                          <span class="at">xmin =</span> monitoring_extent[<span class="dv">1</span>], <span class="at">xmax =</span> monitoring_extent[<span class="dv">3</span>],</span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a>                          <span class="at">ymin =</span> monitoring_extent[<span class="dv">2</span>], <span class="at">ymax =</span> monitoring_extent[<span class="dv">4</span>])</span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co"># Simulate realistic LULC pattern</span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a>lulc_codes <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">5</span>, <span class="dv">41</span>, <span class="dv">42</span>, <span class="dv">81</span>, <span class="dv">82</span>, <span class="dv">11</span>, <span class="dv">21</span>)  <span class="co"># Developed, Forest, Wetland, Agriculture</span></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a>lulc_probs <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.15</span>, <span class="fl">0.25</span>, <span class="fl">0.05</span>, <span class="fl">0.40</span>, <span class="fl">0.08</span>, <span class="fl">0.05</span>, <span class="fl">0.01</span>, <span class="fl">0.01</span>)</span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a>terra<span class="sc">::</span><span class="fu">values</span>(lulc_raster) <span class="ot">&lt;-</span> <span class="fu">sample</span>(lulc_codes, <span class="dv">22500</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>, <span class="at">prob =</span> lulc_probs)</span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="fu">names</span>(lulc_raster) <span class="ot">&lt;-</span> <span class="st">&quot;LULC&quot;</span></span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a></span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Environmental monitoring setup completed&quot;</span>)</span></code></pre></div>
+</div>
+<div id="step-2-comprehensive-water-quality-analysis" class="section level3">
+<h3>Step 2: Comprehensive Water Quality Analysis</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># Comprehensive water quality assessment</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>water_quality_results <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co"># Analyze each water quality parameter</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>parameters <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;nitrate_mg_l&quot;</span>, <span class="st">&quot;phosphorus_mg_l&quot;</span>, <span class="st">&quot;turbidity_ntu&quot;</span>, <span class="st">&quot;dissolved_oxygen_mg_l&quot;</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="cf">for</span> (param <span class="cf">in</span> parameters) {</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  </span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>  <span class="co"># Define parameter-specific thresholds</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>  thresholds <span class="ot">&lt;-</span> <span class="cf">switch</span>(param,</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>    <span class="st">&quot;nitrate_mg_l&quot;</span> <span class="ot">=</span> <span class="fu">list</span>(<span class="st">&quot;Low&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">3</span>), <span class="st">&quot;Moderate&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">3</span>, <span class="dv">6</span>), </span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>                         <span class="st">&quot;High&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">6</span>, <span class="dv">10</span>), <span class="st">&quot;Excessive&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="cn">Inf</span>)),</span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>    <span class="st">&quot;phosphorus_mg_l&quot;</span> <span class="ot">=</span> <span class="fu">list</span>(<span class="st">&quot;Low&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.1</span>), <span class="st">&quot;Moderate&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="fl">0.1</span>, <span class="fl">0.3</span>), </span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>                            <span class="st">&quot;High&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="fl">0.3</span>, <span class="fl">0.8</span>), <span class="st">&quot;Excessive&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="fl">0.8</span>, <span class="cn">Inf</span>)),</span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>    <span class="st">&quot;turbidity_ntu&quot;</span> <span class="ot">=</span> <span class="fu">list</span>(<span class="st">&quot;Clear&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">5</span>), <span class="st">&quot;Moderate&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">15</span>), </span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>                          <span class="st">&quot;Turbid&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">15</span>, <span class="dv">30</span>), <span class="st">&quot;Very_Turbid&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">30</span>, <span class="cn">Inf</span>)),</span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a>    <span class="st">&quot;dissolved_oxygen_mg_l&quot;</span> <span class="ot">=</span> <span class="fu">list</span>(<span class="st">&quot;Critical&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">4</span>), <span class="st">&quot;Stressed&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">6</span>), </span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>                                  <span class="st">&quot;Good&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">6</span>, <span class="dv">8</span>), <span class="st">&quot;Excellent&quot;</span> <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">8</span>, <span class="cn">Inf</span>))</span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a>  )</span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a>  </span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a>  <span class="co"># Comprehensive analysis</span></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a>  water_quality_results[[param]] <span class="ot">&lt;-</span> <span class="fu">analyze_water_quality_comprehensive</span>(</span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a>    <span class="at">water_data =</span> water_stations,</span>
+<span id="cb7-24"><a href="#cb7-24" tabindex="-1"></a>    <span class="at">variable =</span> param,</span>
+<span id="cb7-25"><a href="#cb7-25" tabindex="-1"></a>    <span class="at">region_boundary =</span> monitoring_extent,</span>
+<span id="cb7-26"><a href="#cb7-26" tabindex="-1"></a>    <span class="at">thresholds =</span> thresholds,</span>
+<span id="cb7-27"><a href="#cb7-27" tabindex="-1"></a>    <span class="at">output_folder =</span> <span class="fu">paste0</span>(<span class="st">&quot;water_quality_&quot;</span>, param)</span>
+<span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a>  )</span>
+<span id="cb7-29"><a href="#cb7-29" tabindex="-1"></a>}</span>
+<span id="cb7-30"><a href="#cb7-30" tabindex="-1"></a></span>
+<span id="cb7-31"><a href="#cb7-31" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Water quality analysis completed for all parameters&quot;</span>)</span></code></pre></div>
+</div>
+<div id="step-3-land-use-impact-assessment" class="section level3">
+<h3>Step 3: Land Use Impact Assessment</h3>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># Assess land use impacts on water quality</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>land_use_impact_analysis <span class="ot">&lt;-</span> <span class="cf">function</span>(water_stations, lulc_raster, <span class="at">buffer_sizes =</span> <span class="fu">c</span>(<span class="dv">500</span>, <span class="dv">1000</span>, <span class="dv">2000</span>)) {</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  </span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  results <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  </span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  <span class="cf">for</span> (buffer_size <span class="cf">in</span> buffer_sizes) {</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>    </span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>    <span class="co"># Extract land use composition around each station</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>    buffered_lulc <span class="ot">&lt;-</span> <span class="fu">spatial_join_universal</span>(</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>      <span class="at">vector_data =</span> water_stations,</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>      <span class="at">raster_data =</span> lulc_raster,</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>      <span class="at">method =</span> <span class="st">&quot;buffer&quot;</span>,</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>      <span class="at">buffer_size =</span> buffer_size,</span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>      <span class="at">summary_function =</span> <span class="st">&quot;mode&quot;</span>,  <span class="co"># Most common land use</span></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a>      <span class="at">variable_names =</span> <span class="fu">paste0</span>(<span class="st">&quot;dominant_lulc_&quot;</span>, buffer_size, <span class="st">&quot;m&quot;</span>)</span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a>    )</span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a>    </span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a>    <span class="co"># Calculate land use percentages</span></span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(water_stations)) {</span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a>      station_point <span class="ot">&lt;-</span> water_stations[i, ]</span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a>      station_buffer <span class="ot">&lt;-</span> sf<span class="sc">::</span><span class="fu">st_buffer</span>(sf<span class="sc">::</span><span class="fu">st_as_sf</span>(station_point, </span>
+<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a>                                                  <span class="at">coords =</span> <span class="fu">c</span>(<span class="st">&quot;lon&quot;</span>, <span class="st">&quot;lat&quot;</span>), </span>
+<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a>                                                  <span class="at">crs =</span> <span class="dv">4326</span>), </span>
+<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a>                                     <span class="at">dist =</span> buffer_size)</span>
+<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a>      </span>
+<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a>      <span class="co"># Extract all LULC values within buffer</span></span>
+<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a>      lulc_values <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">extract</span>(lulc_raster, terra<span class="sc">::</span><span class="fu">vect</span>(station_buffer))</span>
+<span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a>      lulc_table <span class="ot">&lt;-</span> <span class="fu">table</span>(lulc_values)</span>
+<span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a>      </span>
+<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a>      <span class="co"># Calculate percentages</span></span>
+<span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a>      total_pixels <span class="ot">&lt;-</span> <span class="fu">sum</span>(lulc_table)</span>
+<span id="cb8-32"><a href="#cb8-32" tabindex="-1"></a>      agriculture_pct <span class="ot">&lt;-</span> <span class="fu">sum</span>(lulc_table[<span class="fu">names</span>(lulc_table) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;1&quot;</span>, <span class="st">&quot;5&quot;</span>)]) <span class="sc">/</span> total_pixels <span class="sc">*</span> <span class="dv">100</span></span>
+<span id="cb8-33"><a href="#cb8-33" tabindex="-1"></a>      developed_pct <span class="ot">&lt;-</span> <span class="fu">sum</span>(lulc_table[<span class="fu">names</span>(lulc_table) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;21&quot;</span>, <span class="st">&quot;22&quot;</span>, <span class="st">&quot;23&quot;</span>, <span class="st">&quot;24&quot;</span>)]) <span class="sc">/</span> total_pixels <span class="sc">*</span> <span class="dv">100</span></span>
+<span id="cb8-34"><a href="#cb8-34" tabindex="-1"></a>      </span>
+<span id="cb8-35"><a href="#cb8-35" tabindex="-1"></a>      water_stations[i, <span class="fu">paste0</span>(<span class="st">&quot;agriculture_pct_&quot;</span>, buffer_size, <span class="st">&quot;m&quot;</span>)] <span class="ot">&lt;-</span> agriculture_pct</span>
+<span id="cb8-36"><a href="#cb8-36" tabindex="-1"></a>      water_stations[i, <span class="fu">paste0</span>(<span class="st">&quot;developed_pct_&quot;</span>, buffer_size, <span class="st">&quot;m&quot;</span>)] <span class="ot">&lt;-</span> developed_pct</span>
+<span id="cb8-37"><a href="#cb8-37" tabindex="-1"></a>    }</span>
+<span id="cb8-38"><a href="#cb8-38" tabindex="-1"></a>    </span>
+<span id="cb8-39"><a href="#cb8-39" tabindex="-1"></a>    results[[<span class="fu">paste0</span>(<span class="st">&quot;buffer_&quot;</span>, buffer_size, <span class="st">&quot;m&quot;</span>)]] <span class="ot">&lt;-</span> water_stations</span>
+<span id="cb8-40"><a href="#cb8-40" tabindex="-1"></a>  }</span>
+<span id="cb8-41"><a href="#cb8-41" tabindex="-1"></a>  </span>
+<span id="cb8-42"><a href="#cb8-42" tabindex="-1"></a>  <span class="fu">return</span>(results)</span>
+<span id="cb8-43"><a href="#cb8-43" tabindex="-1"></a>}</span>
+<span id="cb8-44"><a href="#cb8-44" tabindex="-1"></a></span>
+<span id="cb8-45"><a href="#cb8-45" tabindex="-1"></a><span class="co"># Perform land use impact analysis</span></span>
+<span id="cb8-46"><a href="#cb8-46" tabindex="-1"></a>land_use_impacts <span class="ot">&lt;-</span> <span class="fu">land_use_impact_analysis</span>(water_stations, lulc_raster)</span>
+<span id="cb8-47"><a href="#cb8-47" tabindex="-1"></a></span>
+<span id="cb8-48"><a href="#cb8-48" tabindex="-1"></a><span class="co"># Analyze correlations between land use and water quality</span></span>
+<span id="cb8-49"><a href="#cb8-49" tabindex="-1"></a>correlation_analysis <span class="ot">&lt;-</span> <span class="cf">function</span>(data) {</span>
+<span id="cb8-50"><a href="#cb8-50" tabindex="-1"></a>  </span>
+<span id="cb8-51"><a href="#cb8-51" tabindex="-1"></a>  <span class="co"># Select relevant columns</span></span>
+<span id="cb8-52"><a href="#cb8-52" tabindex="-1"></a>  water_quality_vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;nitrate_mg_l&quot;</span>, <span class="st">&quot;phosphorus_mg_l&quot;</span>, <span class="st">&quot;turbidity_ntu&quot;</span>)</span>
+<span id="cb8-53"><a href="#cb8-53" tabindex="-1"></a>  land_use_vars <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="st">&quot;agriculture_pct|developed_pct&quot;</span>, <span class="fu">names</span>(data), <span class="at">value =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-54"><a href="#cb8-54" tabindex="-1"></a>  </span>
+<span id="cb8-55"><a href="#cb8-55" tabindex="-1"></a>  correlation_matrix <span class="ot">&lt;-</span> <span class="fu">cor</span>(data[, <span class="fu">c</span>(water_quality_vars, land_use_vars)], </span>
+<span id="cb8-56"><a href="#cb8-56" tabindex="-1"></a>                           <span class="at">use =</span> <span class="st">&quot;complete.obs&quot;</span>)</span>
+<span id="cb8-57"><a href="#cb8-57" tabindex="-1"></a>  </span>
+<span id="cb8-58"><a href="#cb8-58" tabindex="-1"></a>  <span class="fu">return</span>(correlation_matrix)</span>
+<span id="cb8-59"><a href="#cb8-59" tabindex="-1"></a>}</span>
+<span id="cb8-60"><a href="#cb8-60" tabindex="-1"></a></span>
+<span id="cb8-61"><a href="#cb8-61" tabindex="-1"></a><span class="co"># Analyze correlations for different buffer sizes</span></span>
+<span id="cb8-62"><a href="#cb8-62" tabindex="-1"></a>correlations_500m <span class="ot">&lt;-</span> <span class="fu">correlation_analysis</span>(land_use_impacts<span class="sc">$</span>buffer_500m)</span>
+<span id="cb8-63"><a href="#cb8-63" tabindex="-1"></a>correlations_1000m <span class="ot">&lt;-</span> <span class="fu">correlation_analysis</span>(land_use_impacts<span class="sc">$</span>buffer_1000m)</span>
+<span id="cb8-64"><a href="#cb8-64" tabindex="-1"></a>correlations_2000m <span class="ot">&lt;-</span> <span class="fu">correlation_analysis</span>(land_use_impacts<span class="sc">$</span>buffer_2000m)</span>
+<span id="cb8-65"><a href="#cb8-65" tabindex="-1"></a></span>
+<span id="cb8-66"><a href="#cb8-66" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Land use impact analysis completed&quot;</span>)</span>
+<span id="cb8-67"><a href="#cb8-67" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Correlations at 1000m buffer:&quot;</span>)</span>
+<span id="cb8-68"><a href="#cb8-68" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">round</span>(correlations_1000m[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">4</span><span class="sc">:</span><span class="dv">7</span>], <span class="dv">3</span>))</span></code></pre></div>
+</div>
+<div id="step-4-watershed-scale-assessment" class="section level3">
+<h3>Step 4: Watershed-Scale Assessment</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># Watershed-scale environmental assessment</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>watershed_assessment <span class="ot">&lt;-</span> <span class="cf">function</span>(water_stations, environmental_layers) {</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  </span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="co"># Group stations by watershed</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  watershed_summary <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  </span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  <span class="cf">for</span> (watershed <span class="cf">in</span> <span class="fu">unique</span>(water_stations<span class="sc">$</span>watershed)) {</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>    </span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>    watershed_stations <span class="ot">&lt;-</span> water_stations[water_stations<span class="sc">$</span>watershed <span class="sc">==</span> watershed, ]</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>    </span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>    <span class="co"># Calculate watershed-level statistics</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>    watershed_summary[[watershed]] <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>      <span class="at">n_stations =</span> <span class="fu">nrow</span>(watershed_stations),</span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>      <span class="at">mean_nitrate =</span> <span class="fu">mean</span>(watershed_stations<span class="sc">$</span>nitrate_mg_l, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>      <span class="at">mean_phosphorus =</span> <span class="fu">mean</span>(watershed_stations<span class="sc">$</span>phosphorus_mg_l, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>      <span class="at">mean_turbidity =</span> <span class="fu">mean</span>(watershed_stations<span class="sc">$</span>turbidity_ntu, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a>      <span class="at">stations_exceeding_nitrate_threshold =</span> <span class="fu">sum</span>(watershed_stations<span class="sc">$</span>nitrate_mg_l <span class="sc">&gt;</span> <span class="dv">6</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a>      <span class="at">stations_exceeding_phosphorus_threshold =</span> <span class="fu">sum</span>(watershed_stations<span class="sc">$</span>phosphorus_mg_l <span class="sc">&gt;</span> <span class="fl">0.3</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a>    )</span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a>  }</span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a>  </span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a>  <span class="fu">return</span>(watershed_summary)</span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a>}</span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a></span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co"># Environmental layers for watershed analysis</span></span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a>environmental_layers <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a>  <span class="at">vegetation =</span> enhanced_ndvi,  <span class="co"># From previous case study</span></span>
+<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a>  <span class="at">elevation =</span> elevation,</span>
+<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a>  <span class="at">lulc =</span> lulc_raster</span>
+<span id="cb9-30"><a href="#cb9-30" tabindex="-1"></a>)</span>
+<span id="cb9-31"><a href="#cb9-31" tabindex="-1"></a></span>
+<span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a>watershed_results <span class="ot">&lt;-</span> <span class="fu">watershed_assessment</span>(water_stations, environmental_layers)</span>
+<span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a></span>
+<span id="cb9-34"><a href="#cb9-34" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Watershed Assessment Results:&quot;</span>)</span>
+<span id="cb9-35"><a href="#cb9-35" tabindex="-1"></a><span class="cf">for</span> (watershed <span class="cf">in</span> <span class="fu">names</span>(watershed_results)) {</span>
+<span id="cb9-36"><a href="#cb9-36" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>, watershed, <span class="st">&quot;:</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb9-37"><a href="#cb9-37" tabindex="-1"></a>  result <span class="ot">&lt;-</span> watershed_results[[watershed]]</span>
+<span id="cb9-38"><a href="#cb9-38" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;  Stations:&quot;</span>, result<span class="sc">$</span>n_stations, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb9-39"><a href="#cb9-39" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;  Mean Nitrate:&quot;</span>, <span class="fu">round</span>(result<span class="sc">$</span>mean_nitrate, <span class="dv">2</span>), <span class="st">&quot;mg/L</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb9-40"><a href="#cb9-40" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;  Mean Phosphorus:&quot;</span>, <span class="fu">round</span>(result<span class="sc">$</span>mean_phosphorus, <span class="dv">3</span>), <span class="st">&quot;mg/L</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb9-41"><a href="#cb9-41" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;  Stations exceeding nitrate threshold:&quot;</span>, result<span class="sc">$</span>stations_exceeding_nitrate_threshold, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb9-42"><a href="#cb9-42" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+<div id="step-5-conservation-priority-mapping" class="section level3">
+<h3>Step 5: Conservation Priority Mapping</h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># Identify priority areas for conservation based on water quality risk</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>conservation_priority_analysis <span class="ot">&lt;-</span> <span class="cf">function</span>(lulc_raster, water_quality_data, <span class="at">slope_data =</span> <span class="cn">NULL</span>) {</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  </span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="co"># Create risk factors</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  risk_factors <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  </span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  <span class="co"># Agricultural intensity risk</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>  ag_risk <span class="ot">&lt;-</span> lulc_raster</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>  ag_risk[lulc_raster <span class="sc">!=</span> <span class="dv">1</span> <span class="sc">&amp;</span> lulc_raster <span class="sc">!=</span> <span class="dv">5</span>] <span class="ot">&lt;-</span> <span class="dv">0</span>  <span class="co"># Non-ag areas = 0 risk</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>  ag_risk[lulc_raster <span class="sc">==</span> <span class="dv">1</span> <span class="sc">|</span> lulc_raster <span class="sc">==</span> <span class="dv">5</span>] <span class="ot">&lt;-</span> <span class="dv">1</span>  <span class="co"># Ag areas = 1 risk</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>  <span class="fu">names</span>(ag_risk) <span class="ot">&lt;-</span> <span class="st">&quot;agricultural_risk&quot;</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a>  </span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a>  <span class="co"># Water quality risk based on monitoring data</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>  <span class="co"># Create risk surface using interpolation of water quality data</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>  high_risk_stations <span class="ot">&lt;-</span> water_quality_data[water_quality_data<span class="sc">$</span>nitrate_mg_l <span class="sc">&gt;</span> <span class="dv">6</span> <span class="sc">|</span> </span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>                                          water_quality_data<span class="sc">$</span>phosphorus_mg_l <span class="sc">&gt;</span> <span class="fl">0.3</span>, ]</span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>  </span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">nrow</span>(high_risk_stations) <span class="sc">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a>    <span class="co"># Simple distance-based risk (closer to high-risk stations = higher risk)</span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a>    risk_raster <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">rast</span>(lulc_raster)</span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a>    terra<span class="sc">::</span><span class="fu">values</span>(risk_raster) <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a>    </span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(high_risk_stations)) {</span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a>      station_point <span class="ot">&lt;-</span> <span class="fu">c</span>(high_risk_stations<span class="sc">$</span>lon[i], high_risk_stations<span class="sc">$</span>lat[i])</span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a>      <span class="co"># Create simple distance decay function (this is simplified)</span></span>
+<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a>      distances <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">distance</span>(risk_raster, station_point)</span>
+<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a>      station_risk <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> distances <span class="sc">/</span> <span class="dv">5000</span>)  <span class="co"># 5km decay distance</span></span>
+<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a>      risk_raster <span class="ot">&lt;-</span> risk_raster <span class="sc">+</span> station_risk</span>
+<span id="cb10-29"><a href="#cb10-29" tabindex="-1"></a>    }</span>
+<span id="cb10-30"><a href="#cb10-30" tabindex="-1"></a>    </span>
+<span id="cb10-31"><a href="#cb10-31" tabindex="-1"></a>    <span class="fu">names</span>(risk_raster) <span class="ot">&lt;-</span> <span class="st">&quot;water_quality_risk&quot;</span></span>
+<span id="cb10-32"><a href="#cb10-32" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb10-33"><a href="#cb10-33" tabindex="-1"></a>    risk_raster <span class="ot">&lt;-</span> ag_risk <span class="sc">*</span> <span class="dv">0</span>  <span class="co"># No high-risk stations</span></span>
+<span id="cb10-34"><a href="#cb10-34" tabindex="-1"></a>  }</span>
+<span id="cb10-35"><a href="#cb10-35" tabindex="-1"></a>  </span>
+<span id="cb10-36"><a href="#cb10-36" tabindex="-1"></a>  <span class="co"># Combined priority score</span></span>
+<span id="cb10-37"><a href="#cb10-37" tabindex="-1"></a>  combined_priority <span class="ot">&lt;-</span> (ag_risk <span class="sc">*</span> <span class="fl">0.6</span>) <span class="sc">+</span> (risk_raster <span class="sc">*</span> <span class="fl">0.4</span>)</span>
+<span id="cb10-38"><a href="#cb10-38" tabindex="-1"></a>  <span class="fu">names</span>(combined_priority) <span class="ot">&lt;-</span> <span class="st">&quot;conservation_priority&quot;</span></span>
+<span id="cb10-39"><a href="#cb10-39" tabindex="-1"></a>  </span>
+<span id="cb10-40"><a href="#cb10-40" tabindex="-1"></a>  <span class="co"># Classify priority levels</span></span>
+<span id="cb10-41"><a href="#cb10-41" tabindex="-1"></a>  priority_values <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">values</span>(combined_priority, <span class="at">mat =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb10-42"><a href="#cb10-42" tabindex="-1"></a>  priority_breaks <span class="ot">&lt;-</span> <span class="fu">quantile</span>(priority_values[priority_values <span class="sc">&gt;</span> <span class="dv">0</span>], </span>
+<span id="cb10-43"><a href="#cb10-43" tabindex="-1"></a>                             <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.25</span>, <span class="fl">0.5</span>, <span class="fl">0.75</span>, <span class="fl">1.0</span>), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb10-44"><a href="#cb10-44" tabindex="-1"></a>  </span>
+<span id="cb10-45"><a href="#cb10-45" tabindex="-1"></a>  priority_classified <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">classify</span>(combined_priority,</span>
+<span id="cb10-46"><a href="#cb10-46" tabindex="-1"></a>                                        <span class="fu">cbind</span>(priority_breaks[<span class="sc">-</span><span class="fu">length</span>(priority_breaks)],</span>
+<span id="cb10-47"><a href="#cb10-47" tabindex="-1"></a>                                              priority_breaks[<span class="sc">-</span><span class="dv">1</span>],</span>
+<span id="cb10-48"><a href="#cb10-48" tabindex="-1"></a>                                              <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>))</span>
+<span id="cb10-49"><a href="#cb10-49" tabindex="-1"></a>  <span class="fu">names</span>(priority_classified) <span class="ot">&lt;-</span> <span class="st">&quot;priority_class&quot;</span></span>
+<span id="cb10-50"><a href="#cb10-50" tabindex="-1"></a>  </span>
+<span id="cb10-51"><a href="#cb10-51" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">list</span>(</span>
+<span id="cb10-52"><a href="#cb10-52" tabindex="-1"></a>    <span class="at">priority_surface =</span> combined_priority,</span>
+<span id="cb10-53"><a href="#cb10-53" tabindex="-1"></a>    <span class="at">priority_classified =</span> priority_classified,</span>
+<span id="cb10-54"><a href="#cb10-54" tabindex="-1"></a>    <span class="at">high_risk_stations =</span> high_risk_stations</span>
+<span id="cb10-55"><a href="#cb10-55" tabindex="-1"></a>  ))</span>
+<span id="cb10-56"><a href="#cb10-56" tabindex="-1"></a>}</span>
+<span id="cb10-57"><a href="#cb10-57" tabindex="-1"></a></span>
+<span id="cb10-58"><a href="#cb10-58" tabindex="-1"></a><span class="co"># Generate conservation priorities</span></span>
+<span id="cb10-59"><a href="#cb10-59" tabindex="-1"></a>conservation_priorities <span class="ot">&lt;-</span> <span class="fu">conservation_priority_analysis</span>(lulc_raster, water_stations)</span>
+<span id="cb10-60"><a href="#cb10-60" tabindex="-1"></a></span>
+<span id="cb10-61"><a href="#cb10-61" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Conservation priority analysis completed&quot;</span>)</span>
+<span id="cb10-62"><a href="#cb10-62" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;High-risk stations identified:&quot;</span>, <span class="fu">nrow</span>(conservation_priorities<span class="sc">$</span>high_risk_stations)))</span></code></pre></div>
+</div>
+</div>
+<div id="case-study-3-temporal-change-detection-and-monitoring" class="section level2">
+<h2>Case Study 3: Temporal Change Detection and Monitoring</h2>
+<p><strong>Objective</strong>: Analyze landscape changes over time,
+detect deforestation/land use conversion, and monitor ecosystem health
+trends.</p>
+<div id="step-1-multi-temporal-data-preparation" class="section level3">
+<h3>Step 1: Multi-Temporal Data Preparation</h3>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># Simulate multi-temporal satellite data (5-year time series)</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>years <span class="ot">&lt;-</span> <span class="dv">2020</span><span class="sc">:</span><span class="dv">2024</span></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>temporal_extent <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">83.0</span>, <span class="fl">40.2</span>, <span class="sc">-</span><span class="fl">82.0</span>, <span class="fl">41.2</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co"># Create temporal NDVI series with realistic trends</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>temporal_ndvi_series <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>base_ndvi <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">rast</span>(<span class="at">nrows =</span> <span class="dv">120</span>, <span class="at">ncols =</span> <span class="dv">120</span>,</span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>                        <span class="at">xmin =</span> temporal_extent[<span class="dv">1</span>], <span class="at">xmax =</span> temporal_extent[<span class="dv">3</span>],</span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>                        <span class="at">ymin =</span> temporal_extent[<span class="dv">2</span>], <span class="at">ymax =</span> temporal_extent[<span class="dv">4</span>])</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co"># Create base NDVI pattern</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>x_coords <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">xFromCell</span>(base_ndvi, <span class="dv">1</span><span class="sc">:</span>terra<span class="sc">::</span><span class="fu">ncell</span>(base_ndvi))</span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>y_coords <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">yFromCell</span>(base_ndvi, <span class="dv">1</span><span class="sc">:</span>terra<span class="sc">::</span><span class="fu">ncell</span>(base_ndvi))</span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a>base_pattern <span class="ot">&lt;-</span> <span class="fl">0.6</span> <span class="sc">+</span> <span class="fl">0.2</span> <span class="sc">*</span> <span class="fu">sin</span>((x_coords <span class="sc">-</span> <span class="fu">min</span>(x_coords)) <span class="sc">*</span> <span class="dv">6</span>) <span class="sc">+</span> </span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a>                <span class="fl">0.1</span> <span class="sc">*</span> <span class="fu">cos</span>((y_coords <span class="sc">-</span> <span class="fu">min</span>(y_coords)) <span class="sc">*</span> <span class="dv">4</span>) <span class="sc">+</span></span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a>                <span class="fu">rnorm</span>(terra<span class="sc">::</span><span class="fu">ncell</span>(base_ndvi), <span class="dv">0</span>, <span class="fl">0.1</span>)</span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a>terra<span class="sc">::</span><span class="fu">values</span>(base_ndvi) <span class="ot">&lt;-</span> <span class="fu">pmax</span>(<span class="fl">0.1</span>, <span class="fu">pmin</span>(<span class="fl">0.9</span>, base_pattern))</span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a></span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a><span class="co"># Simulate temporal changes</span></span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">length</span>(years)) {</span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a>  year <span class="ot">&lt;-</span> years[i]</span>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a>  </span>
+<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a>  <span class="co"># Add temporal trends</span></span>
+<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a>  <span class="co"># 1. General vegetation improvement (climate change effect)</span></span>
+<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a>  climate_trend <span class="ot">&lt;-</span> (i <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">*</span> <span class="fl">0.02</span></span>
+<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a>  </span>
+<span id="cb11-27"><a href="#cb11-27" tabindex="-1"></a>  <span class="co"># 2. Localized disturbances (development, deforestation)</span></span>
+<span id="cb11-28"><a href="#cb11-28" tabindex="-1"></a>  disturbance_effect <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb11-29"><a href="#cb11-29" tabindex="-1"></a>  <span class="cf">if</span> (i <span class="sc">&gt;=</span> <span class="dv">3</span>) {  <span class="co"># Disturbance starts in year 3</span></span>
+<span id="cb11-30"><a href="#cb11-30" tabindex="-1"></a>    <span class="co"># Simulate development in lower-left quadrant</span></span>
+<span id="cb11-31"><a href="#cb11-31" tabindex="-1"></a>    disturbance_mask <span class="ot">&lt;-</span> (x_coords <span class="sc">&lt;</span> (<span class="fu">min</span>(x_coords) <span class="sc">+</span> (<span class="fu">max</span>(x_coords) <span class="sc">-</span> <span class="fu">min</span>(x_coords)) <span class="sc">*</span> <span class="fl">0.4</span>)) <span class="sc">&amp;</span></span>
+<span id="cb11-32"><a href="#cb11-32" tabindex="-1"></a>                       (y_coords <span class="sc">&lt;</span> (<span class="fu">min</span>(y_coords) <span class="sc">+</span> (<span class="fu">max</span>(y_coords) <span class="sc">-</span> <span class="fu">min</span>(y_coords)) <span class="sc">*</span> <span class="fl">0.4</span>))</span>
+<span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a>    disturbance_effect <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(disturbance_mask, <span class="sc">-</span><span class="fl">0.3</span>, <span class="dv">0</span>)</span>
+<span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a>  }</span>
+<span id="cb11-35"><a href="#cb11-35" tabindex="-1"></a>  </span>
+<span id="cb11-36"><a href="#cb11-36" tabindex="-1"></a>  <span class="co"># 3. Inter-annual variability</span></span>
+<span id="cb11-37"><a href="#cb11-37" tabindex="-1"></a>  annual_variation <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(terra<span class="sc">::</span><span class="fu">ncell</span>(base_ndvi), <span class="dv">0</span>, <span class="fl">0.05</span>)</span>
+<span id="cb11-38"><a href="#cb11-38" tabindex="-1"></a>  </span>
+<span id="cb11-39"><a href="#cb11-39" tabindex="-1"></a>  <span class="co"># Combine effects</span></span>
+<span id="cb11-40"><a href="#cb11-40" tabindex="-1"></a>  year_ndvi <span class="ot">&lt;-</span> base_ndvi <span class="sc">+</span> climate_trend <span class="sc">+</span> disturbance_effect <span class="sc">+</span> annual_variation</span>
+<span id="cb11-41"><a href="#cb11-41" tabindex="-1"></a>  year_ndvi <span class="ot">&lt;-</span> <span class="fu">pmax</span>(<span class="fl">0.05</span>, <span class="fu">pmin</span>(<span class="fl">0.95</span>, year_ndvi))</span>
+<span id="cb11-42"><a href="#cb11-42" tabindex="-1"></a>  <span class="fu">names</span>(year_ndvi) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;NDVI_&quot;</span>, year)</span>
+<span id="cb11-43"><a href="#cb11-43" tabindex="-1"></a>  </span>
+<span id="cb11-44"><a href="#cb11-44" tabindex="-1"></a>  temporal_ndvi_series[[<span class="fu">as.character</span>(year)]] <span class="ot">&lt;-</span> year_ndvi</span>
+<span id="cb11-45"><a href="#cb11-45" tabindex="-1"></a>}</span>
+<span id="cb11-46"><a href="#cb11-46" tabindex="-1"></a></span>
+<span id="cb11-47"><a href="#cb11-47" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Multi-temporal data series created for years:&quot;</span>, <span class="fu">paste</span>(years, <span class="at">collapse =</span> <span class="st">&quot;, &quot;</span>))</span></code></pre></div>
+</div>
+<div id="step-2-comprehensive-temporal-analysis" class="section level3">
+<h3>Step 2: Comprehensive Temporal Analysis</h3>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># Comprehensive temporal change analysis</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>temporal_analysis_results <span class="ot">&lt;-</span> <span class="fu">analyze_temporal_changes</span>(</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="at">data_list =</span> temporal_ndvi_series,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="at">dates =</span> <span class="fu">as.character</span>(years),</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="at">region_boundary =</span> temporal_extent,</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>  <span class="at">analysis_type =</span> <span class="st">&quot;trend&quot;</span>,</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>  <span class="at">output_folder =</span> <span class="st">&quot;temporal_analysis_results&quot;</span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>)</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co"># Additional change detection analysis</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>change_detection_results <span class="ot">&lt;-</span> <span class="fu">analyze_temporal_changes</span>(</span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>  <span class="at">data_list =</span> temporal_ndvi_series,</span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>  <span class="at">dates =</span> <span class="fu">as.character</span>(years),</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a>  <span class="at">analysis_type =</span> <span class="st">&quot;change_detection&quot;</span></span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a>)</span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a></span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a><span class="co"># Statistical analysis</span></span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a>statistics_results <span class="ot">&lt;-</span> <span class="fu">analyze_temporal_changes</span>(</span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a>  <span class="at">data_list =</span> temporal_ndvi_series,</span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a>  <span class="at">dates =</span> <span class="fu">as.character</span>(years),</span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a>  <span class="at">analysis_type =</span> <span class="st">&quot;statistics&quot;</span></span>
+<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a>)</span>
+<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a></span>
+<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Temporal analysis completed:&quot;</span>)</span>
+<span id="cb12-25"><a href="#cb12-25" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Trend analysis:&quot;</span>, <span class="sc">!</span><span class="fu">is.null</span>(temporal_analysis_results<span class="sc">$</span>trend_rasters))</span>
+<span id="cb12-26"><a href="#cb12-26" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Change detection:&quot;</span>, <span class="fu">length</span>(change_detection_results<span class="sc">$</span>change_rasters), <span class="st">&quot;change maps&quot;</span>)</span>
+<span id="cb12-27"><a href="#cb12-27" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Statistical summary:&quot;</span>, <span class="fu">length</span>(statistics_results<span class="sc">$</span>statistics_rasters), <span class="st">&quot;statistic layers&quot;</span>)</span></code></pre></div>
+</div>
+<div id="step-3-change-hotspot-identification" class="section level3">
+<h3>Step 3: Change Hotspot Identification</h3>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># Identify areas of significant change</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>identify_change_hotspots <span class="ot">&lt;-</span> <span class="cf">function</span>(trend_results, change_results, <span class="at">threshold_slope =</span> <span class="fl">0.02</span>) {</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  </span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="co"># Extract slope (trend) raster</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  slope_raster <span class="ot">&lt;-</span> trend_results<span class="sc">$</span>trend_rasters<span class="sc">$</span>slope</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  r_squared_raster <span class="ot">&lt;-</span> trend_results<span class="sc">$</span>trend_rasters<span class="sc">$</span>r_squared</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>  </span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>  <span class="co"># Identify significant trends</span></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>  significant_trends <span class="ot">&lt;-</span> <span class="fu">abs</span>(slope_raster) <span class="sc">&gt;</span> threshold_slope <span class="sc">&amp;</span> r_squared_raster <span class="sc">&gt;</span> <span class="fl">0.5</span></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>  </span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a>  <span class="co"># Classify change types</span></span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a>  change_types <span class="ot">&lt;-</span> slope_raster</span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a>  change_types[slope_raster <span class="sc">&gt;</span> threshold_slope <span class="sc">&amp;</span> significant_trends] <span class="ot">&lt;-</span> <span class="dv">2</span>   <span class="co"># Increasing</span></span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a>  change_types[slope_raster <span class="sc">&lt;</span> <span class="sc">-</span>threshold_slope <span class="sc">&amp;</span> significant_trends] <span class="ot">&lt;-</span> <span class="dv">1</span>  <span class="co"># Decreasing</span></span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a>  change_types[<span class="sc">!</span>significant_trends] <span class="ot">&lt;-</span> <span class="dv">0</span>  <span class="co"># No significant change</span></span>
+<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a>  </span>
+<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a>  <span class="fu">names</span>(change_types) <span class="ot">&lt;-</span> <span class="st">&quot;change_type&quot;</span></span>
+<span id="cb13-18"><a href="#cb13-18" tabindex="-1"></a>  </span>
+<span id="cb13-19"><a href="#cb13-19" tabindex="-1"></a>  <span class="co"># Calculate change statistics</span></span>
+<span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a>  n_total <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">ncell</span>(change_types)</span>
+<span id="cb13-21"><a href="#cb13-21" tabindex="-1"></a>  n_increasing <span class="ot">&lt;-</span> <span class="fu">sum</span>(terra<span class="sc">::</span><span class="fu">values</span>(change_types) <span class="sc">==</span> <span class="dv">2</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb13-22"><a href="#cb13-22" tabindex="-1"></a>  n_decreasing <span class="ot">&lt;-</span> <span class="fu">sum</span>(terra<span class="sc">::</span><span class="fu">values</span>(change_types) <span class="sc">==</span> <span class="dv">1</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb13-23"><a href="#cb13-23" tabindex="-1"></a>  n_stable <span class="ot">&lt;-</span> <span class="fu">sum</span>(terra<span class="sc">::</span><span class="fu">values</span>(change_types) <span class="sc">==</span> <span class="dv">0</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb13-24"><a href="#cb13-24" tabindex="-1"></a>  </span>
+<span id="cb13-25"><a href="#cb13-25" tabindex="-1"></a>  change_stats <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb13-26"><a href="#cb13-26" tabindex="-1"></a>    <span class="at">total_pixels =</span> n_total,</span>
+<span id="cb13-27"><a href="#cb13-27" tabindex="-1"></a>    <span class="at">increasing_pixels =</span> n_increasing,</span>
+<span id="cb13-28"><a href="#cb13-28" tabindex="-1"></a>    <span class="at">decreasing_pixels =</span> n_decreasing,</span>
+<span id="cb13-29"><a href="#cb13-29" tabindex="-1"></a>    <span class="at">stable_pixels =</span> n_stable,</span>
+<span id="cb13-30"><a href="#cb13-30" tabindex="-1"></a>    <span class="at">increasing_percent =</span> <span class="fu">round</span>(n_increasing <span class="sc">/</span> n_total <span class="sc">*</span> <span class="dv">100</span>, <span class="dv">1</span>),</span>
+<span id="cb13-31"><a href="#cb13-31" tabindex="-1"></a>    <span class="at">decreasing_percent =</span> <span class="fu">round</span>(n_decreasing <span class="sc">/</span> n_total <span class="sc">*</span> <span class="dv">100</span>, <span class="dv">1</span>)</span>
+<span id="cb13-32"><a href="#cb13-32" tabindex="-1"></a>  )</span>
+<span id="cb13-33"><a href="#cb13-33" tabindex="-1"></a>  </span>
+<span id="cb13-34"><a href="#cb13-34" tabindex="-1"></a>  <span class="fu">return</span>(<span class="fu">list</span>(</span>
+<span id="cb13-35"><a href="#cb13-35" tabindex="-1"></a>    <span class="at">change_types =</span> change_types,</span>
+<span id="cb13-36"><a href="#cb13-36" tabindex="-1"></a>    <span class="at">significant_trends =</span> significant_trends,</span>
+<span id="cb13-37"><a href="#cb13-37" tabindex="-1"></a>    <span class="at">change_statistics =</span> change_stats</span>
+<span id="cb13-38"><a href="#cb13-38" tabindex="-1"></a>  ))</span>
+<span id="cb13-39"><a href="#cb13-39" tabindex="-1"></a>}</span>
+<span id="cb13-40"><a href="#cb13-40" tabindex="-1"></a></span>
+<span id="cb13-41"><a href="#cb13-41" tabindex="-1"></a><span class="co"># Identify hotspots</span></span>
+<span id="cb13-42"><a href="#cb13-42" tabindex="-1"></a>change_hotspots <span class="ot">&lt;-</span> <span class="fu">identify_change_hotspots</span>(temporal_analysis_results, change_detection_results)</span>
+<span id="cb13-43"><a href="#cb13-43" tabindex="-1"></a></span>
+<span id="cb13-44"><a href="#cb13-44" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;Change Hotspot Analysis:&quot;</span>)</span>
+<span id="cb13-45"><a href="#cb13-45" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Pixels with increasing vegetation:&quot;</span>, change_hotspots<span class="sc">$</span>change_statistics<span class="sc">$</span>increasing_pixels))</span>
+<span id="cb13-46"><a href="#cb13-46" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Pixels with decreasing vegetation:&quot;</span>, change_hotspots<span class="sc">$</span>change_statistics<span class="sc">$</span>decreasing_pixels))</span>
+<span id="cb13-47"><a href="#cb13-47" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Percentage of area with significant decline:&quot;</span>, </span>
+<span id="cb13-48"><a href="#cb13-48" tabindex="-1"></a>           change_hotspots<span class="sc">$</span>change_statistics<span class="sc">$</span>decreasing_percent, <span class="st">&quot;%&quot;</span>))</span></code></pre></div>
+</div>
+<div id="step-4-integrated-multi-case-study-synthesis" class="section level3">
+<h3>Step 4: Integrated Multi-Case Study Synthesis</h3>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Synthesize results from all case studies</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>comprehensive_synthesis <span class="ot">&lt;-</span> <span class="cf">function</span>(agricultural_results, environmental_results, temporal_results) {</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  </span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  synthesis_report <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>  </span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>  <span class="co"># 1. Agricultural insights</span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>  synthesis_report<span class="sc">$</span>agricultural_summary <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>    <span class="at">total_fields_analyzed =</span> <span class="fu">nrow</span>(field_boundaries),</span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>    <span class="at">management_zones_created =</span> management_zones<span class="sc">$</span>optimal_zones,</span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>    <span class="at">average_ndvi =</span> <span class="fu">round</span>(<span class="fu">mean</span>(terra<span class="sc">::</span><span class="fu">values</span>(enhanced_ndvi), <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">3</span>),</span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a>    <span class="at">precision_ag_benefits =</span> <span class="st">&quot;Variable-rate applications recommended for all zones&quot;</span></span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a>  )</span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a>  </span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a>  <span class="co"># 2. Environmental insights  </span></span>
+<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a>  synthesis_report<span class="sc">$</span>environmental_summary <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a>    <span class="at">water_stations_monitored =</span> <span class="fu">nrow</span>(water_stations),</span>
+<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a>    <span class="at">parameters_analyzed =</span> <span class="fu">length</span>(parameters),</span>
+<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a>    <span class="at">watersheds_assessed =</span> <span class="fu">length</span>(<span class="fu">unique</span>(water_stations<span class="sc">$</span>watershed)),</span>
+<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a>    <span class="at">high_risk_areas_identified =</span> <span class="fu">nrow</span>(conservation_priorities<span class="sc">$</span>high_risk_stations)</span>
+<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a>  )</span>
+<span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a>  </span>
+<span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a>  <span class="co"># 3. Temporal insights</span></span>
+<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a>  synthesis_report<span class="sc">$</span>temporal_summary <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb14-24"><a href="#cb14-24" tabindex="-1"></a>    <span class="at">years_analyzed =</span> <span class="fu">length</span>(years),</span>
+<span id="cb14-25"><a href="#cb14-25" tabindex="-1"></a>    <span class="at">significant_change_areas =</span> change_hotspots<span class="sc">$</span>change_statistics<span class="sc">$</span>decreasing_percent,</span>
+<span id="cb14-26"><a href="#cb14-26" tabindex="-1"></a>    <span class="at">trend_analysis_completed =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb14-27"><a href="#cb14-27" tabindex="-1"></a>    <span class="at">monitoring_recommendations =</span> <span class="st">&quot;Continue monitoring areas with significant decline&quot;</span></span>
+<span id="cb14-28"><a href="#cb14-28" tabindex="-1"></a>  )</span>
+<span id="cb14-29"><a href="#cb14-29" tabindex="-1"></a>  </span>
+<span id="cb14-30"><a href="#cb14-30" tabindex="-1"></a>  <span class="co"># 4. Integrated recommendations</span></span>
+<span id="cb14-31"><a href="#cb14-31" tabindex="-1"></a>  synthesis_report<span class="sc">$</span>integrated_recommendations <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb14-32"><a href="#cb14-32" tabindex="-1"></a>    <span class="at">precision_agriculture =</span> <span class="st">&quot;Implement zone-based management for optimal yields&quot;</span>,</span>
+<span id="cb14-33"><a href="#cb14-33" tabindex="-1"></a>    <span class="at">water_quality =</span> <span class="st">&quot;Focus conservation efforts on high-risk watersheds&quot;</span>,</span>
+<span id="cb14-34"><a href="#cb14-34" tabindex="-1"></a>    <span class="at">land_change_monitoring =</span> <span class="st">&quot;Establish permanent monitoring plots in change hotspots&quot;</span>,</span>
+<span id="cb14-35"><a href="#cb14-35" tabindex="-1"></a>    <span class="at">data_integration =</span> <span class="st">&quot;Continue multi-source data integration for comprehensive assessment&quot;</span></span>
+<span id="cb14-36"><a href="#cb14-36" tabindex="-1"></a>  )</span>
+<span id="cb14-37"><a href="#cb14-37" tabindex="-1"></a>  </span>
+<span id="cb14-38"><a href="#cb14-38" tabindex="-1"></a>  <span class="fu">return</span>(synthesis_report)</span>
+<span id="cb14-39"><a href="#cb14-39" tabindex="-1"></a>}</span>
+<span id="cb14-40"><a href="#cb14-40" tabindex="-1"></a></span>
+<span id="cb14-41"><a href="#cb14-41" tabindex="-1"></a><span class="co"># Generate comprehensive synthesis</span></span>
+<span id="cb14-42"><a href="#cb14-42" tabindex="-1"></a>final_synthesis <span class="ot">&lt;-</span> <span class="fu">comprehensive_synthesis</span>(</span>
+<span id="cb14-43"><a href="#cb14-43" tabindex="-1"></a>  agricultural_results, </span>
+<span id="cb14-44"><a href="#cb14-44" tabindex="-1"></a>  water_quality_results, </span>
+<span id="cb14-45"><a href="#cb14-45" tabindex="-1"></a>  temporal_analysis_results</span>
+<span id="cb14-46"><a href="#cb14-46" tabindex="-1"></a>)</span>
+<span id="cb14-47"><a href="#cb14-47" tabindex="-1"></a></span>
+<span id="cb14-48"><a href="#cb14-48" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;COMPREHENSIVE ANALYSIS SYNTHESIS&quot;</span>)</span>
+<span id="cb14-49"><a href="#cb14-49" tabindex="-1"></a><span class="fu">print</span>(<span class="st">&quot;=====================================&quot;</span>)</span>
+<span id="cb14-50"><a href="#cb14-50" tabindex="-1"></a><span class="cf">for</span> (section <span class="cf">in</span> <span class="fu">names</span>(final_synthesis)) {</span>
+<span id="cb14-51"><a href="#cb14-51" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>, <span class="fu">toupper</span>(<span class="fu">gsub</span>(<span class="st">&quot;_&quot;</span>, <span class="st">&quot; &quot;</span>, section)), <span class="st">&quot;:</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb14-52"><a href="#cb14-52" tabindex="-1"></a>  <span class="cf">for</span> (item <span class="cf">in</span> <span class="fu">names</span>(final_synthesis[[section]])) {</span>
+<span id="cb14-53"><a href="#cb14-53" tabindex="-1"></a>    <span class="fu">cat</span>(<span class="st">&quot;  &quot;</span>, <span class="fu">gsub</span>(<span class="st">&quot;_&quot;</span>, <span class="st">&quot; &quot;</span>, item), <span class="st">&quot;:&quot;</span>, final_synthesis[[section]][[item]], <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb14-54"><a href="#cb14-54" tabindex="-1"></a>  }</span>
+<span id="cb14-55"><a href="#cb14-55" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+</div>
+<div id="advanced-workflow-tips-and-best-practices" class="section level2">
+<h2>Advanced Workflow Tips and Best Practices</h2>
+<div id="workflow-optimization" class="section level3">
+<h3>1. Workflow Optimization</h3>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># Performance optimization for large-scale analyses</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>optimization_tips <span class="ot">&lt;-</span> <span class="cf">function</span>() {</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;WORKFLOW OPTIMIZATION GUIDE</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;===========================</span><span class="sc">\n\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>  </span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;Data Management:</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;  - Process data in chunks for large datasets</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;  - Use appropriate raster resolutions for analysis scale</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;  - Implement data caching for repeated analyses</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;  - Clean up intermediate files regularly</span><span class="sc">\n\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a>  </span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;Memory Management:</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;  - Monitor memory usage with gc() and object.size()</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;  - Use terra&#39;s out-of-memory processing for large rasters</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;  - Remove unused objects with rm()</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-16"><a href="#cb15-16" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;  - Consider parallel processing for independent operations</span><span class="sc">\n\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-17"><a href="#cb15-17" tabindex="-1"></a>  </span>
+<span id="cb15-18"><a href="#cb15-18" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;Quality Control:</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-19"><a href="#cb15-19" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;  - Validate inputs before processing</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-20"><a href="#cb15-20" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;  - Implement checkpoints in long workflows</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-21"><a href="#cb15-21" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;  - Log processing steps and parameters</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-22"><a href="#cb15-22" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;  - Create reproducible analysis scripts</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb15-23"><a href="#cb15-23" tabindex="-1"></a>}</span>
+<span id="cb15-24"><a href="#cb15-24" tabindex="-1"></a></span>
+<span id="cb15-25"><a href="#cb15-25" tabindex="-1"></a><span class="fu">optimization_tips</span>()</span></code></pre></div>
+</div>
+<div id="reproducible-research-framework" class="section level3">
+<h3>2. Reproducible Research Framework</h3>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co"># Framework for reproducible geospatial research</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>create_reproducible_workflow <span class="ot">&lt;-</span> <span class="cf">function</span>(project_name, analysis_config) {</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>  </span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>  <span class="co"># Create project structure</span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>  project_dirs <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>    <span class="fu">file.path</span>(project_name, <span class="st">&quot;data&quot;</span>, <span class="st">&quot;raw&quot;</span>),</span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>    <span class="fu">file.path</span>(project_name, <span class="st">&quot;data&quot;</span>, <span class="st">&quot;processed&quot;</span>),</span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>    <span class="fu">file.path</span>(project_name, <span class="st">&quot;scripts&quot;</span>),</span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a>    <span class="fu">file.path</span>(project_name, <span class="st">&quot;results&quot;</span>, <span class="st">&quot;figures&quot;</span>),</span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a>    <span class="fu">file.path</span>(project_name, <span class="st">&quot;results&quot;</span>, <span class="st">&quot;tables&quot;</span>),</span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a>    <span class="fu">file.path</span>(project_name, <span class="st">&quot;documentation&quot;</span>)</span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a>  )</span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a>  </span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a>  <span class="cf">for</span> (dir <span class="cf">in</span> project_dirs) {</span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">dir.exists</span>(dir)) <span class="fu">dir.create</span>(dir, <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a>  }</span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a>  </span>
+<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a>  <span class="co"># Create analysis log</span></span>
+<span id="cb16-19"><a href="#cb16-19" tabindex="-1"></a>  analysis_log <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb16-20"><a href="#cb16-20" tabindex="-1"></a>    <span class="at">project_name =</span> project_name,</span>
+<span id="cb16-21"><a href="#cb16-21" tabindex="-1"></a>    <span class="at">creation_date =</span> <span class="fu">Sys.time</span>(),</span>
+<span id="cb16-22"><a href="#cb16-22" tabindex="-1"></a>    <span class="at">geospatialsuite_version =</span> <span class="st">&quot;0.1.0&quot;</span>,</span>
+<span id="cb16-23"><a href="#cb16-23" tabindex="-1"></a>    <span class="at">analysis_config =</span> analysis_config,</span>
+<span id="cb16-24"><a href="#cb16-24" tabindex="-1"></a>    <span class="at">r_session_info =</span> <span class="fu">sessionInfo</span>()</span>
+<span id="cb16-25"><a href="#cb16-25" tabindex="-1"></a>  )</span>
+<span id="cb16-26"><a href="#cb16-26" tabindex="-1"></a>  </span>
+<span id="cb16-27"><a href="#cb16-27" tabindex="-1"></a>  <span class="co"># Save analysis configuration</span></span>
+<span id="cb16-28"><a href="#cb16-28" tabindex="-1"></a>  <span class="fu">saveRDS</span>(analysis_log, <span class="fu">file.path</span>(project_name, <span class="st">&quot;analysis_log.rds&quot;</span>))</span>
+<span id="cb16-29"><a href="#cb16-29" tabindex="-1"></a>  </span>
+<span id="cb16-30"><a href="#cb16-30" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;Reproducible workflow structure created for:&quot;</span>, project_name, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb16-31"><a href="#cb16-31" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;Project directories:&quot;</span>, <span class="fu">length</span>(project_dirs), <span class="st">&quot;created</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb16-32"><a href="#cb16-32" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;Analysis log saved</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb16-33"><a href="#cb16-33" tabindex="-1"></a>  </span>
+<span id="cb16-34"><a href="#cb16-34" tabindex="-1"></a>  <span class="fu">return</span>(project_dirs)</span>
+<span id="cb16-35"><a href="#cb16-35" tabindex="-1"></a>}</span>
+<span id="cb16-36"><a href="#cb16-36" tabindex="-1"></a></span>
+<span id="cb16-37"><a href="#cb16-37" tabindex="-1"></a><span class="co"># Example usage</span></span>
+<span id="cb16-38"><a href="#cb16-38" tabindex="-1"></a>workflow_config <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb16-39"><a href="#cb16-39" tabindex="-1"></a>  <span class="at">analysis_types =</span> <span class="fu">c</span>(<span class="st">&quot;agricultural&quot;</span>, <span class="st">&quot;environmental&quot;</span>, <span class="st">&quot;temporal&quot;</span>),</span>
+<span id="cb16-40"><a href="#cb16-40" tabindex="-1"></a>  <span class="at">study_region =</span> <span class="st">&quot;Ohio Agricultural Region&quot;</span>,</span>
+<span id="cb16-41"><a href="#cb16-41" tabindex="-1"></a>  <span class="at">temporal_extent =</span> <span class="st">&quot;2020-2024&quot;</span>,</span>
+<span id="cb16-42"><a href="#cb16-42" tabindex="-1"></a>  <span class="at">spatial_resolution =</span> <span class="st">&quot;30m&quot;</span>,</span>
+<span id="cb16-43"><a href="#cb16-43" tabindex="-1"></a>  <span class="at">coordinate_system =</span> <span class="st">&quot;WGS84&quot;</span></span>
+<span id="cb16-44"><a href="#cb16-44" tabindex="-1"></a>)</span>
+<span id="cb16-45"><a href="#cb16-45" tabindex="-1"></a></span>
+<span id="cb16-46"><a href="#cb16-46" tabindex="-1"></a>project_structure <span class="ot">&lt;-</span> <span class="fu">create_reproducible_workflow</span>(<span class="st">&quot;integrated_geospatial_analysis&quot;</span>, workflow_config)</span></code></pre></div>
+</div>
+</div>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<p>This comprehensive workflow vignette demonstrates:</p>
+<div id="complete-case-studies" class="section level3">
+<h3><strong>Complete Case Studies:</strong></h3>
+<ol style="list-style-type: decimal">
+<li><strong>Precision Agriculture Analysis</strong> - Field-scale
+management zones and variable-rate recommendations</li>
+<li><strong>Environmental Monitoring</strong> - Water quality assessment
+with land use impact analysis<br />
+</li>
+<li><strong>Temporal Change Detection</strong> - Multi-year trend
+analysis and change hotspot identification</li>
+</ol>
+</div>
+<div id="key-workflow-components" class="section level3">
+<h3><strong>Key Workflow Components:</strong></h3>
+<ul>
+<li><strong>Data Integration</strong>: Multi-source data fusion and
+analysis</li>
+<li><strong>Spatial Analysis</strong>: Universal spatial joins and
+multi-scale extraction</li>
+<li><strong>Temporal Analysis</strong>: Change detection and trend
+analysis</li>
+<li><strong>Visualization</strong>: Professional maps and comprehensive
+dashboards</li>
+<li><strong>Reporting</strong>: Automated report generation and
+synthesis</li>
+</ul>
+</div>
+<div id="best-practices-demonstrated" class="section level3">
+<h3><strong>Best Practices Demonstrated:</strong></h3>
+<ol style="list-style-type: decimal">
+<li><strong>Systematic approach</strong> to complex geospatial
+problems</li>
+<li><strong>Quality control</strong> and validation at each step</li>
+<li><strong>Reproducible workflows</strong> with documented
+parameters</li>
+<li><strong>Multi-scale analysis</strong> from field to landscape
+levels</li>
+<li><strong>Integrated assessment</strong> combining multiple data
+types</li>
+</ol>
+</div>
+<div id="real-world-applications" class="section level3">
+<h3><strong>Real-World Applications:</strong></h3>
+<ul>
+<li><strong>Agricultural consultancy</strong> and precision farming
+services</li>
+<li><strong>Environmental monitoring</strong> and regulatory
+compliance</li>
+<li><strong>Land management</strong> and conservation planning</li>
+<li><strong>Research and development</strong> in geospatial
+sciences</li>
+<li><strong>Policy development</strong> and impact assessment</li>
+</ul>
+</div>
+<div id="scalability" class="section level3">
+<h3><strong>Scalability:</strong></h3>
+<ul>
+<li>Methods work from <strong>field scale</strong> (hectares) to
+<strong>regional scale</strong> (thousands of km²)</li>
+<li><strong>Temporal flexibility</strong> from single time points to
+multi-decade series</li>
+<li><strong>Universal applicability</strong> - adapt to any geographic
+region or crop type</li>
+<li><strong>Modular design</strong> - use individual components or
+complete workflows</li>
+</ul>
+<p>The workflows in GeoSpatialSuite provide a <strong>complete
+toolkit</strong> for professional geospatial analysis, from data
+preparation through final reporting and recommendations!</p>
+</div>
+</div>
+<div id="acknowledgments" class="section level2">
+<h2>Acknowledgments</h2>
+<p>This work was developed by the GeoSpatialSuite team with
+contributions from: Olatunde D. Akanbi, Vibha Mandayam, Yinghui Wu,
+Jeffrey Yarus, Erika I. Barcelos, and Roger H. French.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

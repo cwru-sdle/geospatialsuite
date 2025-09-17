@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="GeoSpatialSuite Development Team" />
+
+
+<title>Vegetation Index Analysis with GeoSpatialSuite</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Vegetation Index Analysis with
+GeoSpatialSuite</h1>
+<h4 class="author">GeoSpatialSuite Development Team</h4>
+
+
+<div id="TOC">
+<ul>
+<li><a href="#introduction" id="toc-introduction">Introduction</a>
+<ul>
+<li><a href="#overview-of-available-indices" id="toc-overview-of-available-indices">Overview of Available Indices</a>
+<ul>
+<li><a href="#index-categories" id="toc-index-categories">Index
+Categories</a></li>
+</ul></li>
+<li><a href="#single-date-analysis" id="toc-single-date-analysis">Single
+Date Analysis</a>
+<ul>
+<li><a href="#basic-ndvi-calculation" id="toc-basic-ndvi-calculation">Basic NDVI Calculation</a></li>
+<li><a href="#multiple-index-calculation" id="toc-multiple-index-calculation">Multiple Index Calculation</a></li>
+<li><a href="#multi-band-data-processing" id="toc-multi-band-data-processing">Multi-Band Data Processing</a></li>
+</ul></li>
+<li><a href="#time-series-analysis" id="toc-time-series-analysis">Time
+Series Analysis</a>
+<ul>
+<li><a href="#enhanced-ndvi-for-temporal-analysis" id="toc-enhanced-ndvi-for-temporal-analysis">Enhanced NDVI for Temporal
+Analysis</a></li>
+<li><a href="#temporal-change-analysis" id="toc-temporal-change-analysis">Temporal Change Analysis</a></li>
+</ul></li>
+<li><a href="#agricultural-applications" id="toc-agricultural-applications">Agricultural Applications</a>
+<ul>
+<li><a href="#crop-specific-analysis" id="toc-crop-specific-analysis">Crop-Specific Analysis</a></li>
+<li><a href="#growth-stage-monitoring" id="toc-growth-stage-monitoring">Growth Stage Monitoring</a></li>
+</ul></li>
+<li><a href="#stress-detection" id="toc-stress-detection">Stress
+Detection</a>
+<ul>
+<li><a href="#identifying-plant-stress" id="toc-identifying-plant-stress">Identifying Plant Stress</a></li>
+<li><a href="#water-stress-detection" id="toc-water-stress-detection">Water Stress Detection</a></li>
+</ul></li>
+<li><a href="#quality-control-and-validation" id="toc-quality-control-and-validation">Quality Control and
+Validation</a>
+<ul>
+<li><a href="#quality-filtering" id="toc-quality-filtering">Quality
+Filtering</a></li>
+<li><a href="#validation-with-reference-data" id="toc-validation-with-reference-data">Validation with Reference
+Data</a></li>
+</ul></li>
+<li><a href="#advanced-applications" id="toc-advanced-applications">Advanced Applications</a>
+<ul>
+<li><a href="#phenology-analysis" id="toc-phenology-analysis">Phenology
+Analysis</a></li>
+<li><a href="#multi-sensor-integration" id="toc-multi-sensor-integration">Multi-Sensor Integration</a></li>
+</ul></li>
+<li><a href="#specialized-indices-by-application" id="toc-specialized-indices-by-application">Specialized Indices by
+Application</a>
+<ul>
+<li><a href="#forest-monitoring" id="toc-forest-monitoring">Forest
+Monitoring</a></li>
+<li><a href="#grassland-and-rangeland" id="toc-grassland-and-rangeland">Grassland and Rangeland</a></li>
+<li><a href="#urban-vegetation" id="toc-urban-vegetation">Urban
+Vegetation</a></li>
+</ul></li>
+<li><a href="#index-selection-guide" id="toc-index-selection-guide">Index Selection Guide</a>
+<ul>
+<li><a href="#when-to-use-each-index" id="toc-when-to-use-each-index">When to Use Each Index</a></li>
+<li><a href="#index-combinations-for-different-applications" id="toc-index-combinations-for-different-applications">Index
+Combinations for Different Applications</a></li>
+</ul></li>
+<li><a href="#visualization-and-interpretation" id="toc-visualization-and-interpretation">Visualization and
+Interpretation</a>
+<ul>
+<li><a href="#custom-visualization" id="toc-custom-visualization">Custom
+Visualization</a></li>
+<li><a href="#interactive-exploration" id="toc-interactive-exploration">Interactive Exploration</a></li>
+</ul></li>
+<li><a href="#statistical-analysis" id="toc-statistical-analysis">Statistical Analysis</a>
+<ul>
+<li><a href="#vegetation-statistics" id="toc-vegetation-statistics">Vegetation Statistics</a></li>
+<li><a href="#correlation-analysis" id="toc-correlation-analysis">Correlation Analysis</a></li>
+</ul></li>
+<li><a href="#practical-examples" id="toc-practical-examples">Practical
+Examples</a>
+<ul>
+<li><a href="#example-1-corn-field-monitoring" id="toc-example-1-corn-field-monitoring">Example 1: Corn Field
+Monitoring</a></li>
+<li><a href="#example-2-stress-detection-pipeline" id="toc-example-2-stress-detection-pipeline">Example 2: Stress Detection
+Pipeline</a></li>
+<li><a href="#example-3-regional-vegetation-assessment" id="toc-example-3-regional-vegetation-assessment">Example 3: Regional
+Vegetation Assessment</a></li>
+</ul></li>
+<li><a href="#troubleshooting-common-issues" id="toc-troubleshooting-common-issues">Troubleshooting Common Issues</a>
+<ul>
+<li><a href="#band-detection-problems" id="toc-band-detection-problems">Band Detection Problems</a></li>
+<li><a href="#crs-and-projection-issues" id="toc-crs-and-projection-issues">CRS and Projection Issues</a></li>
+<li><a href="#memory-management-for-large-areas" id="toc-memory-management-for-large-areas">Memory Management for Large
+Areas</a></li>
+</ul></li>
+<li><a href="#performance-optimization" id="toc-performance-optimization">Performance Optimization</a>
+<ul>
+<li><a href="#best-practices" id="toc-best-practices">Best
+Practices</a></li>
+</ul></li>
+<li><a href="#interpretation-guidelines" id="toc-interpretation-guidelines">Interpretation Guidelines</a>
+<ul>
+<li><a href="#ndvi-interpretation-by-land-cover" id="toc-ndvi-interpretation-by-land-cover">NDVI Interpretation by Land
+Cover</a></li>
+<li><a href="#seasonal-patterns" id="toc-seasonal-patterns">Seasonal
+Patterns</a></li>
+</ul></li>
+<li><a href="#advanced-topics" id="toc-advanced-topics">Advanced
+Topics</a>
+<ul>
+<li><a href="#custom-index-development" id="toc-custom-index-development">Custom Index Development</a></li>
+<li><a href="#integration-with-external-data" id="toc-integration-with-external-data">Integration with External
+Data</a></li>
+</ul></li>
+<li><a href="#conclusion" id="toc-conclusion">Conclusion</a>
+<ul>
+<li><a href="#additional-resources" id="toc-additional-resources">Additional Resources</a></li>
+</ul></li>
+<li><a href="#acknowledgments" id="toc-acknowledgments">Acknowledgments</a></li>
+</ul></li>
+</ul>
+</div>
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>This vignette demonstrates comprehensive vegetation analysis using
+GeoSpatialSuite’s 60+ vegetation indices. Learn to monitor plant health,
+detect stress, and analyze agricultural productivity using satellite
+imagery.</p>
+<div id="overview-of-available-indices" class="section level2">
+<h2>Overview of Available Indices</h2>
+<p>GeoSpatialSuite supports over 60 vegetation indices across multiple
+categories:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(geospatialsuite)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co"># See all available vegetation indices</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>all_indices <span class="ot">&lt;-</span> <span class="fu">list_vegetation_indices</span>()</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">print</span>(all_indices)</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co"># View detailed information with formulas</span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>detailed_indices <span class="ot">&lt;-</span> <span class="fu">list_vegetation_indices</span>(<span class="at">detailed =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="fu">head</span>(detailed_indices)</span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="co"># Filter by category</span></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>basic_indices <span class="ot">&lt;-</span> <span class="fu">list_vegetation_indices</span>(<span class="at">category =</span> <span class="st">&quot;basic&quot;</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>stress_indices <span class="ot">&lt;-</span> <span class="fu">list_vegetation_indices</span>(<span class="at">category =</span> <span class="st">&quot;stress&quot;</span>)</span></code></pre></div>
+<div id="index-categories" class="section level3">
+<h3>Index Categories</h3>
+<p><strong>Basic Vegetation Indices (10):</strong> - NDVI, SAVI, MSAVI,
+OSAVI, EVI, EVI2, DVI, RVI, GNDVI, WDVI</p>
+<p><strong>Enhanced/Improved Indices (12):</strong> - ARVI, RDVI, PVI,
+IPVI, TNDVI, GEMI, VARI, TSAVI, ATSAVI, GESAVI, MTVI, CTVI</p>
+<p><strong>Red Edge and Advanced Indices (10):</strong> - NDRE, MTCI,
+IRECI, S2REP, PSRI, CRI1, CRI2, ARI1, ARI2, MCARI</p>
+<p><strong>Stress and Chlorophyll Indices (12):</strong> - PRI, SIPI,
+CCI, NDNI, CARI, TCARI, MTVI1, MTVI2, TVI, NPCI, RARS, NPQI</p>
+</div>
+</div>
+<div id="single-date-analysis" class="section level2">
+<h2>Single Date Analysis</h2>
+<div id="basic-ndvi-calculation" class="section level3">
+<h3>Basic NDVI Calculation</h3>
+<p>The most common vegetation analysis:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># Simple NDVI from individual bands</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>ndvi <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="at">red =</span> <span class="st">&quot;landsat_red.tif&quot;</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="at">nir =</span> <span class="st">&quot;landsat_nir.tif&quot;</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">index_type =</span> <span class="st">&quot;NDVI&quot;</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>)</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co"># View results</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>terra<span class="sc">::</span><span class="fu">plot</span>(ndvi, <span class="at">main =</span> <span class="st">&quot;NDVI Analysis&quot;</span>, </span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>            <span class="at">col =</span> <span class="fu">colorRampPalette</span>(<span class="fu">c</span>(<span class="st">&quot;brown&quot;</span>, <span class="st">&quot;yellow&quot;</span>, <span class="st">&quot;green&quot;</span>))(<span class="dv">100</span>))</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co"># Check value range</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="fu">summary</span>(terra<span class="sc">::</span><span class="fu">values</span>(ndvi, <span class="at">mat =</span> <span class="cn">FALSE</span>))</span></code></pre></div>
+</div>
+<div id="multiple-index-calculation" class="section level3">
+<h3>Multiple Index Calculation</h3>
+<p>Calculate several indices at once for comprehensive analysis:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Calculate multiple vegetation indices</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>vegetation_stack <span class="ot">&lt;-</span> <span class="fu">calculate_multiple_indices</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="at">red =</span> red_band,</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="at">nir =</span> nir_band, </span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="at">blue =</span> blue_band,</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  <span class="at">green =</span> green_band,</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;EVI&quot;</span>, <span class="st">&quot;SAVI&quot;</span>, <span class="st">&quot;GNDVI&quot;</span>, <span class="st">&quot;DVI&quot;</span>, <span class="st">&quot;RVI&quot;</span>),</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">output_stack =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">region_boundary =</span> <span class="st">&quot;Ohio&quot;</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>)</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co"># Access individual indices</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>ndvi_layer <span class="ot">&lt;-</span> vegetation_stack<span class="sc">$</span>NDVI</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>evi_layer <span class="ot">&lt;-</span> vegetation_stack<span class="sc">$</span>EVI</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co"># Create comparison visualization</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>terra<span class="sc">::</span><span class="fu">plot</span>(vegetation_stack, <span class="at">main =</span> <span class="fu">names</span>(vegetation_stack))</span></code></pre></div>
+</div>
+<div id="multi-band-data-processing" class="section level3">
+<h3>Multi-Band Data Processing</h3>
+<p>Work with multi-band satellite imagery:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># From multi-band raster with auto-detection</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>evi <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">spectral_data =</span> <span class="st">&quot;sentinel2_image.tif&quot;</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">index_type =</span> <span class="st">&quot;EVI&quot;</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">auto_detect_bands =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>)</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co"># From directory with band detection</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>savi <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>  <span class="at">spectral_data =</span> <span class="st">&quot;/path/to/sentinel/bands/&quot;</span>,</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>  <span class="at">index_type =</span> <span class="st">&quot;SAVI&quot;</span>, </span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>  <span class="at">auto_detect_bands =</span> <span class="cn">TRUE</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>)</span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co"># Custom band names for non-standard data</span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>ndvi_custom <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(</span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>  <span class="at">spectral_data =</span> custom_satellite_data,</span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a>  <span class="at">band_names =</span> <span class="fu">c</span>(<span class="st">&quot;B4&quot;</span>, <span class="st">&quot;B3&quot;</span>, <span class="st">&quot;B2&quot;</span>, <span class="st">&quot;B8&quot;</span>),  <span class="co"># Red, Green, Blue, NIR</span></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a>  <span class="at">index_type =</span> <span class="st">&quot;NDVI&quot;</span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+</div>
+<div id="time-series-analysis" class="section level2">
+<h2>Time Series Analysis</h2>
+<div id="enhanced-ndvi-for-temporal-analysis" class="section level3">
+<h3>Enhanced NDVI for Temporal Analysis</h3>
+<p>Use <code>calculate_ndvi_enhanced()</code> for time series:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Time series NDVI with quality control</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>ndvi_series <span class="ot">&lt;-</span> <span class="fu">calculate_ndvi_enhanced</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">red_data =</span> <span class="st">&quot;/path/to/red/time_series/&quot;</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">nir_data =</span> <span class="st">&quot;/path/to/nir/time_series/&quot;</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">match_by_date =</span> <span class="cn">TRUE</span>,           <span class="co"># Automatically match files by date</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">quality_filter =</span> <span class="cn">TRUE</span>,          <span class="co"># Remove outliers</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  <span class="at">temporal_smoothing =</span> <span class="cn">TRUE</span>,      <span class="co"># Smooth time series</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>  <span class="at">clamp_range =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.2</span>, <span class="dv">1</span>),</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>)</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co"># Plot time series layers</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>terra<span class="sc">::</span><span class="fu">plot</span>(ndvi_series, <span class="at">main =</span> <span class="fu">paste</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="fu">names</span>(ndvi_series)))</span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co"># Calculate temporal statistics</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a>temporal_mean <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">app</span>(ndvi_series, mean, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a>temporal_cv <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">app</span>(ndvi_series, <span class="cf">function</span>(x) <span class="fu">sd</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">/</span> <span class="fu">mean</span>(x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span></code></pre></div>
+</div>
+<div id="temporal-change-analysis" class="section level3">
+<h3>Temporal Change Analysis</h3>
+<p>Analyze vegetation changes over time:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># Temporal analysis workflow</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>temporal_results <span class="ot">&lt;-</span> <span class="fu">analyze_temporal_changes</span>(</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="at">data_list =</span> <span class="fu">c</span>(<span class="st">&quot;ndvi_2020.tif&quot;</span>, <span class="st">&quot;ndvi_2021.tif&quot;</span>, <span class="st">&quot;ndvi_2022.tif&quot;</span>, <span class="st">&quot;ndvi_2023.tif&quot;</span>),</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="at">dates =</span> <span class="fu">c</span>(<span class="st">&quot;2020&quot;</span>, <span class="st">&quot;2021&quot;</span>, <span class="st">&quot;2022&quot;</span>, <span class="st">&quot;2023&quot;</span>),</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">region_boundary =</span> <span class="st">&quot;Iowa&quot;</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="at">analysis_type =</span> <span class="st">&quot;trend&quot;</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>  <span class="at">output_folder =</span> <span class="st">&quot;temporal_analysis/&quot;</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>)</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co"># Access trend results</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>slope_raster <span class="ot">&lt;-</span> temporal_results<span class="sc">$</span>trend_rasters<span class="sc">$</span>slope</span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>r_squared_raster <span class="ot">&lt;-</span> temporal_results<span class="sc">$</span>trend_rasters<span class="sc">$</span>r_squared</span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co"># Interpret trends</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co"># Positive slope = increasing vegetation</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co"># Negative slope = declining vegetation  </span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co"># High R² = strong temporal trend</span></span></code></pre></div>
+</div>
+</div>
+<div id="agricultural-applications" class="section level2">
+<h2>Agricultural Applications</h2>
+<div id="crop-specific-analysis" class="section level3">
+<h3>Crop-Specific Analysis</h3>
+<p>Analyze vegetation for specific crops:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># Comprehensive crop vegetation analysis</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>corn_analysis <span class="ot">&lt;-</span> <span class="fu">analyze_crop_vegetation</span>(</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">spectral_data =</span> <span class="st">&quot;sentinel2_data.tif&quot;</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="at">crop_type =</span> <span class="st">&quot;corn&quot;</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="at">growth_stage =</span> <span class="st">&quot;mid&quot;</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">analysis_type =</span> <span class="st">&quot;comprehensive&quot;</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="at">cdl_mask =</span> corn_mask,</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>)</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co"># Access results</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>vegetation_indices <span class="ot">&lt;-</span> corn_analysis<span class="sc">$</span>vegetation_indices</span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>stress_analysis <span class="ot">&lt;-</span> corn_analysis<span class="sc">$</span>analysis_results<span class="sc">$</span>stress_analysis</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>yield_analysis <span class="ot">&lt;-</span> corn_analysis<span class="sc">$</span>analysis_results<span class="sc">$</span>yield_analysis</span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co"># View stress detection results</span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="fu">print</span>(stress_analysis<span class="sc">$</span>NDVI)</span></code></pre></div>
+</div>
+<div id="growth-stage-monitoring" class="section level3">
+<h3>Growth Stage Monitoring</h3>
+<p>Monitor crop development through the season:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># Early season analysis (emergence to vegetative)</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>early_season <span class="ot">&lt;-</span> <span class="fu">analyze_crop_vegetation</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">spectral_data =</span> <span class="st">&quot;may_sentinel2.tif&quot;</span>, </span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">crop_type =</span> <span class="st">&quot;soybeans&quot;</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">growth_stage =</span> <span class="st">&quot;early&quot;</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  <span class="at">analysis_type =</span> <span class="st">&quot;growth&quot;</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>)</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co"># Mid-season analysis (reproductive stage)  </span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>mid_season <span class="ot">&lt;-</span> <span class="fu">analyze_crop_vegetation</span>(</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>  <span class="at">spectral_data =</span> <span class="st">&quot;july_sentinel2.tif&quot;</span>,</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>  <span class="at">crop_type =</span> <span class="st">&quot;soybeans&quot;</span>, </span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>  <span class="at">growth_stage =</span> <span class="st">&quot;mid&quot;</span>,</span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>  <span class="at">analysis_type =</span> <span class="st">&quot;stress&quot;</span></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a>)</span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a></span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co"># Compare growth stages</span></span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a>early_ndvi <span class="ot">&lt;-</span> early_season<span class="sc">$</span>vegetation_indices<span class="sc">$</span>NDVI</span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a>mid_ndvi <span class="ot">&lt;-</span> mid_season<span class="sc">$</span>vegetation_indices<span class="sc">$</span>NDVI</span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a>growth_change <span class="ot">&lt;-</span> mid_ndvi <span class="sc">-</span> early_ndvi</span></code></pre></div>
+</div>
+</div>
+<div id="stress-detection" class="section level2">
+<h2>Stress Detection</h2>
+<div id="identifying-plant-stress" class="section level3">
+<h3>Identifying Plant Stress</h3>
+<p>Use specialized indices for stress detection:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># Calculate stress-sensitive indices</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>stress_indices <span class="ot">&lt;-</span> <span class="fu">calculate_multiple_indices</span>(</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="at">red =</span> red_band,</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="at">nir =</span> nir_band,</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="at">green =</span> green_band,</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="at">red_edge =</span> red_edge_band,     <span class="co"># If available</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;PRI&quot;</span>, <span class="st">&quot;SIPI&quot;</span>, <span class="st">&quot;NDRE&quot;</span>),</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  <span class="at">output_stack =</span> <span class="cn">TRUE</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>)</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co"># Stress analysis thresholds</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>ndvi_values <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">values</span>(stress_indices<span class="sc">$</span>NDVI, <span class="at">mat =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>healthy_threshold <span class="ot">&lt;-</span> <span class="fl">0.6</span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>stress_threshold <span class="ot">&lt;-</span> <span class="fl">0.4</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="co"># Classify stress levels</span></span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a>stress_mask <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">classify</span>(stress_indices<span class="sc">$</span>NDVI, </span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a>                               <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, stress_threshold, <span class="dv">1</span>,      <span class="co"># Severe stress</span></span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a>                                       stress_threshold, healthy_threshold, <span class="dv">2</span>,  <span class="co"># Moderate stress  </span></span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a>                                       healthy_threshold, <span class="dv">1</span>, <span class="dv">3</span>), <span class="at">ncol =</span> <span class="dv">3</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a></span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co"># Visualization</span></span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a>stress_colors <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;red&quot;</span>, <span class="st">&quot;orange&quot;</span>, <span class="st">&quot;green&quot;</span>)</span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a>terra<span class="sc">::</span><span class="fu">plot</span>(stress_mask, <span class="at">main =</span> <span class="st">&quot;Vegetation Stress Classification&quot;</span>,</span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a>            <span class="at">col =</span> stress_colors, <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">&quot;Severe&quot;</span>, <span class="st">&quot;Moderate&quot;</span>, <span class="st">&quot;Healthy&quot;</span>))</span></code></pre></div>
+</div>
+<div id="water-stress-detection" class="section level3">
+<h3>Water Stress Detection</h3>
+<p>Monitor vegetation water content:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># Water content indices</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>water_stress <span class="ot">&lt;-</span> <span class="fu">calculate_multiple_indices</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">nir =</span> nir_band,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">swir1 =</span> swir1_band,</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDMI&quot;</span>, <span class="st">&quot;MSI&quot;</span>, <span class="st">&quot;NDII&quot;</span>),</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="at">output_stack =</span> <span class="cn">TRUE</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>)</span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co"># NDMI interpretation:</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co"># High NDMI (&gt;0.4) = High water content</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co"># Low NDMI (&lt;0.1) = Water stress</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co"># MSI interpretation (opposite of NDMI):</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co"># Low MSI (&lt;1.0) = High moisture</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co"># High MSI (&gt;1.6) = Water stress</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co"># Create water stress map</span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a>water_stress_binary <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">classify</span>(water_stress<span class="sc">$</span>NDMI,</span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a>                                       <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="fl">0.1</span>, <span class="dv">1</span>,    <span class="co"># Water stress</span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a>                                               <span class="fl">0.1</span>, <span class="fl">0.4</span>, <span class="dv">2</span>,    <span class="co"># Moderate </span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a>                                               <span class="fl">0.4</span>, <span class="dv">1</span>, <span class="dv">3</span>), <span class="at">ncol =</span> <span class="dv">3</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>))</span></code></pre></div>
+</div>
+</div>
+<div id="quality-control-and-validation" class="section level2">
+<h2>Quality Control and Validation</h2>
+<div id="quality-filtering" class="section level3">
+<h3>Quality Filtering</h3>
+<p>Apply quality controls to vegetation data:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># Enhanced NDVI with quality filtering</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>ndvi_quality <span class="ot">&lt;-</span> <span class="fu">calculate_ndvi_enhanced</span>(</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  <span class="at">red_data =</span> red_raster,</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  <span class="at">nir_data =</span> nir_raster,</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>  <span class="at">quality_filter =</span> <span class="cn">TRUE</span>,          <span class="co"># Remove outliers</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>  <span class="at">clamp_range =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.2</span>, <span class="dv">1</span>),      <span class="co"># Reasonable NDVI range</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>  <span class="at">temporal_smoothing =</span> <span class="cn">FALSE</span>,     <span class="co"># For single date</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>)</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co"># Custom quality filtering</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>vegetation_filtered <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(</span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>  <span class="at">red =</span> red_band,</span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a>  <span class="at">nir =</span> nir_band,</span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a>  <span class="at">index_type =</span> <span class="st">&quot;NDVI&quot;</span>,</span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a>  <span class="at">mask_invalid =</span> <span class="cn">TRUE</span>,            <span class="co"># Remove invalid values</span></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a>  <span class="at">clamp_range =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>)         <span class="co"># Theoretical NDVI range</span></span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="validation-with-reference-data" class="section level3">
+<h3>Validation with Reference Data</h3>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># Compare with field measurements</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>field_ndvi_validation <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="at">source_data =</span> <span class="st">&quot;field_measurements.csv&quot;</span>,  <span class="co"># Ground truth points</span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="at">target_data =</span> ndvi_raster,              <span class="co"># Satellite NDVI</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;extract&quot;</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>  <span class="at">buffer_distance =</span> <span class="dv">30</span>,                   <span class="co"># 30m buffer around points</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>  <span class="at">summary_function =</span> <span class="st">&quot;mean&quot;</span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>)</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co"># Calculate correlation</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>observed <span class="ot">&lt;-</span> field_ndvi_validation<span class="sc">$</span>field_ndvi</span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>predicted <span class="ot">&lt;-</span> field_ndvi_validation<span class="sc">$</span>extracted_NDVI</span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a></span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a>correlation <span class="ot">&lt;-</span> <span class="fu">cor</span>(observed, predicted, <span class="at">use =</span> <span class="st">&quot;complete.obs&quot;</span>)</span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a>rmse <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">mean</span>((observed <span class="sc">-</span> predicted)<span class="sc">^</span><span class="dv">2</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a></span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Validation R =&quot;</span>, <span class="fu">round</span>(correlation, <span class="dv">3</span>)))</span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;RMSE =&quot;</span>, <span class="fu">round</span>(rmse, <span class="dv">4</span>)))</span></code></pre></div>
+</div>
+</div>
+<div id="advanced-applications" class="section level2">
+<h2>Advanced Applications</h2>
+<div id="phenology-analysis" class="section level3">
+<h3>Phenology Analysis</h3>
+<p>Track vegetation phenology over time:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># Create NDVI time series for phenology</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>phenology_analysis <span class="ot">&lt;-</span> <span class="fu">analyze_temporal_changes</span>(</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="at">data_list =</span> <span class="fu">list.files</span>(<span class="st">&quot;/ndvi/2023/&quot;</span>, <span class="at">pattern =</span> <span class="st">&quot;*.tif&quot;</span>, <span class="at">full.names =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="at">dates =</span> <span class="fu">extract_dates_universal</span>(<span class="fu">list.files</span>(<span class="st">&quot;/ndvi/2023/&quot;</span>, <span class="at">pattern =</span> <span class="st">&quot;*.tif&quot;</span>)),</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="at">region_boundary =</span> <span class="st">&quot;Iowa&quot;</span>, </span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  <span class="at">analysis_type =</span> <span class="st">&quot;seasonal&quot;</span>,</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>  <span class="at">output_folder =</span> <span class="st">&quot;phenology_results/&quot;</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>)</span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co"># Access seasonal patterns</span></span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a>spring_ndvi <span class="ot">&lt;-</span> phenology_analysis<span class="sc">$</span>seasonal_rasters<span class="sc">$</span>Spring</span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a>summer_ndvi <span class="ot">&lt;-</span> phenology_analysis<span class="sc">$</span>seasonal_rasters<span class="sc">$</span>Summer</span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a>fall_ndvi <span class="ot">&lt;-</span> phenology_analysis<span class="sc">$</span>seasonal_rasters<span class="sc">$</span>Fall</span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a></span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a><span class="co"># Calculate growing season metrics</span></span>
+<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a>peak_season <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">app</span>(<span class="fu">c</span>(spring_ndvi, summer_ndvi), max, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a>growing_season_range <span class="ot">&lt;-</span> summer_ndvi <span class="sc">-</span> spring_ndvi</span></code></pre></div>
+</div>
+<div id="multi-sensor-integration" class="section level3">
+<h3>Multi-Sensor Integration</h3>
+<p>Combine data from different sensors:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Landsat NDVI (30m resolution)</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>landsat_ndvi <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="at">red =</span> <span class="st">&quot;landsat8_red.tif&quot;</span>,</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  <span class="at">nir =</span> <span class="st">&quot;landsat8_nir.tif&quot;</span>, </span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>  <span class="at">index_type =</span> <span class="st">&quot;NDVI&quot;</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>)</span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co"># MODIS NDVI (250m resolution)  </span></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>modis_ndvi <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(</span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>  <span class="at">red =</span> <span class="st">&quot;modis_red.tif&quot;</span>,</span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a>  <span class="at">nir =</span> <span class="st">&quot;modis_nir.tif&quot;</span>,</span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a>  <span class="at">index_type =</span> <span class="st">&quot;NDVI&quot;</span></span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a>)</span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a></span>
+<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a><span class="co"># Resample MODIS to Landsat resolution for comparison</span></span>
+<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a>modis_resampled <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a>  <span class="at">source_data =</span> modis_ndvi,</span>
+<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a>  <span class="at">target_data =</span> landsat_ndvi,</span>
+<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;resample&quot;</span>,</span>
+<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a>  <span class="at">summary_function =</span> <span class="st">&quot;bilinear&quot;</span></span>
+<span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a>)</span>
+<span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a></span>
+<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a><span class="co"># Compare sensors</span></span>
+<span id="cb14-24"><a href="#cb14-24" tabindex="-1"></a>sensor_difference <span class="ot">&lt;-</span> landsat_ndvi <span class="sc">-</span> modis_resampled</span>
+<span id="cb14-25"><a href="#cb14-25" tabindex="-1"></a>correlation <span class="ot">&lt;-</span> <span class="fu">calculate_spatial_correlation</span>(landsat_ndvi, modis_resampled)</span></code></pre></div>
+</div>
+</div>
+<div id="specialized-indices-by-application" class="section level2">
+<h2>Specialized Indices by Application</h2>
+<div id="forest-monitoring" class="section level3">
+<h3>Forest Monitoring</h3>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># Forest-specific indices</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>forest_indices <span class="ot">&lt;-</span> <span class="fu">calculate_multiple_indices</span>(</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>  <span class="at">red =</span> red_band,</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>  <span class="at">nir =</span> nir_band,</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>  <span class="at">swir1 =</span> swir1_band,</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>  <span class="at">swir2 =</span> swir2_band,</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;EVI&quot;</span>, <span class="st">&quot;NBR&quot;</span>, <span class="st">&quot;NDMI&quot;</span>),  <span class="co"># Normalized Burn Ratio, moisture</span></span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>  <span class="at">region_boundary =</span> <span class="st">&quot;forest_boundary.shp&quot;</span>,</span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>  <span class="at">output_stack =</span> <span class="cn">TRUE</span></span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a>)</span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a><span class="co"># Burn severity assessment using NBR</span></span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a>pre_fire_nbr <span class="ot">&lt;-</span> forest_indices<span class="sc">$</span>NBR  <span class="co"># Before fire</span></span>
+<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a>post_fire_nbr <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(</span>
+<span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a>  <span class="at">red =</span> <span class="st">&quot;post_fire_red.tif&quot;</span>,</span>
+<span id="cb15-16"><a href="#cb15-16" tabindex="-1"></a>  <span class="at">nir =</span> <span class="st">&quot;post_fire_nir.tif&quot;</span>, </span>
+<span id="cb15-17"><a href="#cb15-17" tabindex="-1"></a>  <span class="at">swir2 =</span> <span class="st">&quot;post_fire_swir2.tif&quot;</span>,</span>
+<span id="cb15-18"><a href="#cb15-18" tabindex="-1"></a>  <span class="at">index_type =</span> <span class="st">&quot;NBR&quot;</span></span>
+<span id="cb15-19"><a href="#cb15-19" tabindex="-1"></a>)</span>
+<span id="cb15-20"><a href="#cb15-20" tabindex="-1"></a></span>
+<span id="cb15-21"><a href="#cb15-21" tabindex="-1"></a><span class="co"># Calculate burn severity (dNBR)</span></span>
+<span id="cb15-22"><a href="#cb15-22" tabindex="-1"></a>burn_severity <span class="ot">&lt;-</span> pre_fire_nbr <span class="sc">-</span> post_fire_nbr</span>
+<span id="cb15-23"><a href="#cb15-23" tabindex="-1"></a></span>
+<span id="cb15-24"><a href="#cb15-24" tabindex="-1"></a><span class="co"># Classify burn severity</span></span>
+<span id="cb15-25"><a href="#cb15-25" tabindex="-1"></a>severity_classes <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">classify</span>(burn_severity,</span>
+<span id="cb15-26"><a href="#cb15-26" tabindex="-1"></a>  <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>, <span class="fl">0.1</span>, <span class="dv">1</span>,      <span class="co"># Unburned</span></span>
+<span id="cb15-27"><a href="#cb15-27" tabindex="-1"></a>           <span class="fl">0.1</span>, <span class="fl">0.27</span>, <span class="dv">2</span>,       <span class="co"># Low severity</span></span>
+<span id="cb15-28"><a href="#cb15-28" tabindex="-1"></a>           <span class="fl">0.27</span>, <span class="fl">0.44</span>, <span class="dv">3</span>,      <span class="co"># Moderate-low</span></span>
+<span id="cb15-29"><a href="#cb15-29" tabindex="-1"></a>           <span class="fl">0.44</span>, <span class="fl">0.66</span>, <span class="dv">4</span>,      <span class="co"># Moderate-high  </span></span>
+<span id="cb15-30"><a href="#cb15-30" tabindex="-1"></a>           <span class="fl">0.66</span>, <span class="cn">Inf</span>, <span class="dv">5</span>), <span class="at">ncol =</span> <span class="dv">3</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>))</span></code></pre></div>
+</div>
+<div id="grassland-and-rangeland" class="section level3">
+<h3>Grassland and Rangeland</h3>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co"># Grassland-specific analysis</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>grassland_health <span class="ot">&lt;-</span> <span class="fu">calculate_multiple_indices</span>(</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>  <span class="at">red =</span> red_band,</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>  <span class="at">nir =</span> nir_band,</span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>  <span class="at">green =</span> green_band,</span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;SAVI&quot;</span>, <span class="st">&quot;MSAVI&quot;</span>, <span class="st">&quot;GNDVI&quot;</span>),  <span class="co"># Soil-adjusted indices</span></span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>  <span class="at">output_stack =</span> <span class="cn">TRUE</span></span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>)</span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a></span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a><span class="co"># Analyze grazing impact</span></span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a>grazed_area_ndvi <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">mask</span>(grassland_health<span class="sc">$</span>NDVI, grazing_areas)</span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a>ungrazed_area_ndvi <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">mask</span>(grassland_health<span class="sc">$</span>NDVI, ungrazed_areas)</span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a></span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a><span class="co"># Compare means</span></span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a>grazed_mean <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">global</span>(grazed_area_ndvi, <span class="st">&quot;mean&quot;</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a>ungrazed_mean <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">global</span>(ungrazed_area_ndvi, <span class="st">&quot;mean&quot;</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a></span>
+<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a>grazing_impact <span class="ot">&lt;-</span> ungrazed_mean <span class="sc">-</span> grazed_mean</span></code></pre></div>
+</div>
+<div id="urban-vegetation" class="section level3">
+<h3>Urban Vegetation</h3>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="co"># Urban vegetation analysis with atmospheric correction</span></span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>urban_vegetation <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>  <span class="at">red =</span> urban_red,</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>  <span class="at">nir =</span> urban_nir,</span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>  <span class="at">blue =</span> urban_blue,</span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a>  <span class="at">index_type =</span> <span class="st">&quot;ARVI&quot;</span>,           <span class="co"># Atmospherically Resistant VI</span></span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a>  <span class="at">region_boundary =</span> <span class="st">&quot;city_boundary.shp&quot;</span></span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a>)</span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a></span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a><span class="co"># Green space analysis</span></span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a>green_space_threshold <span class="ot">&lt;-</span> <span class="fl">0.3</span></span>
+<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a>urban_greenness <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">classify</span>(urban_vegetation,</span>
+<span id="cb17-13"><a href="#cb17-13" tabindex="-1"></a>  <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, green_space_threshold, <span class="dv">0</span>,           <span class="co"># Non-vegetated</span></span>
+<span id="cb17-14"><a href="#cb17-14" tabindex="-1"></a>           green_space_threshold, <span class="dv">1</span>, <span class="dv">1</span>), <span class="at">ncol =</span> <span class="dv">3</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>))  <span class="co"># Vegetated</span></span>
+<span id="cb17-15"><a href="#cb17-15" tabindex="-1"></a></span>
+<span id="cb17-16"><a href="#cb17-16" tabindex="-1"></a><span class="co"># Calculate green space statistics</span></span>
+<span id="cb17-17"><a href="#cb17-17" tabindex="-1"></a>total_urban_area <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">ncell</span>(urban_greenness) <span class="sc">*</span> <span class="fu">prod</span>(terra<span class="sc">::</span><span class="fu">res</span>(urban_greenness))</span>
+<span id="cb17-18"><a href="#cb17-18" tabindex="-1"></a>green_area <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">global</span>(urban_greenness, <span class="st">&quot;sum&quot;</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">*</span> <span class="fu">prod</span>(terra<span class="sc">::</span><span class="fu">res</span>(urban_greenness))</span>
+<span id="cb17-19"><a href="#cb17-19" tabindex="-1"></a>green_space_percentage <span class="ot">&lt;-</span> (green_area <span class="sc">/</span> total_urban_area) <span class="sc">*</span> <span class="dv">100</span></span></code></pre></div>
+</div>
+</div>
+<div id="index-selection-guide" class="section level2">
+<h2>Index Selection Guide</h2>
+<div id="when-to-use-each-index" class="section level3">
+<h3>When to Use Each Index</h3>
+<p><strong>NDVI (Normalized Difference Vegetation Index):</strong> -
+<strong>Best for:</strong> General vegetation monitoring, biomass
+estimation - <strong>Range:</strong> -1 to 1 (vegetation typically
+0.3-0.9) - <strong>Limitations:</strong> Saturates in dense
+vegetation</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>ndvi <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(<span class="at">red =</span> red, <span class="at">nir =</span> nir, <span class="at">index_type =</span> <span class="st">&quot;NDVI&quot;</span>)</span></code></pre></div>
+<p><strong>EVI (Enhanced Vegetation Index):</strong> - <strong>Best
+for:</strong> Dense vegetation, reducing atmospheric effects -
+<strong>Range:</strong> -1 to 3 (vegetation typically 0.2-1.0) -
+<strong>Advantages:</strong> Less saturation than NDVI</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>evi <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(<span class="at">red =</span> red, <span class="at">nir =</span> nir, <span class="at">blue =</span> blue, <span class="at">index_type =</span> <span class="st">&quot;EVI&quot;</span>)</span></code></pre></div>
+<p><strong>SAVI (Soil Adjusted Vegetation Index):</strong> -
+<strong>Best for:</strong> Areas with exposed soil, early season crops -
+<strong>Range:</strong> -1 to 1.5 - <strong>Advantages:</strong> Reduces
+soil background effects</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>savi <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(<span class="at">red =</span> red, <span class="at">nir =</span> nir, <span class="at">index_type =</span> <span class="st">&quot;SAVI&quot;</span>)</span></code></pre></div>
+<p><strong>PRI (Photochemical Reflectance Index):</strong> -
+<strong>Best for:</strong> Plant stress detection, photosynthetic
+efficiency - <strong>Range:</strong> -1 to 1 -
+<strong>Applications:</strong> Early stress detection before visible
+symptoms</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a><span class="co"># Note: PRI typically uses 531nm and 570nm bands</span></span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a><span class="co"># Using green and NIR as approximation</span></span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a>pri <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(<span class="at">green =</span> green, <span class="at">nir =</span> nir, <span class="at">index_type =</span> <span class="st">&quot;PRI&quot;</span>)</span></code></pre></div>
+</div>
+<div id="index-combinations-for-different-applications" class="section level3">
+<h3>Index Combinations for Different Applications</h3>
+<p><strong>Crop Health Monitoring:</strong></p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a>crop_health <span class="ot">&lt;-</span> <span class="fu">calculate_multiple_indices</span>(</span>
+<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a>  <span class="at">red =</span> red, <span class="at">nir =</span> nir, <span class="at">green =</span> green,</span>
+<span id="cb22-3"><a href="#cb22-3" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;GNDVI&quot;</span>, <span class="st">&quot;SIPI&quot;</span>),  <span class="co"># Structure Insensitive Pigment Index</span></span>
+<span id="cb22-4"><a href="#cb22-4" tabindex="-1"></a>  <span class="at">output_stack =</span> <span class="cn">TRUE</span></span>
+<span id="cb22-5"><a href="#cb22-5" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Drought Monitoring:</strong></p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a>drought_indices <span class="ot">&lt;-</span> <span class="fu">calculate_multiple_indices</span>(</span>
+<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a>  <span class="at">nir =</span> nir, <span class="at">swir1 =</span> swir1,</span>
+<span id="cb23-3"><a href="#cb23-3" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDMI&quot;</span>, <span class="st">&quot;MSI&quot;</span>),  <span class="co"># Moisture indices</span></span>
+<span id="cb23-4"><a href="#cb23-4" tabindex="-1"></a>  <span class="at">output_stack =</span> <span class="cn">TRUE</span></span>
+<span id="cb23-5"><a href="#cb23-5" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Precision Agriculture:</strong></p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a>precision_ag <span class="ot">&lt;-</span> <span class="fu">calculate_multiple_indices</span>(</span>
+<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a>  <span class="at">red =</span> red, <span class="at">nir =</span> nir, <span class="at">green =</span> green, <span class="at">red_edge =</span> red_edge,</span>
+<span id="cb24-3"><a href="#cb24-3" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;NDRE&quot;</span>, <span class="st">&quot;GNDVI&quot;</span>, <span class="st">&quot;CCI&quot;</span>),  <span class="co"># Chlorophyll indices</span></span>
+<span id="cb24-4"><a href="#cb24-4" tabindex="-1"></a>  <span class="at">output_stack =</span> <span class="cn">TRUE</span></span>
+<span id="cb24-5"><a href="#cb24-5" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+</div>
+<div id="visualization-and-interpretation" class="section level2">
+<h2>Visualization and Interpretation</h2>
+<div id="custom-visualization" class="section level3">
+<h3>Custom Visualization</h3>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a><span class="co"># NDVI-specific visualization</span></span>
+<span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a><span class="fu">create_spatial_map</span>(</span>
+<span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a>  <span class="at">spatial_data =</span> ndvi_raster,</span>
+<span id="cb25-4"><a href="#cb25-4" tabindex="-1"></a>  <span class="at">color_scheme =</span> <span class="st">&quot;ndvi&quot;</span>,          <span class="co"># NDVI-specific colors</span></span>
+<span id="cb25-5"><a href="#cb25-5" tabindex="-1"></a>  <span class="at">region_boundary =</span> <span class="st">&quot;study_area.shp&quot;</span>,</span>
+<span id="cb25-6"><a href="#cb25-6" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">&quot;NDVI Analysis - Growing Season Peak&quot;</span>,</span>
+<span id="cb25-7"><a href="#cb25-7" tabindex="-1"></a>  <span class="at">output_file =</span> <span class="st">&quot;ndvi_analysis.png&quot;</span></span>
+<span id="cb25-8"><a href="#cb25-8" tabindex="-1"></a>)</span>
+<span id="cb25-9"><a href="#cb25-9" tabindex="-1"></a></span>
+<span id="cb25-10"><a href="#cb25-10" tabindex="-1"></a><span class="co"># Multi-index comparison</span></span>
+<span id="cb25-11"><a href="#cb25-11" tabindex="-1"></a><span class="fu">create_comparison_map</span>(</span>
+<span id="cb25-12"><a href="#cb25-12" tabindex="-1"></a>  <span class="at">data1 =</span> ndvi_raster,</span>
+<span id="cb25-13"><a href="#cb25-13" tabindex="-1"></a>  <span class="at">data2 =</span> evi_raster, </span>
+<span id="cb25-14"><a href="#cb25-14" tabindex="-1"></a>  <span class="at">comparison_type =</span> <span class="st">&quot;side_by_side&quot;</span>,</span>
+<span id="cb25-15"><a href="#cb25-15" tabindex="-1"></a>  <span class="at">titles =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;EVI&quot;</span>),</span>
+<span id="cb25-16"><a href="#cb25-16" tabindex="-1"></a>  <span class="at">color_scheme =</span> <span class="st">&quot;viridis&quot;</span></span>
+<span id="cb25-17"><a href="#cb25-17" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="interactive-exploration" class="section level3">
+<h3>Interactive Exploration</h3>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a><span class="co"># Interactive vegetation analysis</span></span>
+<span id="cb26-2"><a href="#cb26-2" tabindex="-1"></a>interactive_veg_map <span class="ot">&lt;-</span> <span class="fu">create_interactive_map</span>(</span>
+<span id="cb26-3"><a href="#cb26-3" tabindex="-1"></a>  <span class="at">spatial_data =</span> vegetation_points,</span>
+<span id="cb26-4"><a href="#cb26-4" tabindex="-1"></a>  <span class="at">fill_variable =</span> <span class="st">&quot;NDVI&quot;</span>,</span>
+<span id="cb26-5"><a href="#cb26-5" tabindex="-1"></a>  <span class="at">popup_vars =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;EVI&quot;</span>, <span class="st">&quot;collection_date&quot;</span>),</span>
+<span id="cb26-6"><a href="#cb26-6" tabindex="-1"></a>  <span class="at">basemap =</span> <span class="st">&quot;satellite&quot;</span>,</span>
+<span id="cb26-7"><a href="#cb26-7" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">&quot;Interactive Vegetation Analysis&quot;</span></span>
+<span id="cb26-8"><a href="#cb26-8" tabindex="-1"></a>)</span>
+<span id="cb26-9"><a href="#cb26-9" tabindex="-1"></a></span>
+<span id="cb26-10"><a href="#cb26-10" tabindex="-1"></a><span class="co"># Save interactive map</span></span>
+<span id="cb26-11"><a href="#cb26-11" tabindex="-1"></a>htmlwidgets<span class="sc">::</span><span class="fu">saveWidget</span>(interactive_veg_map, <span class="st">&quot;vegetation_interactive.html&quot;</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="statistical-analysis" class="section level2">
+<h2>Statistical Analysis</h2>
+<div id="vegetation-statistics" class="section level3">
+<h3>Vegetation Statistics</h3>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a><span class="co"># Calculate comprehensive statistics</span></span>
+<span id="cb27-2"><a href="#cb27-2" tabindex="-1"></a>vegetation_stats <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">global</span>(vegetation_stack, </span>
+<span id="cb27-3"><a href="#cb27-3" tabindex="-1"></a>                                  <span class="fu">c</span>(<span class="st">&quot;mean&quot;</span>, <span class="st">&quot;sd&quot;</span>, <span class="st">&quot;min&quot;</span>, <span class="st">&quot;max&quot;</span>), </span>
+<span id="cb27-4"><a href="#cb27-4" tabindex="-1"></a>                                  <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb27-5"><a href="#cb27-5" tabindex="-1"></a></span>
+<span id="cb27-6"><a href="#cb27-6" tabindex="-1"></a><span class="fu">print</span>(vegetation_stats)</span>
+<span id="cb27-7"><a href="#cb27-7" tabindex="-1"></a></span>
+<span id="cb27-8"><a href="#cb27-8" tabindex="-1"></a><span class="co"># Zonal statistics by land cover</span></span>
+<span id="cb27-9"><a href="#cb27-9" tabindex="-1"></a>landcover_stats <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb27-10"><a href="#cb27-10" tabindex="-1"></a>  <span class="at">source_data =</span> vegetation_stack,</span>
+<span id="cb27-11"><a href="#cb27-11" tabindex="-1"></a>  <span class="at">target_data =</span> <span class="st">&quot;landcover_polygons.shp&quot;</span>,</span>
+<span id="cb27-12"><a href="#cb27-12" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;zonal&quot;</span>, </span>
+<span id="cb27-13"><a href="#cb27-13" tabindex="-1"></a>  <span class="at">summary_function =</span> <span class="st">&quot;mean&quot;</span></span>
+<span id="cb27-14"><a href="#cb27-14" tabindex="-1"></a>)</span>
+<span id="cb27-15"><a href="#cb27-15" tabindex="-1"></a></span>
+<span id="cb27-16"><a href="#cb27-16" tabindex="-1"></a><span class="co"># Statistics by vegetation class</span></span>
+<span id="cb27-17"><a href="#cb27-17" tabindex="-1"></a>healthy_vegetation <span class="ot">&lt;-</span> vegetation_stack<span class="sc">$</span>NDVI <span class="sc">&gt;</span> <span class="fl">0.6</span></span>
+<span id="cb27-18"><a href="#cb27-18" tabindex="-1"></a>moderate_vegetation <span class="ot">&lt;-</span> vegetation_stack<span class="sc">$</span>NDVI <span class="sc">&gt;</span> <span class="fl">0.3</span> <span class="sc">&amp;</span> vegetation_stack<span class="sc">$</span>NDVI <span class="sc">&lt;=</span> <span class="fl">0.6</span></span>
+<span id="cb27-19"><a href="#cb27-19" tabindex="-1"></a>poor_vegetation <span class="ot">&lt;-</span> vegetation_stack<span class="sc">$</span>NDVI <span class="sc">&lt;=</span> <span class="fl">0.3</span></span>
+<span id="cb27-20"><a href="#cb27-20" tabindex="-1"></a></span>
+<span id="cb27-21"><a href="#cb27-21" tabindex="-1"></a><span class="co"># Calculate percentages</span></span>
+<span id="cb27-22"><a href="#cb27-22" tabindex="-1"></a>total_pixels <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">ncell</span>(vegetation_stack<span class="sc">$</span>NDVI)</span>
+<span id="cb27-23"><a href="#cb27-23" tabindex="-1"></a>healthy_pct <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">global</span>(healthy_vegetation, <span class="st">&quot;sum&quot;</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">/</span> total_pixels <span class="sc">*</span> <span class="dv">100</span></span>
+<span id="cb27-24"><a href="#cb27-24" tabindex="-1"></a>moderate_pct <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">global</span>(moderate_vegetation, <span class="st">&quot;sum&quot;</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">/</span> total_pixels <span class="sc">*</span> <span class="dv">100</span></span>
+<span id="cb27-25"><a href="#cb27-25" tabindex="-1"></a>poor_pct <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">global</span>(poor_vegetation, <span class="st">&quot;sum&quot;</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">/</span> total_pixels <span class="sc">*</span> <span class="dv">100</span></span></code></pre></div>
+</div>
+<div id="correlation-analysis" class="section level3">
+<h3>Correlation Analysis</h3>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a><span class="co"># Analyze relationships between indices</span></span>
+<span id="cb28-2"><a href="#cb28-2" tabindex="-1"></a>index_correlations <span class="ot">&lt;-</span> <span class="fu">analyze_variable_correlations</span>(</span>
+<span id="cb28-3"><a href="#cb28-3" tabindex="-1"></a>  <span class="at">variable_list =</span> <span class="fu">list</span>(</span>
+<span id="cb28-4"><a href="#cb28-4" tabindex="-1"></a>    <span class="at">NDVI =</span> vegetation_stack<span class="sc">$</span>NDVI,</span>
+<span id="cb28-5"><a href="#cb28-5" tabindex="-1"></a>    <span class="at">EVI =</span> vegetation_stack<span class="sc">$</span>EVI,</span>
+<span id="cb28-6"><a href="#cb28-6" tabindex="-1"></a>    <span class="at">SAVI =</span> vegetation_stack<span class="sc">$</span>SAVI,</span>
+<span id="cb28-7"><a href="#cb28-7" tabindex="-1"></a>    <span class="at">GNDVI =</span> vegetation_stack<span class="sc">$</span>GNDVI</span>
+<span id="cb28-8"><a href="#cb28-8" tabindex="-1"></a>  ),</span>
+<span id="cb28-9"><a href="#cb28-9" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;pearson&quot;</span>,</span>
+<span id="cb28-10"><a href="#cb28-10" tabindex="-1"></a>  <span class="at">create_plots =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb28-11"><a href="#cb28-11" tabindex="-1"></a>  <span class="at">output_folder =</span> <span class="st">&quot;correlation_analysis/&quot;</span></span>
+<span id="cb28-12"><a href="#cb28-12" tabindex="-1"></a>)</span>
+<span id="cb28-13"><a href="#cb28-13" tabindex="-1"></a></span>
+<span id="cb28-14"><a href="#cb28-14" tabindex="-1"></a><span class="co"># View correlation matrix</span></span>
+<span id="cb28-15"><a href="#cb28-15" tabindex="-1"></a><span class="fu">print</span>(index_correlations<span class="sc">$</span>correlation_matrix)</span></code></pre></div>
+</div>
+</div>
+<div id="practical-examples" class="section level2">
+<h2>Practical Examples</h2>
+<div id="example-1-corn-field-monitoring" class="section level3">
+<h3>Example 1: Corn Field Monitoring</h3>
+<p>Complete workflow for monitoring corn fields:</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" tabindex="-1"></a><span class="co"># 1. Define study area</span></span>
+<span id="cb29-2"><a href="#cb29-2" tabindex="-1"></a>study_area <span class="ot">&lt;-</span> <span class="fu">get_region_boundary</span>(<span class="st">&quot;Iowa:Story&quot;</span>)  <span class="co"># Story County, Iowa</span></span>
+<span id="cb29-3"><a href="#cb29-3" tabindex="-1"></a></span>
+<span id="cb29-4"><a href="#cb29-4" tabindex="-1"></a><span class="co"># 2. Create corn mask</span></span>
+<span id="cb29-5"><a href="#cb29-5" tabindex="-1"></a>corn_mask <span class="ot">&lt;-</span> <span class="fu">create_crop_mask</span>(</span>
+<span id="cb29-6"><a href="#cb29-6" tabindex="-1"></a>  <span class="at">cdl_data =</span> <span class="st">&quot;cdl_iowa_2023.tif&quot;</span>,</span>
+<span id="cb29-7"><a href="#cb29-7" tabindex="-1"></a>  <span class="at">crop_codes =</span> <span class="fu">get_comprehensive_cdl_codes</span>(<span class="st">&quot;corn&quot;</span>),</span>
+<span id="cb29-8"><a href="#cb29-8" tabindex="-1"></a>  <span class="at">region_boundary =</span> study_area</span>
+<span id="cb29-9"><a href="#cb29-9" tabindex="-1"></a>)</span>
+<span id="cb29-10"><a href="#cb29-10" tabindex="-1"></a></span>
+<span id="cb29-11"><a href="#cb29-11" tabindex="-1"></a><span class="co"># 3. Calculate vegetation indices for corn areas</span></span>
+<span id="cb29-12"><a href="#cb29-12" tabindex="-1"></a>corn_vegetation <span class="ot">&lt;-</span> <span class="fu">calculate_multiple_indices</span>(</span>
+<span id="cb29-13"><a href="#cb29-13" tabindex="-1"></a>  <span class="at">spectral_data =</span> <span class="st">&quot;sentinel2_iowa_july.tif&quot;</span>,</span>
+<span id="cb29-14"><a href="#cb29-14" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;EVI&quot;</span>, <span class="st">&quot;GNDVI&quot;</span>, <span class="st">&quot;SAVI&quot;</span>),</span>
+<span id="cb29-15"><a href="#cb29-15" tabindex="-1"></a>  <span class="at">auto_detect_bands =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb29-16"><a href="#cb29-16" tabindex="-1"></a>  <span class="at">output_stack =</span> <span class="cn">TRUE</span></span>
+<span id="cb29-17"><a href="#cb29-17" tabindex="-1"></a>)</span>
+<span id="cb29-18"><a href="#cb29-18" tabindex="-1"></a></span>
+<span id="cb29-19"><a href="#cb29-19" tabindex="-1"></a><span class="co"># 4. Apply corn mask</span></span>
+<span id="cb29-20"><a href="#cb29-20" tabindex="-1"></a>corn_vegetation_masked <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">mask</span>(corn_vegetation, corn_mask)</span>
+<span id="cb29-21"><a href="#cb29-21" tabindex="-1"></a></span>
+<span id="cb29-22"><a href="#cb29-22" tabindex="-1"></a><span class="co"># 5. Analyze corn health</span></span>
+<span id="cb29-23"><a href="#cb29-23" tabindex="-1"></a>corn_stats <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">global</span>(corn_vegetation_masked, </span>
+<span id="cb29-24"><a href="#cb29-24" tabindex="-1"></a>                           <span class="fu">c</span>(<span class="st">&quot;mean&quot;</span>, <span class="st">&quot;sd&quot;</span>, <span class="st">&quot;min&quot;</span>, <span class="st">&quot;max&quot;</span>), </span>
+<span id="cb29-25"><a href="#cb29-25" tabindex="-1"></a>                           <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb29-26"><a href="#cb29-26" tabindex="-1"></a></span>
+<span id="cb29-27"><a href="#cb29-27" tabindex="-1"></a><span class="co"># 6. Create visualization</span></span>
+<span id="cb29-28"><a href="#cb29-28" tabindex="-1"></a><span class="fu">quick_map</span>(corn_vegetation_masked<span class="sc">$</span>NDVI, </span>
+<span id="cb29-29"><a href="#cb29-29" tabindex="-1"></a>          <span class="at">title =</span> <span class="st">&quot;Story County Corn NDVI - July 2023&quot;</span>)</span>
+<span id="cb29-30"><a href="#cb29-30" tabindex="-1"></a></span>
+<span id="cb29-31"><a href="#cb29-31" tabindex="-1"></a><span class="co"># 7. Save results</span></span>
+<span id="cb29-32"><a href="#cb29-32" tabindex="-1"></a>terra<span class="sc">::</span><span class="fu">writeRaster</span>(corn_vegetation_masked, <span class="st">&quot;story_county_corn_indices.tif&quot;</span>)</span></code></pre></div>
+</div>
+<div id="example-2-stress-detection-pipeline" class="section level3">
+<h3>Example 2: Stress Detection Pipeline</h3>
+<p>Detect and map vegetation stress:</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" tabindex="-1"></a><span class="co"># 1. Load multi-temporal data</span></span>
+<span id="cb30-2"><a href="#cb30-2" tabindex="-1"></a>april_data <span class="ot">&lt;-</span> <span class="fu">calculate_ndvi_enhanced</span>(<span class="st">&quot;april_sentinel2.tif&quot;</span>)</span>
+<span id="cb30-3"><a href="#cb30-3" tabindex="-1"></a>july_data <span class="ot">&lt;-</span> <span class="fu">calculate_ndvi_enhanced</span>(<span class="st">&quot;july_sentinel2.tif&quot;</span>)</span>
+<span id="cb30-4"><a href="#cb30-4" tabindex="-1"></a></span>
+<span id="cb30-5"><a href="#cb30-5" tabindex="-1"></a><span class="co"># 2. Calculate stress indices</span></span>
+<span id="cb30-6"><a href="#cb30-6" tabindex="-1"></a>stress_indices <span class="ot">&lt;-</span> <span class="fu">calculate_multiple_indices</span>(</span>
+<span id="cb30-7"><a href="#cb30-7" tabindex="-1"></a>  <span class="at">spectral_data =</span> <span class="st">&quot;july_sentinel2.tif&quot;</span>,</span>
+<span id="cb30-8"><a href="#cb30-8" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;PRI&quot;</span>, <span class="st">&quot;SIPI&quot;</span>, <span class="st">&quot;NDMI&quot;</span>),</span>
+<span id="cb30-9"><a href="#cb30-9" tabindex="-1"></a>  <span class="at">auto_detect_bands =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb30-10"><a href="#cb30-10" tabindex="-1"></a>  <span class="at">output_stack =</span> <span class="cn">TRUE</span></span>
+<span id="cb30-11"><a href="#cb30-11" tabindex="-1"></a>)</span>
+<span id="cb30-12"><a href="#cb30-12" tabindex="-1"></a></span>
+<span id="cb30-13"><a href="#cb30-13" tabindex="-1"></a><span class="co"># 3. Identify stressed areas</span></span>
+<span id="cb30-14"><a href="#cb30-14" tabindex="-1"></a><span class="co"># NDVI decline from April to July</span></span>
+<span id="cb30-15"><a href="#cb30-15" tabindex="-1"></a>ndvi_change <span class="ot">&lt;-</span> july_data <span class="sc">-</span> april_data</span>
+<span id="cb30-16"><a href="#cb30-16" tabindex="-1"></a>stress_areas <span class="ot">&lt;-</span> ndvi_change <span class="sc">&lt;</span> <span class="sc">-</span><span class="fl">0.2</span>  <span class="co"># Significant decline</span></span>
+<span id="cb30-17"><a href="#cb30-17" tabindex="-1"></a></span>
+<span id="cb30-18"><a href="#cb30-18" tabindex="-1"></a><span class="co"># Water stress (low NDMI)</span></span>
+<span id="cb30-19"><a href="#cb30-19" tabindex="-1"></a>water_stress <span class="ot">&lt;-</span> stress_indices<span class="sc">$</span>NDMI <span class="sc">&lt;</span> <span class="fl">0.2</span></span>
+<span id="cb30-20"><a href="#cb30-20" tabindex="-1"></a></span>
+<span id="cb30-21"><a href="#cb30-21" tabindex="-1"></a><span class="co"># Combined stress map</span></span>
+<span id="cb30-22"><a href="#cb30-22" tabindex="-1"></a>combined_stress <span class="ot">&lt;-</span> stress_areas <span class="sc">|</span> water_stress</span>
+<span id="cb30-23"><a href="#cb30-23" tabindex="-1"></a></span>
+<span id="cb30-24"><a href="#cb30-24" tabindex="-1"></a><span class="co"># 4. Quantify stress</span></span>
+<span id="cb30-25"><a href="#cb30-25" tabindex="-1"></a>total_area <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">ncell</span>(combined_stress) <span class="sc">*</span> <span class="fu">prod</span>(terra<span class="sc">::</span><span class="fu">res</span>(combined_stress)) <span class="sc">/</span> <span class="dv">10000</span>  <span class="co"># hectares</span></span>
+<span id="cb30-26"><a href="#cb30-26" tabindex="-1"></a>stressed_pixels <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">global</span>(combined_stress, <span class="st">&quot;sum&quot;</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb30-27"><a href="#cb30-27" tabindex="-1"></a>stressed_area <span class="ot">&lt;-</span> stressed_pixels <span class="sc">*</span> <span class="fu">prod</span>(terra<span class="sc">::</span><span class="fu">res</span>(combined_stress)) <span class="sc">/</span> <span class="dv">10000</span>  <span class="co"># hectares</span></span>
+<span id="cb30-28"><a href="#cb30-28" tabindex="-1"></a>stress_percentage <span class="ot">&lt;-</span> (stressed_area <span class="sc">/</span> total_area) <span class="sc">*</span> <span class="dv">100</span></span>
+<span id="cb30-29"><a href="#cb30-29" tabindex="-1"></a></span>
+<span id="cb30-30"><a href="#cb30-30" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Stressed area:&quot;</span>, <span class="fu">round</span>(stressed_area, <span class="dv">1</span>), <span class="st">&quot;hectares&quot;</span>))</span>
+<span id="cb30-31"><a href="#cb30-31" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">paste</span>(<span class="st">&quot;Stress percentage:&quot;</span>, <span class="fu">round</span>(stress_percentage, <span class="dv">1</span>), <span class="st">&quot;%&quot;</span>))</span></code></pre></div>
+</div>
+<div id="example-3-regional-vegetation-assessment" class="section level3">
+<h3>Example 3: Regional Vegetation Assessment</h3>
+<p>Large-scale vegetation analysis:</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" tabindex="-1"></a><span class="co"># 1. Multi-state analysis</span></span>
+<span id="cb31-2"><a href="#cb31-2" tabindex="-1"></a>great_lakes_states <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Michigan&quot;</span>, <span class="st">&quot;Ohio&quot;</span>, <span class="st">&quot;Indiana&quot;</span>, <span class="st">&quot;Illinois&quot;</span>, <span class="st">&quot;Wisconsin&quot;</span>)</span>
+<span id="cb31-3"><a href="#cb31-3" tabindex="-1"></a></span>
+<span id="cb31-4"><a href="#cb31-4" tabindex="-1"></a>regional_ndvi <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb31-5"><a href="#cb31-5" tabindex="-1"></a><span class="cf">for</span> (state <span class="cf">in</span> great_lakes_states) {</span>
+<span id="cb31-6"><a href="#cb31-6" tabindex="-1"></a>  state_ndvi <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(</span>
+<span id="cb31-7"><a href="#cb31-7" tabindex="-1"></a>    <span class="at">spectral_data =</span> <span class="fu">paste0</span>(<span class="st">&quot;/data/&quot;</span>, <span class="fu">tolower</span>(state), <span class="st">&quot;_modis.tif&quot;</span>),</span>
+<span id="cb31-8"><a href="#cb31-8" tabindex="-1"></a>    <span class="at">index_type =</span> <span class="st">&quot;NDVI&quot;</span>, </span>
+<span id="cb31-9"><a href="#cb31-9" tabindex="-1"></a>    <span class="at">region_boundary =</span> state,</span>
+<span id="cb31-10"><a href="#cb31-10" tabindex="-1"></a>    <span class="at">auto_detect_bands =</span> <span class="cn">TRUE</span></span>
+<span id="cb31-11"><a href="#cb31-11" tabindex="-1"></a>  )</span>
+<span id="cb31-12"><a href="#cb31-12" tabindex="-1"></a>  regional_ndvi[[state]] <span class="ot">&lt;-</span> state_ndvi</span>
+<span id="cb31-13"><a href="#cb31-13" tabindex="-1"></a>}</span>
+<span id="cb31-14"><a href="#cb31-14" tabindex="-1"></a></span>
+<span id="cb31-15"><a href="#cb31-15" tabindex="-1"></a><span class="co"># 2. Create regional mosaic</span></span>
+<span id="cb31-16"><a href="#cb31-16" tabindex="-1"></a>great_lakes_mosaic <span class="ot">&lt;-</span> <span class="fu">create_raster_mosaic</span>(</span>
+<span id="cb31-17"><a href="#cb31-17" tabindex="-1"></a>  <span class="at">input_data =</span> regional_ndvi,</span>
+<span id="cb31-18"><a href="#cb31-18" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;merge&quot;</span>,</span>
+<span id="cb31-19"><a href="#cb31-19" tabindex="-1"></a>  <span class="at">region_boundary =</span> <span class="st">&quot;Great Lakes Region&quot;</span></span>
+<span id="cb31-20"><a href="#cb31-20" tabindex="-1"></a>)</span>
+<span id="cb31-21"><a href="#cb31-21" tabindex="-1"></a></span>
+<span id="cb31-22"><a href="#cb31-22" tabindex="-1"></a><span class="co"># 3. Regional statistics</span></span>
+<span id="cb31-23"><a href="#cb31-23" tabindex="-1"></a>regional_stats <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">global</span>(great_lakes_mosaic, </span>
+<span id="cb31-24"><a href="#cb31-24" tabindex="-1"></a>                               <span class="fu">c</span>(<span class="st">&quot;mean&quot;</span>, <span class="st">&quot;sd&quot;</span>, <span class="st">&quot;min&quot;</span>, <span class="st">&quot;max&quot;</span>), </span>
+<span id="cb31-25"><a href="#cb31-25" tabindex="-1"></a>                               <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb31-26"><a href="#cb31-26" tabindex="-1"></a></span>
+<span id="cb31-27"><a href="#cb31-27" tabindex="-1"></a><span class="co"># 4. State-by-state comparison</span></span>
+<span id="cb31-28"><a href="#cb31-28" tabindex="-1"></a>state_means <span class="ot">&lt;-</span> <span class="fu">sapply</span>(regional_ndvi, <span class="cf">function</span>(x) {</span>
+<span id="cb31-29"><a href="#cb31-29" tabindex="-1"></a>  terra<span class="sc">::</span><span class="fu">global</span>(x, <span class="st">&quot;mean&quot;</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)[[<span class="dv">1</span>]]</span>
+<span id="cb31-30"><a href="#cb31-30" tabindex="-1"></a>})</span>
+<span id="cb31-31"><a href="#cb31-31" tabindex="-1"></a></span>
+<span id="cb31-32"><a href="#cb31-32" tabindex="-1"></a><span class="fu">names</span>(state_means) <span class="ot">&lt;-</span> great_lakes_states</span>
+<span id="cb31-33"><a href="#cb31-33" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">sort</span>(state_means, <span class="at">decreasing =</span> <span class="cn">TRUE</span>))</span></code></pre></div>
+</div>
+</div>
+<div id="troubleshooting-common-issues" class="section level2">
+<h2>Troubleshooting Common Issues</h2>
+<div id="band-detection-problems" class="section level3">
+<h3>Band Detection Problems</h3>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" tabindex="-1"></a><span class="co"># If auto-detection fails, specify band names manually</span></span>
+<span id="cb32-2"><a href="#cb32-2" tabindex="-1"></a>custom_ndvi <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(</span>
+<span id="cb32-3"><a href="#cb32-3" tabindex="-1"></a>  <span class="at">spectral_data =</span> <span class="st">&quot;unusual_satellite_data.tif&quot;</span>,</span>
+<span id="cb32-4"><a href="#cb32-4" tabindex="-1"></a>  <span class="at">band_names =</span> <span class="fu">c</span>(<span class="st">&quot;Band_4_Red&quot;</span>, <span class="st">&quot;Band_5_NIR&quot;</span>),  <span class="co"># Custom names</span></span>
+<span id="cb32-5"><a href="#cb32-5" tabindex="-1"></a>  <span class="at">index_type =</span> <span class="st">&quot;NDVI&quot;</span>,</span>
+<span id="cb32-6"><a href="#cb32-6" tabindex="-1"></a>  <span class="at">auto_detect_bands =</span> <span class="cn">FALSE</span></span>
+<span id="cb32-7"><a href="#cb32-7" tabindex="-1"></a>)</span>
+<span id="cb32-8"><a href="#cb32-8" tabindex="-1"></a></span>
+<span id="cb32-9"><a href="#cb32-9" tabindex="-1"></a><span class="co"># Or use individual band approach</span></span>
+<span id="cb32-10"><a href="#cb32-10" tabindex="-1"></a>manual_ndvi <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(</span>
+<span id="cb32-11"><a href="#cb32-11" tabindex="-1"></a>  <span class="at">red =</span> satellite_data<span class="sc">$</span>Band_4_Red,</span>
+<span id="cb32-12"><a href="#cb32-12" tabindex="-1"></a>  <span class="at">nir =</span> satellite_data<span class="sc">$</span>Band_5_NIR,</span>
+<span id="cb32-13"><a href="#cb32-13" tabindex="-1"></a>  <span class="at">index_type =</span> <span class="st">&quot;NDVI&quot;</span></span>
+<span id="cb32-14"><a href="#cb32-14" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="crs-and-projection-issues" class="section level3">
+<h3>CRS and Projection Issues</h3>
+<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" tabindex="-1"></a><span class="co"># Automatic CRS fixing</span></span>
+<span id="cb33-2"><a href="#cb33-2" tabindex="-1"></a>robust_indices <span class="ot">&lt;-</span> <span class="fu">calculate_multiple_indices</span>(</span>
+<span id="cb33-3"><a href="#cb33-3" tabindex="-1"></a>  <span class="at">red =</span> <span class="st">&quot;red_utm.tif&quot;</span>,        <span class="co"># UTM projection</span></span>
+<span id="cb33-4"><a href="#cb33-4" tabindex="-1"></a>  <span class="at">nir =</span> <span class="st">&quot;nir_geographic.tif&quot;</span>, <span class="co"># Geographic coordinates</span></span>
+<span id="cb33-5"><a href="#cb33-5" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;EVI&quot;</span>),</span>
+<span id="cb33-6"><a href="#cb33-6" tabindex="-1"></a>  <span class="at">auto_crs_fix =</span> <span class="cn">TRUE</span>,        <span class="co"># Automatically handle CRS differences</span></span>
+<span id="cb33-7"><a href="#cb33-7" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span>              <span class="co"># See what&#39;s being fixed</span></span>
+<span id="cb33-8"><a href="#cb33-8" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="memory-management-for-large-areas" class="section level3">
+<h3>Memory Management for Large Areas</h3>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" tabindex="-1"></a><span class="co"># Process large areas efficiently</span></span>
+<span id="cb34-2"><a href="#cb34-2" tabindex="-1"></a><span class="co"># 1. Use chunked processing</span></span>
+<span id="cb34-3"><a href="#cb34-3" tabindex="-1"></a>large_area_ndvi <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(</span>
+<span id="cb34-4"><a href="#cb34-4" tabindex="-1"></a>  <span class="at">spectral_data =</span> <span class="st">&quot;very_large_raster.tif&quot;</span>,</span>
+<span id="cb34-5"><a href="#cb34-5" tabindex="-1"></a>  <span class="at">index_type =</span> <span class="st">&quot;NDVI&quot;</span>,</span>
+<span id="cb34-6"><a href="#cb34-6" tabindex="-1"></a>  <span class="at">chunk_size =</span> <span class="dv">500000</span>,    <span class="co"># Smaller chunks</span></span>
+<span id="cb34-7"><a href="#cb34-7" tabindex="-1"></a>  <span class="at">auto_detect_bands =</span> <span class="cn">TRUE</span></span>
+<span id="cb34-8"><a href="#cb34-8" tabindex="-1"></a>)</span>
+<span id="cb34-9"><a href="#cb34-9" tabindex="-1"></a></span>
+<span id="cb34-10"><a href="#cb34-10" tabindex="-1"></a><span class="co"># 2. Process by regions</span></span>
+<span id="cb34-11"><a href="#cb34-11" tabindex="-1"></a>us_states <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Ohio&quot;</span>, <span class="st">&quot;Michigan&quot;</span>, <span class="st">&quot;Indiana&quot;</span>) </span>
+<span id="cb34-12"><a href="#cb34-12" tabindex="-1"></a>state_results <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb34-13"><a href="#cb34-13" tabindex="-1"></a></span>
+<span id="cb34-14"><a href="#cb34-14" tabindex="-1"></a><span class="cf">for</span> (state <span class="cf">in</span> us_states) {</span>
+<span id="cb34-15"><a href="#cb34-15" tabindex="-1"></a>  state_results[[state]] <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(</span>
+<span id="cb34-16"><a href="#cb34-16" tabindex="-1"></a>    <span class="at">spectral_data =</span> <span class="st">&quot;continental_satellite_data.tif&quot;</span>,</span>
+<span id="cb34-17"><a href="#cb34-17" tabindex="-1"></a>    <span class="at">index_type =</span> <span class="st">&quot;NDVI&quot;</span>,</span>
+<span id="cb34-18"><a href="#cb34-18" tabindex="-1"></a>    <span class="at">region_boundary =</span> state,     <span class="co"># Process each state separately</span></span>
+<span id="cb34-19"><a href="#cb34-19" tabindex="-1"></a>    <span class="at">auto_detect_bands =</span> <span class="cn">TRUE</span></span>
+<span id="cb34-20"><a href="#cb34-20" tabindex="-1"></a>  )</span>
+<span id="cb34-21"><a href="#cb34-21" tabindex="-1"></a>}</span>
+<span id="cb34-22"><a href="#cb34-22" tabindex="-1"></a></span>
+<span id="cb34-23"><a href="#cb34-23" tabindex="-1"></a><span class="co"># 3. Combine results</span></span>
+<span id="cb34-24"><a href="#cb34-24" tabindex="-1"></a>combined_results <span class="ot">&lt;-</span> <span class="fu">create_raster_mosaic</span>(state_results, <span class="at">method =</span> <span class="st">&quot;merge&quot;</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="performance-optimization" class="section level2">
+<h2>Performance Optimization</h2>
+<div id="best-practices" class="section level3">
+<h3>Best Practices</h3>
+<ol style="list-style-type: decimal">
+<li><strong>Apply region boundaries early</strong> to reduce data
+size</li>
+<li><strong>Use appropriate resolution</strong> for your analysis
+scale</li>
+<li><strong>Batch process</strong> multiple indices together</li>
+<li><strong>Cache intermediate results</strong> for complex
+workflows</li>
+</ol>
+<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" tabindex="-1"></a><span class="co"># Efficient workflow</span></span>
+<span id="cb35-2"><a href="#cb35-2" tabindex="-1"></a>optimized_workflow <span class="ot">&lt;-</span> <span class="cf">function</span>(satellite_data, study_region) {</span>
+<span id="cb35-3"><a href="#cb35-3" tabindex="-1"></a>  <span class="co"># 1. Crop to region first (reduces data size)</span></span>
+<span id="cb35-4"><a href="#cb35-4" tabindex="-1"></a>  cropped_data <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb35-5"><a href="#cb35-5" tabindex="-1"></a>    <span class="at">source_data =</span> satellite_data,</span>
+<span id="cb35-6"><a href="#cb35-6" tabindex="-1"></a>    <span class="at">target_data =</span> <span class="fu">get_region_boundary</span>(study_region),</span>
+<span id="cb35-7"><a href="#cb35-7" tabindex="-1"></a>    <span class="at">method =</span> <span class="st">&quot;crop&quot;</span></span>
+<span id="cb35-8"><a href="#cb35-8" tabindex="-1"></a>  )</span>
+<span id="cb35-9"><a href="#cb35-9" tabindex="-1"></a>  </span>
+<span id="cb35-10"><a href="#cb35-10" tabindex="-1"></a>  <span class="co"># 2. Calculate multiple indices in one call</span></span>
+<span id="cb35-11"><a href="#cb35-11" tabindex="-1"></a>  vegetation_indices <span class="ot">&lt;-</span> <span class="fu">calculate_multiple_indices</span>(</span>
+<span id="cb35-12"><a href="#cb35-12" tabindex="-1"></a>    <span class="at">spectral_data =</span> cropped_data,</span>
+<span id="cb35-13"><a href="#cb35-13" tabindex="-1"></a>    <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;EVI&quot;</span>, <span class="st">&quot;SAVI&quot;</span>, <span class="st">&quot;GNDVI&quot;</span>),</span>
+<span id="cb35-14"><a href="#cb35-14" tabindex="-1"></a>    <span class="at">auto_detect_bands =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb35-15"><a href="#cb35-15" tabindex="-1"></a>    <span class="at">output_stack =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb35-16"><a href="#cb35-16" tabindex="-1"></a>    <span class="at">parallel =</span> <span class="cn">FALSE</span>  <span class="co"># Use FALSE for stability</span></span>
+<span id="cb35-17"><a href="#cb35-17" tabindex="-1"></a>  )</span>
+<span id="cb35-18"><a href="#cb35-18" tabindex="-1"></a>  </span>
+<span id="cb35-19"><a href="#cb35-19" tabindex="-1"></a>  <span class="co"># 3. Cache results</span></span>
+<span id="cb35-20"><a href="#cb35-20" tabindex="-1"></a>  terra<span class="sc">::</span><span class="fu">writeRaster</span>(vegetation_indices, <span class="st">&quot;cached_vegetation_indices.tif&quot;</span>)</span>
+<span id="cb35-21"><a href="#cb35-21" tabindex="-1"></a>  </span>
+<span id="cb35-22"><a href="#cb35-22" tabindex="-1"></a>  <span class="fu">return</span>(vegetation_indices)</span>
+<span id="cb35-23"><a href="#cb35-23" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+</div>
+<div id="interpretation-guidelines" class="section level2">
+<h2>Interpretation Guidelines</h2>
+<div id="ndvi-interpretation-by-land-cover" class="section level3">
+<h3>NDVI Interpretation by Land Cover</h3>
+<p><strong>Cropland:</strong> - 0.2-0.4: Bare soil/early growth -
+0.4-0.6: Developing vegetation<br />
+- 0.6-0.8: Healthy, mature crops - 0.8-0.9: Peak vegetation (dense
+crops)</p>
+<p><strong>Forest:</strong> - 0.4-0.6: Sparse forest/stressed trees -
+0.6-0.8: Healthy forest - 0.8-0.9: Dense, healthy forest</p>
+<p><strong>Grassland:</strong> - 0.2-0.4: Sparse grass/dormant season -
+0.4-0.6: Moderate grass cover - 0.6-0.8: Dense, healthy grassland</p>
+</div>
+<div id="seasonal-patterns" class="section level3">
+<h3>Seasonal Patterns</h3>
+<p><strong>Temperate Crops (Corn/Soybeans):</strong> -
+<strong>April-May:</strong> 0.2-0.4 (emergence) -
+<strong>June-July:</strong> 0.4-0.7 (vegetative growth) -
+<strong>July-August:</strong> 0.6-0.9 (peak season) -
+<strong>September-October:</strong> 0.4-0.6 (senescence)</p>
+</div>
+</div>
+<div id="advanced-topics" class="section level2">
+<h2>Advanced Topics</h2>
+<div id="custom-index-development" class="section level3">
+<h3>Custom Index Development</h3>
+<p>Create your own vegetation indices:</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" tabindex="-1"></a><span class="co"># Custom ratio index</span></span>
+<span id="cb36-2"><a href="#cb36-2" tabindex="-1"></a>custom_ratio <span class="ot">&lt;-</span> nir_band <span class="sc">/</span> red_band</span>
+<span id="cb36-3"><a href="#cb36-3" tabindex="-1"></a><span class="fu">names</span>(custom_ratio) <span class="ot">&lt;-</span> <span class="st">&quot;Custom_Ratio&quot;</span></span>
+<span id="cb36-4"><a href="#cb36-4" tabindex="-1"></a></span>
+<span id="cb36-5"><a href="#cb36-5" tabindex="-1"></a><span class="co"># Custom normalized difference</span></span>
+<span id="cb36-6"><a href="#cb36-6" tabindex="-1"></a>custom_nd <span class="ot">&lt;-</span> (nir_band <span class="sc">-</span> green_band) <span class="sc">/</span> (nir_band <span class="sc">+</span> green_band)</span>
+<span id="cb36-7"><a href="#cb36-7" tabindex="-1"></a><span class="fu">names</span>(custom_nd) <span class="ot">&lt;-</span> <span class="st">&quot;Custom_ND&quot;</span></span>
+<span id="cb36-8"><a href="#cb36-8" tabindex="-1"></a></span>
+<span id="cb36-9"><a href="#cb36-9" tabindex="-1"></a><span class="co"># Combine with standard indices</span></span>
+<span id="cb36-10"><a href="#cb36-10" tabindex="-1"></a>all_indices <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb36-11"><a href="#cb36-11" tabindex="-1"></a>  <span class="fu">calculate_vegetation_index</span>(<span class="at">red =</span> red, <span class="at">nir =</span> nir, <span class="at">index_type =</span> <span class="st">&quot;NDVI&quot;</span>),</span>
+<span id="cb36-12"><a href="#cb36-12" tabindex="-1"></a>  custom_ratio,</span>
+<span id="cb36-13"><a href="#cb36-13" tabindex="-1"></a>  custom_nd</span>
+<span id="cb36-14"><a href="#cb36-14" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="integration-with-external-data" class="section level3">
+<h3>Integration with External Data</h3>
+<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" tabindex="-1"></a><span class="co"># Combine vegetation indices with environmental data</span></span>
+<span id="cb37-2"><a href="#cb37-2" tabindex="-1"></a>environmental_analysis <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb37-3"><a href="#cb37-3" tabindex="-1"></a>  <span class="at">source_data =</span> vegetation_indices,</span>
+<span id="cb37-4"><a href="#cb37-4" tabindex="-1"></a>  <span class="at">target_data =</span> <span class="fu">list</span>(</span>
+<span id="cb37-5"><a href="#cb37-5" tabindex="-1"></a>    <span class="at">precipitation =</span> <span class="st">&quot;annual_precip.tif&quot;</span>,</span>
+<span id="cb37-6"><a href="#cb37-6" tabindex="-1"></a>    <span class="at">temperature =</span> <span class="st">&quot;mean_temp.tif&quot;</span>, </span>
+<span id="cb37-7"><a href="#cb37-7" tabindex="-1"></a>    <span class="at">elevation =</span> <span class="st">&quot;dem.tif&quot;</span></span>
+<span id="cb37-8"><a href="#cb37-8" tabindex="-1"></a>  ),</span>
+<span id="cb37-9"><a href="#cb37-9" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;extract&quot;</span></span>
+<span id="cb37-10"><a href="#cb37-10" tabindex="-1"></a>)</span>
+<span id="cb37-11"><a href="#cb37-11" tabindex="-1"></a></span>
+<span id="cb37-12"><a href="#cb37-12" tabindex="-1"></a><span class="co"># Analyze relationships</span></span>
+<span id="cb37-13"><a href="#cb37-13" tabindex="-1"></a>vegetation_env_correlation <span class="ot">&lt;-</span> <span class="fu">analyze_variable_correlations</span>(</span>
+<span id="cb37-14"><a href="#cb37-14" tabindex="-1"></a>  <span class="at">variable_list =</span> <span class="fu">list</span>(</span>
+<span id="cb37-15"><a href="#cb37-15" tabindex="-1"></a>    <span class="at">NDVI =</span> vegetation_indices<span class="sc">$</span>NDVI,</span>
+<span id="cb37-16"><a href="#cb37-16" tabindex="-1"></a>    <span class="at">precipitation =</span> environmental_data<span class="sc">$</span>precipitation,</span>
+<span id="cb37-17"><a href="#cb37-17" tabindex="-1"></a>    <span class="at">temperature =</span> environmental_data<span class="sc">$</span>temperature</span>
+<span id="cb37-18"><a href="#cb37-18" tabindex="-1"></a>  ),</span>
+<span id="cb37-19"><a href="#cb37-19" tabindex="-1"></a>  <span class="at">create_plots =</span> <span class="cn">TRUE</span></span>
+<span id="cb37-20"><a href="#cb37-20" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>This vignette covered comprehensive vegetation analysis with
+GeoSpatialSuite:</p>
+<ul>
+<li><strong>60+ vegetation indices</strong> for diverse
+applications</li>
+<li><strong>Time series analysis</strong> for monitoring changes</li>
+<li><strong>Quality control</strong> for reliable results<br />
+</li>
+<li><strong>Agricultural applications</strong> for crop monitoring</li>
+<li><strong>Stress detection</strong> for early warning systems</li>
+<li><strong>Multi-scale analysis</strong> from field to regional
+scales</li>
+</ul>
+<div id="additional-resources" class="section level3">
+<h3>Additional Resources</h3>
+<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" tabindex="-1"></a><span class="co"># Explore more indices</span></span>
+<span id="cb38-2"><a href="#cb38-2" tabindex="-1"></a><span class="fu">list_vegetation_indices</span>(<span class="at">detailed =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb38-3"><a href="#cb38-3" tabindex="-1"></a></span>
+<span id="cb38-4"><a href="#cb38-4" tabindex="-1"></a><span class="co"># Get help</span></span>
+<span id="cb38-5"><a href="#cb38-5" tabindex="-1"></a>?calculate_vegetation_index</span>
+<span id="cb38-6"><a href="#cb38-6" tabindex="-1"></a>?calculate_multiple_indices  </span>
+<span id="cb38-7"><a href="#cb38-7" tabindex="-1"></a>?analyze_crop_vegetation</span>
+<span id="cb38-8"><a href="#cb38-8" tabindex="-1"></a></span>
+<span id="cb38-9"><a href="#cb38-9" tabindex="-1"></a><span class="co"># Test your installation</span></span>
+<span id="cb38-10"><a href="#cb38-10" tabindex="-1"></a><span class="fu">test_geospatialsuite_package_simple</span>(<span class="at">verbose =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="acknowledgments" class="section level2">
+<h2>Acknowledgments</h2>
+<p>This work was developed by the GeoSpatialSuite team with
+contributions from: Olatunde D. Akanbi, Erika I. Barcelos, and Roger H.
+French.</p>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

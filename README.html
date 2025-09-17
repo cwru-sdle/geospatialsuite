@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style type="text/css">
+@font-face {
+font-family: octicons-link;
+src: url(data:font/woff;charset=utf-8;base64,d09GRgABAAAAAAZwABAAAAAACFQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABEU0lHAAAGaAAAAAgAAAAIAAAAAUdTVUIAAAZcAAAACgAAAAoAAQAAT1MvMgAAAyQAAABJAAAAYFYEU3RjbWFwAAADcAAAAEUAAACAAJThvmN2dCAAAATkAAAABAAAAAQAAAAAZnBnbQAAA7gAAACyAAABCUM+8IhnYXNwAAAGTAAAABAAAAAQABoAI2dseWYAAAFsAAABPAAAAZwcEq9taGVhZAAAAsgAAAA0AAAANgh4a91oaGVhAAADCAAAABoAAAAkCA8DRGhtdHgAAAL8AAAADAAAAAwGAACfbG9jYQAAAsAAAAAIAAAACABiATBtYXhwAAACqAAAABgAAAAgAA8ASm5hbWUAAAToAAABQgAAAlXu73sOcG9zdAAABiwAAAAeAAAAME3QpOBwcmVwAAAEbAAAAHYAAAB/aFGpk3jaTY6xa8JAGMW/O62BDi0tJLYQincXEypYIiGJjSgHniQ6umTsUEyLm5BV6NDBP8Tpts6F0v+k/0an2i+itHDw3v2+9+DBKTzsJNnWJNTgHEy4BgG3EMI9DCEDOGEXzDADU5hBKMIgNPZqoD3SilVaXZCER3/I7AtxEJLtzzuZfI+VVkprxTlXShWKb3TBecG11rwoNlmmn1P2WYcJczl32etSpKnziC7lQyWe1smVPy/Lt7Kc+0vWY/gAgIIEqAN9we0pwKXreiMasxvabDQMM4riO+qxM2ogwDGOZTXxwxDiycQIcoYFBLj5K3EIaSctAq2kTYiw+ymhce7vwM9jSqO8JyVd5RH9gyTt2+J/yUmYlIR0s04n6+7Vm1ozezUeLEaUjhaDSuXHwVRgvLJn1tQ7xiuVv/ocTRF42mNgZGBgYGbwZOBiAAFGJBIMAAizAFoAAABiAGIAznjaY2BkYGAA4in8zwXi+W2+MjCzMIDApSwvXzC97Z4Ig8N/BxYGZgcgl52BCSQKAA3jCV8CAABfAAAAAAQAAEB42mNgZGBg4f3vACQZQABIMjKgAmYAKEgBXgAAeNpjYGY6wTiBgZWBg2kmUxoDA4MPhGZMYzBi1AHygVLYQUCaawqDA4PChxhmh/8ODDEsvAwHgMKMIDnGL0x7gJQCAwMAJd4MFwAAAHjaY2BgYGaA4DAGRgYQkAHyGMF8NgYrIM3JIAGVYYDT+AEjAwuDFpBmA9KMDEwMCh9i/v8H8sH0/4dQc1iAmAkALaUKLgAAAHjaTY9LDsIgEIbtgqHUPpDi3gPoBVyRTmTddOmqTXThEXqrob2gQ1FjwpDvfwCBdmdXC5AVKFu3e5MfNFJ29KTQT48Ob9/lqYwOGZxeUelN2U2R6+cArgtCJpauW7UQBqnFkUsjAY/kOU1cP+DAgvxwn1chZDwUbd6CFimGXwzwF6tPbFIcjEl+vvmM/byA48e6tWrKArm4ZJlCbdsrxksL1AwWn/yBSJKpYbq8AXaaTb8AAHja28jAwOC00ZrBeQNDQOWO//sdBBgYGRiYWYAEELEwMTE4uzo5Zzo5b2BxdnFOcALxNjA6b2ByTswC8jYwg0VlNuoCTWAMqNzMzsoK1rEhNqByEyerg5PMJlYuVueETKcd/89uBpnpvIEVomeHLoMsAAe1Id4AAAAAAAB42oWQT07CQBTGv0JBhagk7HQzKxca2sJCE1hDt4QF+9JOS0nbaaYDCQfwCJ7Au3AHj+LO13FMmm6cl7785vven0kBjHCBhfpYuNa5Ph1c0e2Xu3jEvWG7UdPDLZ4N92nOm+EBXuAbHmIMSRMs+4aUEd4Nd3CHD8NdvOLTsA2GL8M9PODbcL+hD7C1xoaHeLJSEao0FEW14ckxC+TU8TxvsY6X0eLPmRhry2WVioLpkrbp84LLQPGI7c6sOiUzpWIWS5GzlSgUzzLBSikOPFTOXqly7rqx0Z1Q5BAIoZBSFihQYQOOBEdkCOgXTOHA07HAGjGWiIjaPZNW13/+lm6S9FT7rLHFJ6fQbkATOG1j2OFMucKJJsxIVfQORl+9Jyda6Sl1dUYhSCm1dyClfoeDve4qMYdLEbfqHf3O/AdDumsjAAB42mNgYoAAZQYjBmyAGYQZmdhL8zLdDEydARfoAqIAAAABAAMABwAKABMAB///AA8AAQAAAAAAAAAAAAAAAAABAAAAAA==) format('woff');
+}
+body {
+-webkit-text-size-adjust: 100%;
+text-size-adjust: 100%;
+color: #333;
+font-family: "Helvetica Neue", Helvetica, "Segoe UI", Arial, freesans, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+font-size: 16px;
+line-height: 1.6;
+word-wrap: break-word;
+}
+a {
+background-color: transparent;
+}
+a:active,
+a:hover {
+outline: 0;
+}
+strong {
+font-weight: bold;
+}
+h1 {
+font-size: 2em;
+margin: 0.67em 0;
+}
+img {
+border: 0;
+}
+hr {
+box-sizing: content-box;
+height: 0;
+}
+pre {
+overflow: auto;
+}
+code,
+kbd,
+pre {
+font-family: monospace, monospace;
+font-size: 1em;
+}
+input {
+color: inherit;
+font: inherit;
+margin: 0;
+}
+html input[disabled] {
+cursor: default;
+}
+input {
+line-height: normal;
+}
+input[type="checkbox"] {
+box-sizing: border-box;
+padding: 0;
+}
+table {
+border-collapse: collapse;
+border-spacing: 0;
+}
+td,
+th {
+padding: 0;
+}
+* {
+box-sizing: border-box;
+}
+input {
+font: 13px / 1.4 Helvetica, arial, nimbussansl, liberationsans, freesans, clean, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+a {
+color: #4078c0;
+text-decoration: none;
+}
+a:hover,
+a:active {
+text-decoration: underline;
+}
+hr {
+height: 0;
+margin: 15px 0;
+overflow: hidden;
+background: transparent;
+border: 0;
+border-bottom: 1px solid #ddd;
+}
+hr:before {
+display: table;
+content: "";
+}
+hr:after {
+display: table;
+clear: both;
+content: "";
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+margin-top: 15px;
+margin-bottom: 15px;
+line-height: 1.1;
+}
+h1 {
+font-size: 30px;
+}
+h2 {
+font-size: 21px;
+}
+h3 {
+font-size: 16px;
+}
+h4 {
+font-size: 14px;
+}
+h5 {
+font-size: 12px;
+}
+h6 {
+font-size: 11px;
+}
+blockquote {
+margin: 0;
+}
+ul,
+ol {
+padding: 0;
+margin-top: 0;
+margin-bottom: 0;
+}
+ol ol,
+ul ol {
+list-style-type: lower-roman;
+}
+ul ul ol,
+ul ol ol,
+ol ul ol,
+ol ol ol {
+list-style-type: lower-alpha;
+}
+dd {
+margin-left: 0;
+}
+code {
+font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+font-size: 12px;
+}
+pre {
+margin-top: 0;
+margin-bottom: 0;
+font: 12px Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
+.select::-ms-expand {
+opacity: 0;
+}
+.octicon {
+font: normal normal normal 16px/1 octicons-link;
+display: inline-block;
+text-decoration: none;
+text-rendering: auto;
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
+-webkit-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+user-select: none;
+}
+.octicon-link:before {
+content: '\f05c';
+}
+.markdown-body:before {
+display: table;
+content: "";
+}
+.markdown-body:after {
+display: table;
+clear: both;
+content: "";
+}
+.markdown-body>*:first-child {
+margin-top: 0 !important;
+}
+.markdown-body>*:last-child {
+margin-bottom: 0 !important;
+}
+a:not([href]) {
+color: inherit;
+text-decoration: none;
+}
+.anchor {
+display: inline-block;
+padding-right: 2px;
+margin-left: -18px;
+}
+.anchor:focus {
+outline: none;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+margin-top: 1em;
+margin-bottom: 16px;
+font-weight: bold;
+line-height: 1.4;
+}
+h1 .octicon-link,
+h2 .octicon-link,
+h3 .octicon-link,
+h4 .octicon-link,
+h5 .octicon-link,
+h6 .octicon-link {
+color: #000;
+vertical-align: middle;
+visibility: hidden;
+}
+h1:hover .anchor,
+h2:hover .anchor,
+h3:hover .anchor,
+h4:hover .anchor,
+h5:hover .anchor,
+h6:hover .anchor {
+text-decoration: none;
+}
+h1:hover .anchor .octicon-link,
+h2:hover .anchor .octicon-link,
+h3:hover .anchor .octicon-link,
+h4:hover .anchor .octicon-link,
+h5:hover .anchor .octicon-link,
+h6:hover .anchor .octicon-link {
+visibility: visible;
+}
+h1 {
+padding-bottom: 0.3em;
+font-size: 2.25em;
+line-height: 1.2;
+border-bottom: 1px solid #eee;
+}
+h1 .anchor {
+line-height: 1;
+}
+h2 {
+padding-bottom: 0.3em;
+font-size: 1.75em;
+line-height: 1.225;
+border-bottom: 1px solid #eee;
+}
+h2 .anchor {
+line-height: 1;
+}
+h3 {
+font-size: 1.5em;
+line-height: 1.43;
+}
+h3 .anchor {
+line-height: 1.2;
+}
+h4 {
+font-size: 1.25em;
+}
+h4 .anchor {
+line-height: 1.2;
+}
+h5 {
+font-size: 1em;
+}
+h5 .anchor {
+line-height: 1.1;
+}
+h6 {
+font-size: 1em;
+color: #777;
+}
+h6 .anchor {
+line-height: 1.1;
+}
+p,
+blockquote,
+ul,
+ol,
+dl,
+table,
+pre {
+margin-top: 0;
+margin-bottom: 16px;
+}
+hr {
+height: 4px;
+padding: 0;
+margin: 16px 0;
+background-color: #e7e7e7;
+border: 0 none;
+}
+ul,
+ol {
+padding-left: 2em;
+}
+ul ul,
+ul ol,
+ol ol,
+ol ul {
+margin-top: 0;
+margin-bottom: 0;
+}
+li>p {
+margin-top: 16px;
+}
+dl {
+padding: 0;
+}
+dl dt {
+padding: 0;
+margin-top: 16px;
+font-size: 1em;
+font-style: italic;
+font-weight: bold;
+}
+dl dd {
+padding: 0 16px;
+margin-bottom: 16px;
+}
+blockquote {
+padding: 0 15px;
+color: #777;
+border-left: 4px solid #ddd;
+}
+blockquote>:first-child {
+margin-top: 0;
+}
+blockquote>:last-child {
+margin-bottom: 0;
+}
+table {
+display: block;
+width: 100%;
+overflow: auto;
+word-break: normal;
+word-break: keep-all;
+}
+table th {
+font-weight: bold;
+}
+table th,
+table td {
+padding: 6px 13px;
+border: 1px solid #ddd;
+}
+table tr {
+background-color: #fff;
+border-top: 1px solid #ccc;
+}
+table tr:nth-child(2n) {
+background-color: #f8f8f8;
+}
+img {
+max-width: 100%;
+box-sizing: content-box;
+background-color: #fff;
+}
+code {
+padding: 0;
+padding-top: 0.2em;
+padding-bottom: 0.2em;
+margin: 0;
+font-size: 85%;
+background-color: rgba(0,0,0,0.04);
+border-radius: 3px;
+}
+code:before,
+code:after {
+letter-spacing: -0.2em;
+content: "\00a0";
+}
+pre>code {
+padding: 0;
+margin: 0;
+font-size: 100%;
+word-break: normal;
+white-space: pre;
+background: transparent;
+border: 0;
+}
+.highlight {
+margin-bottom: 16px;
+}
+.highlight pre,
+pre {
+padding: 16px;
+overflow: auto;
+font-size: 85%;
+line-height: 1.45;
+background-color: #f7f7f7;
+border-radius: 3px;
+}
+.highlight pre {
+margin-bottom: 0;
+word-break: normal;
+}
+pre {
+word-wrap: normal;
+}
+pre code {
+display: inline;
+max-width: initial;
+padding: 0;
+margin: 0;
+overflow: initial;
+line-height: inherit;
+word-wrap: normal;
+background-color: transparent;
+border: 0;
+}
+pre code:before,
+pre code:after {
+content: normal;
+}
+kbd {
+display: inline-block;
+padding: 3px 5px;
+font-size: 11px;
+line-height: 10px;
+color: #555;
+vertical-align: middle;
+background-color: #fcfcfc;
+border: solid 1px #ccc;
+border-bottom-color: #bbb;
+border-radius: 3px;
+box-shadow: inset 0 -1px 0 #bbb;
+}
+.pl-c {
+color: #969896;
+}
+.pl-c1,
+.pl-s .pl-v {
+color: #0086b3;
+}
+.pl-e,
+.pl-en {
+color: #795da3;
+}
+.pl-s .pl-s1,
+.pl-smi {
+color: #333;
+}
+.pl-ent {
+color: #63a35c;
+}
+.pl-k {
+color: #a71d5d;
+}
+.pl-pds,
+.pl-s,
+.pl-s .pl-pse .pl-s1,
+.pl-sr,
+.pl-sr .pl-cce,
+.pl-sr .pl-sra,
+.pl-sr .pl-sre {
+color: #183691;
+}
+.pl-v {
+color: #ed6a43;
+}
+.pl-id {
+color: #b52a1d;
+}
+.pl-ii {
+background-color: #b52a1d;
+color: #f8f8f8;
+}
+.pl-sr .pl-cce {
+color: #63a35c;
+font-weight: bold;
+}
+.pl-ml {
+color: #693a17;
+}
+.pl-mh,
+.pl-mh .pl-en,
+.pl-ms {
+color: #1d3e81;
+font-weight: bold;
+}
+.pl-mq {
+color: #008080;
+}
+.pl-mi {
+color: #333;
+font-style: italic;
+}
+.pl-mb {
+color: #333;
+font-weight: bold;
+}
+.pl-md {
+background-color: #ffecec;
+color: #bd2c00;
+}
+.pl-mi1 {
+background-color: #eaffea;
+color: #55a532;
+}
+.pl-mdr {
+color: #795da3;
+font-weight: bold;
+}
+.pl-mo {
+color: #1d3e81;
+}
+kbd {
+display: inline-block;
+padding: 3px 5px;
+font: 11px Consolas, "Liberation Mono", Menlo, Courier, monospace;
+line-height: 10px;
+color: #555;
+vertical-align: middle;
+background-color: #fcfcfc;
+border: solid 1px #ccc;
+border-bottom-color: #bbb;
+border-radius: 3px;
+box-shadow: inset 0 -1px 0 #bbb;
+}
+.task-list-item {
+list-style-type: none;
+}
+.task-list-item+.task-list-item {
+margin-top: 3px;
+}
+.task-list-item input {
+margin: 0 0.35em 0.25em -1.6em;
+vertical-align: middle;
+}
+:checked+.radio-label {
+z-index: 1;
+position: relative;
+border-color: #4078c0;
+}
+.sourceLine {
+display: inline-block;
+}
+code .kw { color: #000000; }
+code .dt { color: #ed6a43; }
+code .dv { color: #009999; }
+code .bn { color: #009999; }
+code .fl { color: #009999; }
+code .ch { color: #009999; }
+code .st { color: #183691; }
+code .co { color: #969896; }
+code .ot { color: #0086b3; }
+code .al { color: #a61717; }
+code .fu { color: #63a35c; }
+code .er { color: #a61717; background-color: #e3d2d2; }
+code .wa { color: #000000; }
+code .cn { color: #008080; }
+code .sc { color: #008080; }
+code .vs { color: #183691; }
+code .ss { color: #183691; }
+code .im { color: #000000; }
+code .va {color: #008080; }
+code .cf { color: #000000; }
+code .op { color: #000000; }
+code .bu { color: #000000; }
+code .ex { color: #000000; }
+code .pp { color: #999999; }
+code .at { color: #008080; }
+code .do { color: #969896; }
+code .an { color: #008080; }
+code .cv { color: #008080; }
+code .in { color: #008080; }
+</style>
+<style>
+body {
+box-sizing: border-box;
+min-width: 200px;
+max-width: 980px;
+margin: 0 auto;
+padding: 45px;
+padding-top: 0px;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+<h1 id="geospatialsuite-earth_africa">GeoSpatialSuite 🌍</h1>
+<!-- badges: start -->
+
+<p><a href="https://CRAN.R-project.org/package=geospatialsuite"><img role="img" aria-label="CRAN status" src="data:image/svg+xml; charset=utf-8;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4NSIgaGVpZ2h0PSIyMCIgYXJpYS1sYWJlbD0iQ1JBTiAwLjEuMCI+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJiIiB4Mj0iMCIgeTI9IjEwMCUiPgogICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjYmJiIiBzdG9wLW9wYWNpdHk9Ii4xIi8+CiAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3Atb3BhY2l0eT0iLjEiLz4KICA8L2xpbmVhckdyYWRpZW50PgogIDxtYXNrIGlkPSJhIj4KICAgIDxyZWN0IHdpZHRoPSI4NSIgaGVpZ2h0PSIyMCIgcng9IjMiIGZpbGw9IiNmZmYiLz4KICA8L21hc2s+CiAgPGcgbWFzaz0idXJsKCNhKSI+CiAgICA8cGF0aCBmaWxsPSIjNTU1IiBkPSJNMCAwaDQzdjIwSDB6Ii8+CiAgICA8cGF0aCBmaWxsPSIjNGMxIiBkPSJNNDMgMGg2M3YyMEg0M3oiLz4KICAgIDxwYXRoIGZpbGw9InVybCgjYikiIGQ9Ik0wIDBoODV2MjBIMHoiLz4KICA8L2c+CiAgPGcgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIKICAgICBmb250LWZhbWlseT0iRGVqYVZ1IFNhbnMsVmVyZGFuYSxHZW5ldmEsc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMSI+CiAgICA8dGV4dCB4PSIyMS41IiB5PSIxNSIgZmlsbD0iIzAxMDEwMSIgZmlsbC1vcGFjaXR5PSIuMyI+CiAgICAgIENSQU4KICAgIDwvdGV4dD4KICAgIDx0ZXh0IHg9IjIxLjUiIHk9IjE0Ij4KICAgICAgQ1JBTgogICAgPC90ZXh0PgogICAgPHRleHQgeD0iNjMiIHk9IjE1IiBmaWxsPSIjMDEwMTAxIiBmaWxsLW9wYWNpdHk9Ii4zIj4KICAgICAgMC4xLjAKICAgIDwvdGV4dD4KICAgIDx0ZXh0IHg9IjYzIiB5PSIxNCI+CiAgICAgIDAuMS4wCiAgICA8L3RleHQ+CiAgPC9nPgo8L3N2Zz4=" alt="CRAN status" /></a> <a href="https://cran.r-project.org/package=geospatialsuite"><img role="img" aria-label="Downloads" src="data:image/svg+xml; charset=utf-8;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNDkiIGhlaWdodD0iMjAiIGFyaWEtbGFiZWw9IkNSQU4gZG93bmxvYWRzIDExL21vbnRoIj4KICA8bGluZWFyR3JhZGllbnQgaWQ9ImIiIHgyPSIwIiB5Mj0iMTAwJSI+CiAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNiYmIiIHN0b3Atb3BhY2l0eT0iLjEiLz4KICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1vcGFjaXR5PSIuMSIvPgogIDwvbGluZWFyR3JhZGllbnQ+CiAgPG1hc2sgaWQ9ImEiPgogICAgPHJlY3Qgd2lkdGg9IjE0OSIgaGVpZ2h0PSIyMCIgcng9IjMiIGZpbGw9IiNmZmYiLz4KICA8L21hc2s+CiAgPGcgbWFzaz0idXJsKCNhKSI+PHBhdGggZmlsbD0iIzU1NSIgZD0iTTAgMGg3MHYyMEgweiIvPgogICAgPHBhdGggZmlsbD0iIzAwN2VjNiIgZD0iTTcwIDBoNzl2MjBINzB6Ii8+CiAgICA8cGF0aCBmaWxsPSJ1cmwoI2IpIiBkPSJNMCAwaDE0OXYyMEgweiIvPgogIDwvZz4KICA8ZyBmaWxsPSIjZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIgogICAgIGZvbnQtZmFtaWx5PSJEZWphVnUgU2FucyxWZXJkYW5hLEdlbmV2YSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjExIj4KICAgIDx0ZXh0IHg9IjM2IiB5PSIxNSIgZmlsbD0iIzAxMDEwMSIgZmlsbC1vcGFjaXR5PSIuMyI+CiAgICAgIGRvd25sb2FkcwogICAgPC90ZXh0PgogICAgPHRleHQgeD0iMzYiIHk9IjE0Ij4KICAgICAgZG93bmxvYWRzCiAgICA8L3RleHQ+CiAgICA8dGV4dCB4PSIxMDguNSIgeT0iMTUiIGZpbGw9IiMwMTAxMDEiIGZpbGwtb3BhY2l0eT0iLjMiPgogICAgICAxMS9tb250aAogICAgPC90ZXh0PgogICAgPHRleHQgeD0iMTA4LjUiIHk9IjE0Ij4KICAgICAgMTEvbW9udGgKICAgIDwvdGV4dD4KICA8L2c+Cjwvc3ZnPg==" alt="Downloads" /></a> <a href="https://opensource.org/licenses/MIT"><img role="img" aria-label="License: MIT" src="data:image/svg+xml;charset=utf-8;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MiIgaGVpZ2h0PSIyMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJMaWNlbnNlOiBNSVQiPjx0aXRsZT5MaWNlbnNlOiBNSVQ8L3RpdGxlPjxsaW5lYXJHcmFkaWVudCBpZD0icyIgeDI9IjAiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNiYmIiIHN0b3Atb3BhY2l0eT0iLjEiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3Atb3BhY2l0eT0iLjEiLz48L2xpbmVhckdyYWRpZW50PjxjbGlwUGF0aCBpZD0iciI+PHJlY3Qgd2lkdGg9IjgyIiBoZWlnaHQ9IjIwIiByeD0iMyIgZmlsbD0iI2ZmZiIvPjwvY2xpcFBhdGg+PGcgY2xpcC1wYXRoPSJ1cmwoI3IpIj48cmVjdCB3aWR0aD0iNTEiIGhlaWdodD0iMjAiIGZpbGw9IiM1NTUiLz48cmVjdCB4PSI1MSIgd2lkdGg9IjMxIiBoZWlnaHQ9IjIwIiBmaWxsPSIjZGZiMzE3Ii8+PHJlY3Qgd2lkdGg9IjgyIiBoZWlnaHQ9IjIwIiBmaWxsPSJ1cmwoI3MpIi8+PC9nPjxnIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJWZXJkYW5hLEdlbmV2YSxEZWphVnUgU2FucyxzYW5zLXNlcmlmIiB0ZXh0LXJlbmRlcmluZz0iZ2VvbWV0cmljUHJlY2lzaW9uIiBmb250LXNpemU9IjExMCI+PHRleHQgYXJpYS1oaWRkZW49InRydWUiIHg9IjI2NSIgeT0iMTUwIiBmaWxsPSIjMDEwMTAxIiBmaWxsLW9wYWNpdHk9Ii4zIiB0cmFuc2Zvcm09InNjYWxlKC4xKSIgdGV4dExlbmd0aD0iNDEwIj5MaWNlbnNlPC90ZXh0Pjx0ZXh0IHg9IjI2NSIgeT0iMTQwIiB0cmFuc2Zvcm09InNjYWxlKC4xKSIgZmlsbD0iI2ZmZiIgdGV4dExlbmd0aD0iNDEwIj5MaWNlbnNlPC90ZXh0Pjx0ZXh0IGFyaWEtaGlkZGVuPSJ0cnVlIiB4PSI2NTUiIHk9IjE1MCIgZmlsbD0iIzAxMDEwMSIgZmlsbC1vcGFjaXR5PSIuMyIgdHJhbnNmb3JtPSJzY2FsZSguMSkiIHRleHRMZW5ndGg9IjIxMCI+TUlUPC90ZXh0Pjx0ZXh0IHg9IjY1NSIgeT0iMTQwIiB0cmFuc2Zvcm09InNjYWxlKC4xKSIgZmlsbD0iI2ZmZiIgdGV4dExlbmd0aD0iMjEwIj5NSVQ8L3RleHQ+PC9nPjwvc3ZnPg==" alt="License: MIT" /></a></p>
+<!-- badges: end -->
+
+<blockquote>
+<p><strong>Comprehensive Geospatiotemporal Analysis and Multimodal
+Integration Toolkit for R</strong></p>
+</blockquote>
+<p>GeoSpatialSuite is a powerful R package for geospatial analysis
+featuring <strong>60+ vegetation indices</strong>, <strong>universal
+spatial analysis</strong>, <strong>efficient raster
+visualization</strong>, and <strong>comprehensive workflows</strong> for
+agricultural research, environmental monitoring, and remote sensing
+applications.</p>
+<h2 id="clipboard-table-of-contents">📋 Table of Contents</h2>
+<ul>
+<li><a href="#id_-key-features">Key Features</a></li>
+<li><a href="#id_-quick-links">Quick Links</a></li>
+<li><a href="#id_-installation">Installation</a></li>
+<li><a href="#id_-quick-start">Quick Start</a></li>
+<li><a href="#id_-documentation">Documentation</a></li>
+<li><a href="#id_-real-world-examples">Real-World Examples</a></li>
+<li><a href="#id_-what-makes-geospatialsuite-special">What Makes
+GeoSpatialSuite Special</a></li>
+<li><a href="#id_-supported-vegetation-indices">Supported Vegetation
+Indices</a></li>
+<li><a href="#id_-performance">Performance</a></li>
+<li><a href="#id_%EF%B8%8F-system-requirements">System
+Requirements</a></li>
+<li><a href="#id_-citation">Citation</a></li>
+<li><a href="#id_-contact">Contact</a></li>
+<li><a href="#id_-license">License</a></li>
+<li><a href="#id_-acknowledgments">Acknowledgments</a></li>
+</ul>
+<h2 id="link-quick-links">🔗 Quick Links</h2>
+<ul>
+<li><strong>CRAN</strong>: <a href="https://cran.r-project.org/package=geospatialsuite">https://cran.r-project.org/package=geospatialsuite</a></li>
+<li><strong>GitHub</strong>: <a href="https://github.com/cwru-sdle/geospatialsuite">https://github.com/cwru-sdle/geospatialsuite</a></li>
+<li><strong>Bug Reports</strong>: <a href="https://github.com/cwru-sdle/geospatialsuite/issues">https://github.com/cwru-sdle/geospatialsuite/issues</a></li>
+</ul>
+<h2 id="sparkles-key-features">✨ Key Features</h2>
+<h3 id="seedling-advanced-vegetation-analysis">🌱 <strong>Advanced
+Vegetation Analysis</strong></h3>
+<ul>
+<li><strong>60+ vegetation indices</strong> including NDVI, EVI, SAVI,
+PRI, SIPI, NDRE, MTCI</li>
+<li><strong>Automatic band detection</strong> from Landsat, Sentinel,
+and other satellite imagery</li>
+<li><strong>Crop-specific analysis</strong> for corn, soybeans, wheat,
+cotton, rice</li>
+<li><strong>Stress detection and yield assessment</strong>
+workflows</li>
+</ul>
+<h3 id="world_map-universal-spatial-analysis">🗺️ <strong>Universal
+Spatial Analysis</strong></h3>
+<ul>
+<li><strong>Works with ANY data combination</strong> - points, polygons,
+rasters</li>
+<li><strong>Automatic coordinate system handling</strong> and spatial
+validation</li>
+<li><strong>Multiple extraction methods</strong> - simple, buffer,
+bilinear, nearest neighbor</li>
+<li><strong>Multi-dataset integration</strong> for comprehensive
+environmental analysis</li>
+</ul>
+<h3 id="bar_chart-efficient-visualization">📊 <strong>Efficient
+Visualization</strong></h3>
+<ul>
+<li><strong>No data frame conversion</strong> for large rasters (uses
+tidyterra, RStoolbox)</li>
+<li><strong>Interactive maps</strong> with leaflet integration</li>
+<li><strong>Publication-quality graphics</strong> with automatic method
+selection</li>
+<li><strong>RGB composites</strong> with advanced stretching
+algorithms</li>
+</ul>
+<h3 id="arrows_counterclockwise-comprehensive-workflows">🔄
+<strong>Comprehensive Workflows</strong></h3>
+<ul>
+<li><strong>End-to-end analysis pipelines</strong> for common geospatial
+tasks</li>
+<li><strong>NDVI crop analysis</strong> with quality filtering and
+temporal smoothing</li>
+<li><strong>Water quality assessment</strong> with spatial
+integration</li>
+<li><strong>Terrain and temporal analysis</strong> workflows</li>
+</ul>
+<h3 id="zap-performance-features">⚡ <strong>Performance
+Features</strong></h3>
+<ul>
+<li><strong>Smart fallback systems</strong> when optional packages
+unavailable</li>
+<li><strong>Parallel processing</strong> support for multiple
+indices</li>
+<li><strong>Efficient memory usage</strong> optimized for large
+datasets</li>
+<li><strong>Robust error handling</strong> with informative
+messages</li>
+</ul>
+<h2 id="package-installation">📦 Installation</h2>
+<h3 id="from-cran-recommended">From CRAN (Recommended)</h3>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># Install the stable version from CRAN</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;geospatialsuite&quot;</span>)</span></code></pre></div>
+<h3 id="development-version-from-github">Development Version from
+GitHub</h3>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># Install development version with latest features</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co"># install.packages(&quot;devtools&quot;)</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">&quot;cwru-sdle/geospatialsuite&quot;</span>)</span></code></pre></div>
+<h3 id="install-recommended-packages-for-best-performance">Install
+Recommended Packages for Best Performance</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Enhanced visualization and functionality</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">&quot;tidyterra&quot;</span>, <span class="st">&quot;RStoolbox&quot;</span>, <span class="st">&quot;leaflet&quot;</span>, <span class="st">&quot;patchwork&quot;</span>))</span></code></pre></div>
+<h2 id="rocket-quick-start">🚀 Quick Start</h2>
+<h3 id="load-package-and-test-installation">Load Package and Test
+Installation</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">library</span>(geospatialsuite)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co"># Test your installation</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="fu">test_geospatialsuite_package_simple</span>()</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co"># Check function availability</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="fu">test_function_availability</span>(<span class="at">verbose =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<h3 id="basic-usage-examples">Basic Usage Examples</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># 1. One-line mapping (auto-detects everything!)</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">quick_map</span>(<span class="st">&quot;mydata.shp&quot;</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co"># 2. Universal spatial join (most common operation)</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">source_data =</span> <span class="st">&quot;study_sites.csv&quot;</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  <span class="at">target_data =</span> <span class="st">&quot;elevation.tif&quot;</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;extract&quot;</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>)</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co"># 3. Calculate vegetation indices</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>ndvi <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(</span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>  <span class="at">red =</span> red_band, </span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>  <span class="at">nir =</span> nir_band, </span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a>  <span class="at">index_type =</span> <span class="st">&quot;NDVI&quot;</span>,</span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a>)</span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co"># 4. Enhanced NDVI with quality filtering</span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a>enhanced_ndvi <span class="ot">&lt;-</span> <span class="fu">calculate_ndvi_enhanced</span>(</span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a>  <span class="at">red =</span> red_band,</span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a>  <span class="at">nir =</span> nir_band,</span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a>  <span class="at">quality_filter =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a>  <span class="at">mask_invalid =</span> <span class="cn">TRUE</span></span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a>)</span>
+<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a></span>
+<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a><span class="co"># 5. Multiple indices at once</span></span>
+<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a>indices <span class="ot">&lt;-</span> <span class="fu">calculate_multiple_indices</span>(</span>
+<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a>  <span class="at">red =</span> red_band, </span>
+<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a>  <span class="at">nir =</span> nir_band, </span>
+<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a>  <span class="at">blue =</span> blue_band,</span>
+<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;EVI&quot;</span>, <span class="st">&quot;SAVI&quot;</span>),</span>
+<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a>  <span class="at">output_stack =</span> <span class="cn">TRUE</span></span>
+<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a>)</span></code></pre></div>
+<h2 id="open_book-documentation">📖 Documentation</h2>
+<h3 id="vignettes-and-tutorials">Vignettes and Tutorials</h3>
+<ul>
+<li><a href="https://cran.r-project.org/web/packages/geospatialsuite/vignettes/getting-started.html"><strong>Getting
+Started</strong></a> - Package overview and quick start examples</li>
+<li><a href="https://cran.r-project.org/web/packages/geospatialsuite/vignettes/spatial-analysis.html"><strong>Universal
+Spatial Analysis</strong></a> - Core spatial join capabilities</li>
+<li><a href="https://cran.r-project.org/web/packages/geospatialsuite/vignettes/vegetation-indices.html"><strong>Vegetation
+Analysis</strong></a> - 60+ vegetation indices and crop analysis</li>
+<li><a href="https://cran.r-project.org/web/packages/geospatialsuite/vignettes/agricultural-analysis.html"><strong>Agricultural
+Analysis</strong></a> - Efficient domain-specific analysis</li>
+<li><a href="https://cran.r-project.org/web/packages/geospatialsuite/vignettes/workflows-case-studies.html"><strong>Comprehensive
+Workflows</strong></a> - End-to-end analysis pipelines</li>
+</ul>
+<h3 id="function-reference">Function Reference</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># View all available functions</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">help</span>(<span class="at">package =</span> <span class="st">&quot;geospatialsuite&quot;</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co"># Test function availability</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="fu">test_function_availability</span>()</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co"># Run basic package tests</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="fu">test_geospatialsuite_package_simple</span>()</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co"># Run minimal functionality test</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="fu">test_package_minimal</span>(<span class="at">verbose =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<h2 id="dart-real-world-examples">🎯 Real-World Examples</h2>
+<h3 id="agricultural-monitoring">Agricultural Monitoring</h3>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># Comprehensive crop analysis workflow</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>crop_analysis <span class="ot">&lt;-</span> <span class="fu">run_enhanced_ndvi_crop_workflow</span>(</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">config =</span> <span class="fu">list</span>(</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>    <span class="at">red_data =</span> <span class="st">&quot;satellite/red_bands/&quot;</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>    <span class="at">nir_data =</span> <span class="st">&quot;satellite/nir_bands/&quot;</span>, </span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>    <span class="at">region_boundary =</span> <span class="st">&quot;Iowa&quot;</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>    <span class="at">crop_codes =</span> <span class="fu">get_comprehensive_cdl_codes</span>(<span class="st">&quot;soybeans&quot;</span>),</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>    <span class="at">quality_filter =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>    <span class="at">temporal_smoothing =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>    <span class="at">visualization_config =</span> <span class="fu">list</span>(</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>      <span class="at">interactive =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>      <span class="at">create_maps =</span> <span class="cn">TRUE</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>    )</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>  ),</span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>  <span class="at">output_folder =</span> <span class="st">&quot;results/&quot;</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>)</span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co"># Get crop codes for analysis</span></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a>corn_codes <span class="ot">&lt;-</span> <span class="fu">get_comprehensive_cdl_codes</span>(<span class="st">&quot;corn&quot;</span>)</span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a>grain_codes <span class="ot">&lt;-</span> <span class="fu">get_comprehensive_cdl_codes</span>(<span class="st">&quot;grains&quot;</span>)</span></code></pre></div>
+<h3 id="environmental-monitoring">Environmental Monitoring</h3>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># Multi-dataset environmental integration</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>environmental_data <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">source_data =</span> <span class="st">&quot;monitoring_stations.csv&quot;</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">target_data =</span> <span class="st">&quot;satellite_ndvi.tif&quot;</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;extract&quot;</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  <span class="at">buffer_distance =</span> <span class="dv">1000</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>  <span class="at">summary_function =</span> <span class="st">&quot;mean&quot;</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>)</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co"># Process additional raster data</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>soil_data <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>  <span class="at">source_data =</span> environmental_data,</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>  <span class="at">target_data =</span> <span class="st">&quot;soil_nitrogen.tif&quot;</span>,</span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;extract&quot;</span></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a>)</span></code></pre></div>
+<h3 id="water-quality-assessment">Water Quality Assessment</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># Comprehensive water quality analysis</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>water_results <span class="ot">&lt;-</span> <span class="fu">analyze_water_quality_comprehensive</span>(</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="at">water_data =</span> <span class="st">&quot;water_stations.csv&quot;</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="at">variable =</span> <span class="st">&quot;nitrate_nitrite&quot;</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="at">region_boundary =</span> <span class="st">&quot;Ohio&quot;</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="at">thresholds =</span> <span class="fu">list</span>(</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>    <span class="at">Normal =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">4</span>), </span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>    <span class="at">High =</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">10</span>),</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>    <span class="at">Critical =</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="cn">Inf</span>)</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>  ),</span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>)</span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co"># Calculate water indices for drought monitoring</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>water_indices <span class="ot">&lt;-</span> <span class="fu">calculate_water_index</span>(</span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>  <span class="at">green =</span> <span class="st">&quot;landsat_green.tif&quot;</span>,</span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a>  <span class="at">nir =</span> <span class="st">&quot;landsat_nir.tif&quot;</span>,</span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a>  <span class="at">swir1 =</span> <span class="st">&quot;landsat_swir1.tif&quot;</span>,</span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a>  <span class="at">index_type =</span> <span class="st">&quot;MNDWI&quot;</span>,</span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a>  <span class="at">mask_invalid =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a>)</span></code></pre></div>
+<h3 id="remote-sensing-applications">Remote Sensing Applications</h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># Run comprehensive geospatial workflow</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>config <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">analysis_type =</span> <span class="st">&quot;vegetation_comprehensive&quot;</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">input_data =</span> satellite_data,</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">region_boundary =</span> <span class="st">&quot;study_area.shp&quot;</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;EVI&quot;</span>, <span class="st">&quot;SAVI&quot;</span>, <span class="st">&quot;GNDVI&quot;</span>),</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  <span class="at">output_folder =</span> <span class="st">&quot;analysis_results/&quot;</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>)</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">run_comprehensive_geospatial_workflow</span>(config)</span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co"># Quick visualization of results</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="fu">quick_map</span>(results<span class="sc">$</span>vegetation_data, <span class="at">title =</span> <span class="st">&quot;Vegetation Analysis Results&quot;</span>)</span></code></pre></div>
+<h2 id="star2-what-makes-geospatialsuite-special">🌟 What Makes
+GeoSpatialSuite Special</h2>
+<h3 id="id_1-universal-design">1. <strong>Universal Design</strong></h3>
+<p>Works with any spatial data combination - no need to learn different
+functions for different data types. The
+<code>universal_spatial_join()</code> function automatically handles: -
+Vector-to-vector joins - Vector-to-raster extractions</p>
+<ul>
+<li>Raster-to-raster operations - Multi-dataset integrations</li>
+</ul>
+<h3 id="id_2-intelligent-automation">2. <strong>Intelligent
+Automation</strong></h3>
+<ul>
+<li><strong>Auto-detects coordinate columns</strong> (lat/lng, x/y,
+longitude/latitude)</li>
+<li><strong>Automatically identifies satellite bands</strong> across
+Landsat, Sentinel-2, MODIS</li>
+<li><strong>Smart coordinate system transformations</strong> with
+validation</li>
+<li><strong>Optimal method selection</strong> for performance and
+accuracy</li>
+</ul>
+<h3 id="id_3-efficient-visualization">3. <strong>Efficient
+Visualization</strong></h3>
+<ul>
+<li><strong>Terra-based plotting</strong> using reliable
+<code>terra::plot()</code> and <code>terra::plotRGB()</code></li>
+<li><strong>Quick mapping</strong> with <code>quick_map()</code>
+function for instant visualization</li>
+<li><strong>Multiple color schemes</strong>: viridis, plasma, ndvi,
+terrain, categorical</li>
+<li><strong>Interactive mapping</strong> with automatic leaflet
+integration when available</li>
+</ul>
+<h3 id="id_4-comprehensive-coverage">4. <strong>Comprehensive
+Coverage</strong></h3>
+<ul>
+<li><strong>60+ vegetation indices</strong> including latest research
+developments</li>
+<li><strong>Complete spatial operations</strong> through
+<code>universal_spatial_join()</code></li>
+<li><strong>Robust error handling</strong> with informative messages and
+recovery strategies</li>
+<li><strong>Cross-platform compatibility</strong> (Windows, macOS,
+Linux)</li>
+</ul>
+<h3 id="id_5-research-ready">5. <strong>Research-Ready</strong></h3>
+<p>Designed specifically for reproducible research with: - Comprehensive
+testing suite (<code>test_geospatialsuite_package_simple()</code>) -
+Function availability checking
+(<code>test_function_availability()</code>) - Quality control and
+filtering options - Integration with modern R spatial ecosystem</p>
+<h2 id="zap-performance">⚡ Performance</h2>
+<p>GeoSpatialSuite is optimized for:</p>
+<ul>
+<li><strong>Large rasters</strong>: Efficient memory usage with terra
+backend</li>
+<li><strong>Multiple datasets</strong>: Parallel processing capabilities
+for vegetation indices</li>
+<li><strong>Cross-platform</strong>: Tested on Windows, macOS, and
+Linux</li>
+<li><strong>Any geographic region</strong>: Universal coordinate system
+handling</li>
+<li><strong>Big data</strong>: Streaming and chunked processing for
+large satellite imagery</li>
+<li><strong>Interactive analysis</strong>: Fast visualization without
+data conversion overhead</li>
+</ul>
+<h3 id="performance-tips">Performance Tips</h3>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># Test basic functionality</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="fu">test_package_minimal</span>(<span class="at">verbose =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co"># Check which functions are available</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="fu">test_function_availability</span>(<span class="at">verbose =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co"># Use efficient spatial operations</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>  <span class="at">source_data =</span> <span class="st">&quot;points.csv&quot;</span>,</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>  <span class="at">target_data =</span> <span class="st">&quot;large_raster.tif&quot;</span>,</span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;extract&quot;</span>,</span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>  <span class="at">chunk_size =</span> <span class="dv">1000000</span>  <span class="co"># Process in chunks for large data</span></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>)</span></code></pre></div>
+<h2 id="bar_chart-supported-vegetation-indices">📊 Supported Vegetation
+Indices</h2>
+<details>
+
+<summary>
+
+<p><strong>Click to see all 60+ vegetation indices</strong></p>
+</summary>
+
+<h3 id="basic-vegetation-indices">Basic Vegetation Indices</h3>
+<ul>
+<li><strong>NDVI</strong> - Normalized Difference Vegetation Index
+(Rouse et al. 1974)</li>
+<li><strong>EVI</strong> - Enhanced Vegetation Index (Huete et
+al. 2002)</li>
+<li><strong>SAVI</strong> - Soil Adjusted Vegetation Index (Huete
+1988)</li>
+<li><strong>MSAVI</strong> - Modified Soil Adjusted Vegetation Index (Qi
+et al. 1994)</li>
+<li><strong>OSAVI</strong> - Optimized Soil Adjusted Vegetation Index
+(Rondeaux et al. 1996)</li>
+<li><strong>GNDVI</strong> - Green Normalized Difference Vegetation
+Index</li>
+</ul>
+<h3 id="atmospheric-correction-indices">Atmospheric Correction
+Indices</h3>
+<ul>
+<li><strong>ARVI</strong> - Atmospherically Resistant Vegetation Index
+(Kaufman &amp; Tanré 1992)</li>
+<li><strong>RDVI</strong> - Renormalized Difference Vegetation
+Index</li>
+<li><strong>WDVI</strong> - Weighted Difference Vegetation Index</li>
+<li><strong>PVI</strong> - Perpendicular Vegetation Index</li>
+<li><strong>VARI</strong> - Visible Atmospherically Resistant Index</li>
+</ul>
+<h3 id="red-edge-indices-sentinel-2hyperspectral">Red-Edge Indices
+(Sentinel-2/Hyperspectral)</h3>
+<ul>
+<li><strong>NDRE</strong> - Normalized Difference Red Edge</li>
+<li><strong>MTCI</strong> - MERIS Terrestrial Chlorophyll Index</li>
+<li><strong>IRECI</strong> - Inverted Red-Edge Chlorophyll Index</li>
+<li><strong>S2REP</strong> - Sentinel-2 Red-Edge Position</li>
+<li><strong>CIred-edge</strong> - Chlorophyll Index Red-Edge</li>
+</ul>
+<h3 id="stress-detection-and-pigment-indices">Stress Detection and
+Pigment Indices</h3>
+<ul>
+<li><strong>PRI</strong> - Photochemical Reflectance Index</li>
+<li><strong>SIPI</strong> - Structure Insensitive Pigment Index</li>
+<li><strong>PSRI</strong> - Plant Senescence Reflectance Index</li>
+<li><strong>CCI</strong> - Canopy Chlorophyll Index</li>
+<li><strong>ARI</strong> - Anthocyanin Reflectance Index</li>
+</ul>
+<h3 id="water-and-moisture-indices">Water and Moisture Indices</h3>
+<ul>
+<li><strong>NDWI</strong> - Normalized Difference Water Index (McFeeters
+1996)</li>
+<li><strong>MNDWI</strong> - Modified Normalized Difference Water Index
+(Xu 2006)</li>
+<li><strong>NDMI</strong> - Normalized Difference Moisture Index (Gao
+1996)</li>
+<li><strong>MSI</strong> - Moisture Stress Index</li>
+<li><strong>WI</strong> - Water Index</li>
+<li><strong>LSWI</strong> - Land Surface Water Index</li>
+</ul>
+<h3 id="specialized-agricultural-indices">Specialized Agricultural
+Indices</h3>
+<ul>
+<li><strong>GCCI</strong> - Green Crop Coverage Index</li>
+<li><strong>NGRDI</strong> - Normalized Green-Red Difference Index</li>
+<li><strong>GLI</strong> - Green Leaf Index</li>
+<li><strong>VDVI</strong> - Visible-band Difference Vegetation
+Index</li>
+<li><strong>TGI</strong> - Triangular Greenness Index</li>
+</ul>
+<h3 id="advanced-biophysical-indices">Advanced Biophysical Indices</h3>
+<ul>
+<li><strong>LAI</strong> - Leaf Area Index estimators</li>
+<li><strong>FAPAR</strong> - Fraction of Absorbed PAR</li>
+<li><strong>MTVI1/MTVI2</strong> - Modified Triangular Vegetation
+Index</li>
+<li><strong>TCARI</strong> - Transformed Chlorophyll Absorption Ratio
+Index</li>
+<li><strong>OSAVI2</strong> - Second Optimized SAVI</li>
+</ul>
+<p><em>Total: 60+ indices with automatic band detection across satellite
+platforms</em></p>
+</details>
+
+<h2 id="hammer_and_wrench-system-requirements">🛠️ System
+Requirements</h2>
+<h3 id="required-dependencies">Required Dependencies</h3>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># Core dependencies (automatically installed with geospatialsuite)</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="fu">terra</span> (<span class="sc">&gt;=</span> <span class="fl">1.6</span><span class="dv">-17</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="fu">sf</span> (<span class="sc">&gt;=</span> <span class="fl">1.0</span><span class="dv">-0</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="fu">dplyr</span> (<span class="sc">&gt;=</span> <span class="dv">1</span>.<span class="fl">0.0</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="fu">ggplot2</span> (<span class="sc">&gt;=</span> <span class="dv">3</span>.<span class="fl">3.0</span>)</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>magrittr</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>viridis</span></code></pre></div>
+<h3 id="recommended-packages-for-enhanced-functionality">Recommended
+Packages for Enhanced Functionality</h3>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># Install these for optimal performance and features</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="st">&quot;tidyterra&quot;</span>,    <span class="co"># Efficient raster visualization with ggplot2</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="st">&quot;RStoolbox&quot;</span>,    <span class="co"># Remote sensing tools and visualization</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="st">&quot;leaflet&quot;</span>,      <span class="co"># Interactive web mapping</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  <span class="st">&quot;patchwork&quot;</span>,    <span class="co"># Multi-panel figures and layouts</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>  <span class="st">&quot;gganimate&quot;</span>,    <span class="co"># Animated visualizations</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>  <span class="st">&quot;rnaturalearth&quot;</span>, <span class="co"># Natural Earth country boundaries</span></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>  <span class="st">&quot;tigris&quot;</span>        <span class="co"># US administrative boundaries</span></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>))</span></code></pre></div>
+<h3 id="optional-packages">Optional Packages</h3>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Additional packages for specialized functions</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  <span class="st">&quot;htmlwidgets&quot;</span>, <span class="co"># Interactive widgets</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  <span class="st">&quot;mice&quot;</span>,        <span class="co"># Multiple imputation</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>  <span class="st">&quot;RColorBrewer&quot;</span>, <span class="co"># Color palettes</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>  <span class="st">&quot;parallel&quot;</span>     <span class="co"># Parallel processing</span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>))</span></code></pre></div>
+<h3 id="minimum-r-version">Minimum R Version</h3>
+<ul>
+<li><strong>R &gt;= 3.5.0</strong> (recommended: R &gt;= 4.0.0)</li>
+</ul>
+<h2 id="page_facing_up-citation">📄 Citation</h2>
+<p>If you use GeoSpatialSuite in your research, please cite:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">citation</span>(<span class="st">&quot;geospatialsuite&quot;</span>)</span></code></pre></div>
+<h2 id="e-mail-contact">📧 Contact</h2>
+<ul>
+<li><strong>Maintainer</strong>: Olatunde D. Akanbi (<a href="mailto:olatunde.akanbi@case.edu">olatunde.akanbi@case.edu</a>)</li>
+<li><strong>Senior Maintainer</strong>: Roger H. French (<a href="mailto:roger.french@case.edu">roger.french@case.edu</a>)</li>
+<li><strong>Lead Developer</strong>: Olatunde D. Akanbi (<a href="mailto:olatunde.akanbi@case.edu">olatunde.akanbi@case.edu</a>)</li>
+<li><strong>Issues &amp; Bug Reports</strong>: <a href="https://github.com/cwru-sdle/geospatialsuite/issues">https://github.com/cwru-sdle/geospatialsuite/issues</a></li>
+</ul>
+<h2 id="pencil-license">📝 License</h2>
+<p>MIT License - see <a href="LICENSE">LICENSE</a> file for details.</p>
+<h2 id="pray-acknowledgments">🙏 Acknowledgments</h2>
+<ul>
+<li><strong>Development Institution</strong>: Solar Durability and
+Lifetime Extension (SDLE) Center, Case Western Reserve University,
+Cleveland, Ohio, U.S.A.</li>
+<li><strong>Built on</strong>: The excellent work of the
+<code>terra</code>, <code>sf</code>, <code>ggplot2</code>, and broader R
+spatial community</li>
+<li><strong>Funding</strong>: This material is based upon financial
+support by the National Science Foundation, EEC Division of Engineering
+Education and Centers, NSF Engineering Research Center for Advancing
+Sustainable and Distributed Fertilizer production (CASFER), NSF 20-553
+Gen-4 Engineering Research Centers award 2133576.</li>
+</ul>
+<h3 id="contributing-institutions">Contributing Institutions</h3>
+<ul>
+<li>Case Western Reserve University</li>
+<li>NSF Engineering Research Center for Advancing Sustainable and
+Distributed Fertilizer production (CASFER)</li>
+</ul>
+<h3 id="special-thanks">Special Thanks</h3>
+<ul>
+<li>R Core Team and CRAN maintainers</li>
+<li><code>terra</code> package developers (Robert J. Hijmans et
+al.)</li>
+<li><code>sf</code> package developers (Edzer Pebesma et al.)</li>
+<li>Remote sensing and geospatial R community</li>
+</ul>
+<hr />
+<p><strong>Ready to get started?</strong> Install from CRAN with
+<code>install.packages(&quot;geospatialsuite&quot;)</code> and check out the <a href="https://cran.r-project.org/web/packages/geospatialsuite/vignettes/getting-started.html">Getting
+Started vignette</a>!</p>
+
+</body>
+</html>

@@ -1,0 +1,431 @@
+## ----setup, include = FALSE---------------------------------------------------
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 12,
+  fig.height = 8,
+  warning = FALSE,
+  message = FALSE
+)
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Load required packages
+# library(geospatialsuite)
+# library(terra)
+# library(sf)
+# 
+# # Check package functionality
+# test_package_minimal()
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Load sample bands (Green, NIR, SWIR1)
+# green_band <- rast(nrows = 100, ncols = 100,
+#                    xmin = -84, xmax = -83, ymin = 40, ymax = 41)
+# values(green_band) <- runif(10000, 0.2, 0.4)
+# 
+# nir_band <- rast(nrows = 100, ncols = 100,
+#                  xmin = -84, xmax = -83, ymin = 40, ymax = 41)
+# values(nir_band) <- runif(10000, 0.4, 0.8)
+# 
+# swir1_band <- rast(nrows = 100, ncols = 100,
+#                    xmin = -84, xmax = -83, ymin = 40, ymax = 41)
+# values(swir1_band) <- runif(10000, 0.1, 0.3)
+# 
+# # Calculate Original NDWI (McFeeters 1996) - Water body detection
+# ndwi <- calculate_water_index(
+#   green = green_band,
+#   nir = nir_band,
+#   index_type = "NDWI",
+#   verbose = TRUE
+# )
+# 
+# # Calculate Modified NDWI (Xu 2006) - Enhanced water detection
+# mndwi <- calculate_water_index(
+#   green = green_band,
+#   nir = nir_band,
+#   swir1 = swir1_band,
+#   index_type = "MNDWI",
+#   verbose = TRUE
+# )
+# 
+# # Calculate NDMI (Gao 1996) - Vegetation moisture content
+# ndmi <- calculate_water_index(
+#   green = green_band,
+#   nir = nir_band,
+#   swir1 = swir1_band,
+#   index_type = "NDMI",
+#   verbose = TRUE
+# )
+
+## ----eval=FALSE---------------------------------------------------------------
+# # List all available water indices
+# water_indices_info <- list_water_indices(detailed = TRUE)
+# print(water_indices_info)
+# 
+# # Get indices for specific applications
+# water_detection <- list_water_indices(application_filter = "water_detection")
+# moisture_monitoring <- list_water_indices(application_filter = "moisture_monitoring")
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Calculate multiple water indices at once
+# water_analysis <- calculate_multiple_water_indices(
+#   green = green_band,
+#   nir = nir_band,
+#   swir1 = swir1_band,
+#   indices = c("NDWI", "MNDWI", "NDMI", "MSI"),
+#   output_stack = TRUE,
+#   verbose = TRUE
+# )
+# 
+# # Access individual indices
+# ndwi_layer <- water_analysis[["NDWI"]]
+# mndwi_layer <- water_analysis[["MNDWI"]]
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Perform complete water body analysis
+# water_body_analysis <- analyze_water_bodies(
+#   green = green_band,
+#   nir = nir_band,
+#   swir1 = swir1_band,
+#   water_threshold_ndwi = 0.3,
+#   water_threshold_mndwi = 0.5,
+#   verbose = TRUE
+# )
+# 
+# # Access results
+# water_indices <- water_body_analysis$water_indices
+# water_masks <- water_body_analysis$water_masks
+# statistics <- water_body_analysis$statistics
+# 
+# # Print water body statistics
+# print(statistics)
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Create sample water quality monitoring data
+# sample_water_data <- data.frame(
+#   station_id = paste0("WQ_", 1:50),
+#   longitude = runif(50, -84, -83),
+#   latitude = runif(50, 40, 41),
+#   temperature = runif(50, 15, 25),
+#   ph = runif(50, 6.5, 8.5),
+#   dissolved_oxygen = runif(50, 5, 12),
+#   turbidity = runif(50, 2, 15),
+#   nitrate = runif(50, 0.5, 5.0),
+#   phosphorus = runif(50, 0.1, 2.0),
+#   sample_date = as.Date("2023-06-01") + sample(0:180, 50, replace = TRUE)
+# )
+# 
+# # Comprehensive water quality analysis
+# water_quality_results <- analyze_water_quality_comprehensive(
+#   water_data = sample_water_data,
+#   variable = "dissolved_oxygen",
+#   coord_cols = c("longitude", "latitude"),
+#   thresholds = list(
+#     Excellent = c(8, Inf),
+#     Good = c(6, 8),
+#     Fair = c(4, 6),
+#     Poor = c(0, 4)
+#   ),
+#   verbose = TRUE
+# )
+# 
+# # Access analysis results
+# quality_stats <- water_quality_results$statistics
+# spatial_patterns <- water_quality_results$spatial_analysis
+# temporal_trends <- water_quality_results$temporal_analysis
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Analyze multiple water quality parameters
+# parameters <- c("temperature", "ph", "dissolved_oxygen", "turbidity")
+# 
+# multi_param_results <- list()
+# for (param in parameters) {
+#   multi_param_results[[param]] <- analyze_water_quality_comprehensive(
+#     water_data = sample_water_data,
+#     variable = param,
+#     verbose = FALSE
+#   )
+# }
+# 
+# # Extract key statistics
+# param_summary <- sapply(parameters, function(p) {
+#   stats <- multi_param_results[[p]]$statistics$primary_variable
+#   c(mean = stats$mean, sd = stats$sd, min = stats$min, max = stats$max)
+# })
+# 
+# print(param_summary)
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Quick water index mapping
+# quick_map(ndwi, title = "NDWI - Water Detection")
+# quick_map(mndwi, title = "MNDWI - Enhanced Water Detection")
+# 
+# # Create water quality map with region boundary
+# water_map <- create_spatial_map(
+#   spatial_data = water_quality_results$water_data,
+#   fill_variable = "dissolved_oxygen",
+#   region_boundary = c(-84, 40, -83, 41),  # Custom bounding box
+#   color_scheme = "water",
+#   title = "Dissolved Oxygen Concentrations",
+#   point_size = 4
+# )
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Compare different water indices
+# comparison_map <- create_comparison_map(
+#   data1 = ndwi,
+#   data2 = mndwi,
+#   comparison_type = "side_by_side",
+#   titles = c("NDWI (Original)", "MNDWI (Modified)"),
+#   color_scheme = "water"
+# )
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Apply water quality standards
+# quality_thresholds <- list(
+#   Excellent = c(9, Inf),
+#   Good = c(7, 9),
+#   Moderate = c(5, 7),
+#   Poor = c(3, 5),
+#   Very_Poor = c(0, 3)
+# )
+# 
+# # Classify water quality
+# classified_results <- analyze_water_quality_comprehensive(
+#   water_data = sample_water_data,
+#   variable = "dissolved_oxygen",
+#   thresholds = quality_thresholds,
+#   verbose = TRUE
+# )
+# 
+# # View classification results
+# threshold_stats <- classified_results$threshold_analysis$threshold_statistics
+# print(threshold_stats$category_percentages)
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Apply standard water detection thresholds
+# water_pixels_ndwi <- ndwi > 0.3   # Standard NDWI threshold
+# water_pixels_mndwi <- mndwi > 0.5  # Standard MNDWI threshold
+# 
+# # Combine for consensus water mask
+# consensus_water <- water_pixels_ndwi & water_pixels_mndwi
+# names(consensus_water) <- "consensus_water_mask"
+# 
+# # Visualize water detection
+# quick_map(consensus_water, title = "Consensus Water Detection")
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Create temporal water quality data
+# temporal_data <- data.frame(
+#   station_id = rep(paste0("WQ_", 1:10), each = 12),
+#   longitude = rep(runif(10, -84, -83), each = 12),
+#   latitude = rep(runif(10, 40, 41), each = 12),
+#   month = rep(1:12, 10),
+#   dissolved_oxygen = runif(120, 4, 12),
+#   temperature = runif(120, 5, 25),
+#   sample_date = rep(seq(as.Date("2023-01-01"),
+#                        as.Date("2023-12-01"), by = "month"), 10)
+# )
+# 
+# # Analyze temporal patterns
+# temporal_results <- analyze_water_quality_comprehensive(
+#   water_data = temporal_data,
+#   variable = "dissolved_oxygen",
+#   date_column = "sample_date",
+#   station_id_col = "station_id",
+#   verbose = TRUE
+# )
+# 
+# # Check for temporal trends
+# if (!is.null(temporal_results$temporal_analysis$trend)) {
+#   trend_info <- temporal_results$temporal_analysis$trend
+#   cat("Temporal trend slope:", trend_info$slope, "\n")
+#   cat("Significance (p-value):", trend_info$p_value, "\n")
+#   cat("R-squared:", trend_info$r_squared, "\n")
+# }
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Simulate lake monitoring scenario
+# lake_stations <- data.frame(
+#   station = paste0("Lake_", LETTERS[1:20]),
+#   lon = runif(20, -83.5, -83.0),
+#   lat = runif(20, 40.2, 40.7),
+#   depth_m = runif(20, 1, 15),
+#   temp_celsius = runif(20, 18, 24),
+#   ph = runif(20, 7.0, 8.5),
+#   do_mg_l = runif(20, 6, 11),
+#   chlorophyll_ug_l = runif(20, 5, 25),
+#   secchi_depth_m = runif(20, 1, 4)
+# )
+# 
+# # Comprehensive lake analysis
+# lake_analysis <- analyze_water_quality_comprehensive(
+#   water_data = lake_stations,
+#   variable = "do_mg_l",
+#   coord_cols = c("lon", "lat"),
+#   thresholds = list(
+#     Hypoxic = c(0, 2),
+#     Low = c(2, 5),
+#     Adequate = c(5, 8),
+#     High = c(8, Inf)
+#   )
+# )
+# 
+# # Analyze chlorophyll patterns
+# chlorophyll_analysis <- analyze_water_quality_comprehensive(
+#   water_data = lake_stations,
+#   variable = "chlorophyll_ug_l",
+#   thresholds = list(
+#     Oligotrophic = c(0, 4),
+#     Mesotrophic = c(4, 10),
+#     Eutrophic = c(10, Inf)
+#   )
+# )
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Analyze water quality along stream network
+# stream_monitoring <- data.frame(
+#   site_id = paste0("Stream_", 1:30),
+#   longitude = runif(30, -83.8, -83.2),
+#   latitude = runif(30, 40.1, 40.8),
+#   stream_order = sample(1:4, 30, replace = TRUE),
+#   flow_cms = runif(30, 0.1, 50),
+#   water_temp = runif(30, 12, 22),
+#   conductivity = runif(30, 200, 800),
+#   total_nitrogen = runif(30, 0.5, 8.0),
+#   total_phosphorus = runif(30, 0.05, 1.5)
+# )
+# 
+# # Analyze nutrient patterns
+# nitrogen_analysis <- analyze_water_quality_comprehensive(
+#   water_data = stream_monitoring,
+#   variable = "total_nitrogen",
+#   thresholds = list(
+#     Low = c(0, 2),
+#     Moderate = c(2, 5),
+#     High = c(5, Inf)
+#   ),
+#   verbose = TRUE
+# )
+# 
+# phosphorus_analysis <- analyze_water_quality_comprehensive(
+#   water_data = stream_monitoring,
+#   variable = "total_phosphorus",
+#   thresholds = list(
+#     Low = c(0, 0.3),
+#     Moderate = c(0.3, 0.8),
+#     High = c(0.8, Inf)
+#   )
+# )
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Handle missing coordinate data
+# incomplete_data <- sample_water_data
+# incomplete_data$latitude[1:5] <- NA
+# 
+# # The function automatically handles missing coordinates
+# robust_results <- analyze_water_quality_comprehensive(
+#   water_data = incomplete_data,
+#   variable = "dissolved_oxygen",
+#   verbose = TRUE
+# )
+# 
+# # Handle different coordinate column names
+# alt_coord_data <- sample_water_data
+# names(alt_coord_data)[names(alt_coord_data) == "longitude"] <- "x"
+# names(alt_coord_data)[names(alt_coord_data) == "latitude"] <- "y"
+# 
+# # Function auto-detects coordinate columns
+# auto_detect_results <- analyze_water_quality_comprehensive(
+#   water_data = alt_coord_data,
+#   variable = "ph",
+#   verbose = TRUE
+# )
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Apply quality filters during analysis
+# filtered_analysis <- analyze_water_quality_comprehensive(
+#   water_data = sample_water_data,
+#   variable = "turbidity",
+#   quality_filters = list(
+#     valid_range = c(0, 100),  # Reasonable turbidity range
+#     remove_outliers = TRUE,
+#     remove_na = TRUE
+#   ),
+#   verbose = TRUE
+# )
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Calculate both water and vegetation indices from the same data
+# # Assume we have a multi-band satellite image
+# red_band <- nir_band * 0.6  # Simulate red band
+# 
+# # Water detection
+# water_indices <- calculate_multiple_water_indices(
+#   green = green_band,
+#   nir = nir_band,
+#   swir1 = swir1_band,
+#   indices = c("NDWI", "MNDWI", "NDMI")
+# )
+# 
+# # Vegetation analysis
+# veg_indices <- calculate_multiple_indices(
+#   red = red_band,
+#   nir = nir_band,
+#   green = green_band,
+#   indices = c("NDVI", "GNDVI", "DVI"),
+#   output_stack = TRUE
+# )
+# 
+# # Create combined analysis
+# combined_stack <- c(water_indices, veg_indices)
+# names(combined_stack) <- c("NDWI", "MNDWI", "NDMI", "NDVI", "GNDVI", "DVI")
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Extract satellite-derived water indices to field monitoring points
+# extracted_values <- universal_spatial_join(
+#   source_data = sample_water_data,
+#   target_data = water_indices,
+#   method = "extract",
+#   buffer_distance = 100,  # 100m buffer around each point
+#   summary_function = "mean"
+# )
+# 
+# # Check correlations between field measurements and remote sensing
+# field_vs_remote <- data.frame(
+#   field_turbidity = extracted_values$turbidity,
+#   remote_ndwi = extracted_values$extracted_NDWI,
+#   remote_mndwi = extracted_values$extracted_MNDWI
+# )
+# 
+# # Calculate correlations
+# cor(field_vs_remote, use = "complete.obs")
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Standard water detection thresholds
+# standard_thresholds <- list(
+#   NDWI = list(water = 0.3, vegetation = 0.0),
+#   MNDWI = list(water = 0.5, built_up = 0.0),
+#   NDMI = list(high_moisture = 0.4, low_moisture = 0.1)
+# )
+# 
+# # Apply thresholds to create binary water masks
+# water_mask_ndwi <- ndwi > standard_thresholds$NDWI$water
+# water_mask_mndwi <- mndwi > standard_thresholds$MNDWI$water
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Always mask invalid values and apply reasonable ranges
+# quality_controlled_ndwi <- calculate_water_index(
+#   green = green_band,
+#   nir = nir_band,
+#   index_type = "NDWI",
+#   clamp_range = c(-1, 1),
+#   mask_invalid = TRUE,
+#   verbose = TRUE
+# )
+# 
+# # Check data coverage
+# values_ndwi <- values(quality_controlled_ndwi, mat = FALSE)
+# coverage_percent <- (sum(!is.na(values_ndwi)) / length(values_ndwi)) * 100
+# cat("Data coverage:", round(coverage_percent, 1), "%\n")
+

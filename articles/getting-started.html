@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="GeoSpatialSuite Development Team" />
+
+
+<title>Getting Started with GeoSpatialSuite</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Getting Started with GeoSpatialSuite</h1>
+<h4 class="author">GeoSpatialSuite Development Team</h4>
+
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>GeoSpatialSuite is a comprehensive R package for geospatial analysis
+and visualization. It provides universal functions that work with any
+region, robust error handling, and simplified workflows for complex
+spatial analysis tasks.</p>
+<div id="key-features" class="section level2">
+<h2>Key Features</h2>
+<ul>
+<li><strong>60+ vegetation indices</strong> with automatic band
+detection</li>
+<li><strong>Universal spatial mapping</strong> with one-line
+functionality</li>
+<li><strong>Reliable terra-based visualization</strong> without complex
+dependencies</li>
+<li><strong>Agricultural applications</strong> including CDL crop
+analysis</li>
+<li><strong>Water quality assessment</strong> with multiple indices</li>
+<li><strong>Robust error handling</strong> throughout all functions</li>
+</ul>
+</div>
+<div id="installation" class="section level2">
+<h2>Installation</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># Install from source</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="co"># install.packages(&quot;geospatialsuite&quot;)</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co"># Load the package</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="fu">library</span>(geospatialsuite)</span></code></pre></div>
+</div>
+<div id="core-dependencies" class="section level2">
+<h2>Core Dependencies</h2>
+<p>GeoSpatialSuite works reliably with just the core dependencies:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># Core packages (required)</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">library</span>(terra)    <span class="co"># Raster operations and plotting</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">library</span>(sf)       <span class="co"># Vector operations  </span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="fu">library</span>(ggplot2)  <span class="co"># Static mapping</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="fu">library</span>(dplyr)    <span class="co"># Data manipulation</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co"># Optional packages (for enhanced features)</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="fu">library</span>(leaflet)      <span class="co"># Interactive mapping</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="fu">library</span>(viridis)      <span class="co"># Enhanced color schemes</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="fu">library</span>(RColorBrewer) <span class="co"># Additional color palettes</span></span></code></pre></div>
+</div>
+<div id="quick-start-one-line-mapping" class="section level2">
+<h2>Quick Start: One-Line Mapping</h2>
+<p>The fastest way to create a map with GeoSpatialSuite:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># One-line mapping - auto-detects data type and creates appropriate map</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">quick_map</span>(<span class="st">&quot;mydata.shp&quot;</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="fu">quick_map</span>(<span class="st">&quot;satellite_image.tif&quot;</span>) </span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="fu">quick_map</span>(my_spatial_data, <span class="at">interactive =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+</div>
+<div id="core-concepts" class="section level2">
+<h2>Core Concepts</h2>
+<div id="data-type-support" class="section level3">
+<h3>Data Type Support</h3>
+<p>GeoSpatialSuite automatically handles various data formats:</p>
+<p><strong>Raster Data:</strong> - Single files:
+<code>&quot;data.tif&quot;</code>, <code>&quot;image.nc&quot;</code> - Directories:
+<code>&quot;/path/to/raster/files/&quot;</code> - Multi-band data: Sentinel-2,
+Landsat, MODIS - SpatRaster objects from terra</p>
+<p><strong>Vector Data:</strong> - Shapefiles:
+<code>&quot;boundaries.shp&quot;</code> - CSV with coordinates:
+<code>&quot;points.csv&quot;</code> - GeoJSON: <code>&quot;features.geojson&quot;</code> -
+sf objects</p>
+<p><strong>Region Boundaries:</strong> - US States: <code>&quot;Ohio&quot;</code>,
+<code>&quot;California&quot;</code> - Countries: <code>&quot;Nigeria&quot;</code>,
+<code>&quot;Brazil&quot;</code> - Custom areas:
+<code>c(xmin, ymin, xmax, ymax)</code> - CONUS: <code>&quot;CONUS&quot;</code></p>
+</div>
+<div id="universal-region-support" class="section level3">
+<h3>Universal Region Support</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># US States</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>ohio_boundary <span class="ot">&lt;-</span> <span class="fu">get_region_boundary</span>(<span class="st">&quot;Ohio&quot;</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>california_boundary <span class="ot">&lt;-</span> <span class="fu">get_region_boundary</span>(<span class="st">&quot;California&quot;</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co"># Countries  </span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>nigeria_boundary <span class="ot">&lt;-</span> <span class="fu">get_region_boundary</span>(<span class="st">&quot;Nigeria&quot;</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>brazil_boundary <span class="ot">&lt;-</span> <span class="fu">get_region_boundary</span>(<span class="st">&quot;Brazil&quot;</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co"># Continental US</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>conus_boundary <span class="ot">&lt;-</span> <span class="fu">get_region_boundary</span>(<span class="st">&quot;CONUS&quot;</span>)</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co"># Custom bounding box</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>custom_area <span class="ot">&lt;-</span> <span class="fu">get_region_boundary</span>(<span class="fu">c</span>(<span class="sc">-</span><span class="fl">84.5</span>, <span class="fl">39.0</span>, <span class="sc">-</span><span class="fl">82.0</span>, <span class="fl">41.0</span>))</span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co"># State and county</span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>franklin_county <span class="ot">&lt;-</span> <span class="fu">get_region_boundary</span>(<span class="st">&quot;Ohio:Franklin&quot;</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="basic-workflows" class="section level2">
+<h2>Basic Workflows</h2>
+<div id="simple-vegetation-analysis" class="section level3">
+<h3>1. Simple Vegetation Analysis</h3>
+<p>Calculate NDVI for any region:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Basic NDVI calculation</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>ndvi <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">red =</span> <span class="st">&quot;red_band.tif&quot;</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">nir =</span> <span class="st">&quot;nir_band.tif&quot;</span>, </span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">index_type =</span> <span class="st">&quot;NDVI&quot;</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>)</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co"># Enhanced NDVI with quality filtering</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>ndvi_enhanced <span class="ot">&lt;-</span> <span class="fu">calculate_ndvi_enhanced</span>(</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>  <span class="at">red_data =</span> red_raster,</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>  <span class="at">nir_data =</span> nir_raster,</span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>  <span class="at">quality_filter =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>  <span class="at">clamp_range =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">0.2</span>, <span class="dv">1</span>)</span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>)</span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co"># Multiple vegetation indices</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a>vegetation_indices <span class="ot">&lt;-</span> <span class="fu">calculate_multiple_indices</span>(</span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a>  <span class="at">red =</span> red_band, </span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a>  <span class="at">nir =</span> nir_band,</span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a>  <span class="at">blue =</span> blue_band,</span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;EVI&quot;</span>, <span class="st">&quot;SAVI&quot;</span>, <span class="st">&quot;GNDVI&quot;</span>),</span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a>  <span class="at">output_stack =</span> <span class="cn">TRUE</span></span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="water-quality-assessment" class="section level3">
+<h3>2. Water Quality Assessment</h3>
+<p>Analyze water bodies and quality:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># Water detection indices</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>ndwi <span class="ot">&lt;-</span> <span class="fu">calculate_water_index</span>(</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="at">green =</span> green_band,</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="at">nir =</span> nir_band, </span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">index_type =</span> <span class="st">&quot;NDWI&quot;</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>)</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co"># Enhanced water detection  </span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>mndwi <span class="ot">&lt;-</span> <span class="fu">calculate_water_index</span>(</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>  <span class="at">green =</span> green_band,</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>  <span class="at">swir1 =</span> swir1_band,</span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>  <span class="at">index_type =</span> <span class="st">&quot;MNDWI&quot;</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>)</span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co"># Comprehensive water analysis</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a>water_analysis <span class="ot">&lt;-</span> <span class="fu">analyze_water_bodies</span>(</span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a>  <span class="at">green =</span> <span class="st">&quot;green.tif&quot;</span>,</span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a>  <span class="at">nir =</span> <span class="st">&quot;nir.tif&quot;</span>, </span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a>  <span class="at">swir1 =</span> <span class="st">&quot;swir1.tif&quot;</span>,</span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a>  <span class="at">region_boundary =</span> <span class="st">&quot;Ohio&quot;</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="agricultural-analysis" class="section level3">
+<h3>3. Agricultural Analysis</h3>
+<p>Monitor crops and agricultural areas:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># Get crop codes</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>corn_codes <span class="ot">&lt;-</span> <span class="fu">get_comprehensive_cdl_codes</span>(<span class="st">&quot;corn&quot;</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>grain_codes <span class="ot">&lt;-</span> <span class="fu">get_comprehensive_cdl_codes</span>(<span class="st">&quot;grains&quot;</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co"># Create crop mask</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>corn_mask <span class="ot">&lt;-</span> <span class="fu">create_crop_mask</span>(</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="at">cdl_data =</span> <span class="st">&quot;cdl_2023.tif&quot;</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="at">crop_codes =</span> corn_codes,</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>  <span class="at">region_boundary =</span> <span class="st">&quot;Iowa&quot;</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>)</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co"># Analyze crop areas</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>crop_analysis <span class="ot">&lt;-</span> <span class="fu">analyze_cdl_crops_dynamic</span>(</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>  <span class="at">cdl_data =</span> <span class="st">&quot;cdl_2023.tif&quot;</span>,</span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>  <span class="at">crop_selection =</span> <span class="st">&quot;soybeans&quot;</span>, </span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>  <span class="at">region_boundary =</span> <span class="st">&quot;Ohio&quot;</span>,</span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a>  <span class="at">analysis_type =</span> <span class="st">&quot;area&quot;</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>)</span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co"># Access results</span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a>total_area_hectares <span class="ot">&lt;-</span> crop_analysis<span class="sc">$</span>total_area_ha</span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a>total_area_acres <span class="ot">&lt;-</span> total_area_hectares <span class="sc">*</span> <span class="fl">2.47105</span></span></code></pre></div>
+</div>
+<div id="spatial-data-integration" class="section level3">
+<h3>4. Spatial Data Integration</h3>
+<p>Extract and join spatial data:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># Extract raster values to points - most common use case</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>field_data <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">source_data =</span> <span class="st">&quot;field_sites.csv&quot;</span>,      <span class="co"># CSV with coordinates</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">target_data =</span> <span class="st">&quot;satellite_image.tif&quot;</span>,  <span class="co"># Any raster</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;extract&quot;</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  <span class="at">buffer_distance =</span> <span class="dv">100</span>,                <span class="co"># 100m buffer around points</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>  <span class="at">summary_function =</span> <span class="st">&quot;mean&quot;</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>)</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co"># Zonal statistics for polygons</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>watershed_stats <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>  <span class="at">source_data =</span> <span class="st">&quot;precipitation.tif&quot;</span>,    <span class="co"># Raster data</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>  <span class="at">target_data =</span> <span class="st">&quot;watersheds.shp&quot;</span>,       <span class="co"># Polygon boundaries  </span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;zonal&quot;</span>,</span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a>  <span class="at">summary_function =</span> <span class="st">&quot;mean&quot;</span></span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a>)</span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a></span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co"># Resample raster to different resolution</span></span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a>resampled <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a>  <span class="at">source_data =</span> <span class="st">&quot;fine_resolution.tif&quot;</span>,</span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a>  <span class="at">target_data =</span> <span class="st">&quot;coarse_template.tif&quot;</span>,</span>
+<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;resample&quot;</span></span>
+<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+</div>
+<div id="visualization-examples" class="section level2">
+<h2>Visualization Examples</h2>
+<div id="static-maps-with-terra" class="section level3">
+<h3>Static Maps with Terra</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># Simple raster plotting</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>terra<span class="sc">::</span><span class="fu">plot</span>(ndvi_raster, <span class="at">main =</span> <span class="st">&quot;NDVI Analysis&quot;</span>, </span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>            <span class="at">col =</span> <span class="fu">colorRampPalette</span>(<span class="fu">c</span>(<span class="st">&quot;brown&quot;</span>, <span class="st">&quot;yellow&quot;</span>, <span class="st">&quot;green&quot;</span>))(<span class="dv">100</span>))</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co"># RGB composite</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="fu">plot_rgb_raster</span>(</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  <span class="at">raster_data =</span> satellite_data,</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  <span class="at">r =</span> <span class="dv">4</span>, <span class="at">g =</span> <span class="dv">3</span>, <span class="at">b =</span> <span class="dv">2</span>,           <span class="co"># False color composite</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>  <span class="at">stretch =</span> <span class="st">&quot;hist&quot;</span>,</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">&quot;False Color Composite&quot;</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>)</span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co"># Custom NDVI visualization</span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="fu">create_spatial_map</span>(</span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>  <span class="at">spatial_data =</span> ndvi_raster,</span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>  <span class="at">color_scheme =</span> <span class="st">&quot;ndvi&quot;</span>,</span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a>  <span class="at">region_boundary =</span> <span class="st">&quot;Ohio&quot;</span>,</span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">&quot;Ohio NDVI Analysis&quot;</span></span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="interactive-maps" class="section level3">
+<h3>Interactive Maps</h3>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># Interactive point map</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>interactive_map <span class="ot">&lt;-</span> <span class="fu">create_interactive_map</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">spatial_data =</span> monitoring_stations,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">fill_variable =</span> <span class="st">&quot;water_quality&quot;</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">basemap =</span> <span class="st">&quot;terrain&quot;</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">&quot;Water Quality Monitoring&quot;</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>)</span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co"># Interactive with custom popup</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>leaflet_map <span class="ot">&lt;-</span> <span class="fu">create_spatial_map</span>(</span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>  <span class="at">spatial_data =</span> crop_data,</span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a>  <span class="at">fill_variable =</span> <span class="st">&quot;yield&quot;</span>,</span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a>  <span class="at">interactive =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">&quot;Crop Yield Distribution&quot;</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+</div>
+<div id="error-handling-and-troubleshooting" class="section level2">
+<h2>Error Handling and Troubleshooting</h2>
+<div id="common-issues-and-solutions" class="section level3">
+<h3>Common Issues and Solutions</h3>
+<p><strong>CRS Mismatches:</strong></p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># Automatic CRS fixing</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">calculate_vegetation_index</span>(</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  <span class="at">red =</span> red_band,</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  <span class="at">nir =</span> nir_band,</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>  <span class="at">auto_crs_fix =</span> <span class="cn">TRUE</span>,  <span class="co"># Automatically handle CRS differences</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span>        <span class="co"># See what&#39;s happening</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Missing Data:</strong></p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># Handle missing values</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>interpolated <span class="ot">&lt;-</span> <span class="fu">spatial_interpolation_comprehensive</span>(</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="at">spatial_data =</span> sparse_data,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="at">target_variables =</span> <span class="st">&quot;temperature&quot;</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;NN&quot;</span>,               <span class="co"># Nearest neighbor for gaps</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>  <span class="at">na_strategy =</span> <span class="st">&quot;nearest&quot;</span>      <span class="co"># Strategy for NAs</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>)</span></code></pre></div>
+<p><strong>Large Datasets:</strong></p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># Process large datasets efficiently</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">universal_spatial_join</span>(</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="at">source_data =</span> large_points,</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="at">target_data =</span> large_raster,</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="at">method =</span> <span class="st">&quot;extract&quot;</span>,</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  <span class="at">chunk_size =</span> <span class="dv">500000</span>,    <span class="co"># Smaller chunks for memory</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>  <span class="at">parallel =</span> <span class="cn">FALSE</span>        <span class="co"># Disable parallel for stability</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="diagnostic-functions" class="section level3">
+<h3>Diagnostic Functions</h3>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Test package functionality</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>test_results <span class="ot">&lt;-</span> <span class="fu">test_geospatialsuite_package_simple</span>(<span class="at">verbose =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co"># Quick diagnostic</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="fu">quick_diagnostic</span>()</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co"># Check function availability  </span></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>function_status <span class="ot">&lt;-</span> <span class="fu">test_function_availability</span>(<span class="at">verbose =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="data-loading-examples" class="section level2">
+<h2>Data Loading Examples</h2>
+<div id="loading-various-data-types" class="section level3">
+<h3>Loading Various Data Types</h3>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># Load raster data</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>rasters <span class="ot">&lt;-</span> <span class="fu">load_raster_data</span>(<span class="st">&quot;/path/to/raster/files/&quot;</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>single_raster <span class="ot">&lt;-</span> <span class="fu">load_raster_data</span>(<span class="st">&quot;satellite_image.tif&quot;</span>)</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co"># Load with region boundary</span></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>ohio_rasters <span class="ot">&lt;-</span> <span class="fu">load_raster_data</span>(</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>  <span class="st">&quot;/path/to/files/&quot;</span>,</span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>  <span class="at">pattern =</span> <span class="st">&quot;</span><span class="sc">\\</span><span class="st">.(tif|tiff)$&quot;</span></span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>)</span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a></span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a><span class="co"># Date extraction from filenames</span></span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a>dates <span class="ot">&lt;-</span> <span class="fu">extract_dates_universal</span>(</span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a>  <span class="fu">c</span>(<span class="st">&quot;ndvi_2023-05-15.tif&quot;</span>, <span class="st">&quot;ndvi_2023-06-15.tif&quot;</span>)</span>
+<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="working-with-different-coordinate-systems" class="section level3">
+<h3>Working with Different Coordinate Systems</h3>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co"># Automatic CRS handling</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>vegetation_indices <span class="ot">&lt;-</span> <span class="fu">calculate_multiple_indices</span>(</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>  <span class="at">spectral_data =</span> <span class="st">&quot;/path/to/bands/&quot;</span>,   <span class="co"># Mixed CRS files</span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;EVI&quot;</span>, <span class="st">&quot;SAVI&quot;</span>),</span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>  <span class="at">auto_detect_bands =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>  <span class="at">auto_crs_fix =</span> <span class="cn">TRUE</span>,                 <span class="co"># Fix CRS mismatches</span></span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>  <span class="at">region_boundary =</span> <span class="st">&quot;Michigan&quot;</span></span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+</div>
+<div id="performance-tips" class="section level2">
+<h2>Performance Tips</h2>
+<div id="memory-management" class="section level3">
+<h3>Memory Management</h3>
+<ul>
+<li>Use <code>chunk_size</code> parameter for large datasets</li>
+<li>Process regions separately for continental analysis</li>
+<li>Use <code>scale_factor &gt; 1</code> to reduce resolution first</li>
+</ul>
+</div>
+<div id="processing-speed" class="section level3">
+<h3>Processing Speed</h3>
+<ul>
+<li>Disable <code>parallel = FALSE</code> for stability if needed</li>
+<li>Use <code>method = &quot;auto&quot;</code> for optimal processing</li>
+<li>Apply region boundaries early to reduce data size</li>
+</ul>
+</div>
+<div id="file-organization" class="section level3">
+<h3>File Organization</h3>
+<ul>
+<li>Organize files by date or region</li>
+<li>Use consistent naming conventions</li>
+<li>Keep related files in same directory</li>
+</ul>
+</div>
+</div>
+<div id="next-steps" class="section level2">
+<h2>Next Steps</h2>
+<p>After mastering the basics:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Vegetation Analysis</strong> - Explore the vegetation
+indices vignette for comprehensive plant monitoring</li>
+<li><strong>Agricultural Applications</strong> - Learn crop analysis and
+monitoring workflows<br />
+</li>
+<li><strong>Water Quality</strong> - Understand water body assessment
+and quality monitoring</li>
+<li><strong>Advanced Workflows</strong> - Build complex, multi-step
+analysis pipelines</li>
+</ol>
+</div>
+<div id="getting-help" class="section level2">
+<h2>Getting Help</h2>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="co"># Package documentation</span></span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="fu">help</span>(<span class="at">package =</span> <span class="st">&quot;geospatialsuite&quot;</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="co"># Function help</span></span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>?calculate_vegetation_index</span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a>?universal_spatial_join</span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a>?quick_map</span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a></span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="co"># List available vegetation indices</span></span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a><span class="fu">list_vegetation_indices</span>(<span class="at">detailed =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a></span>
+<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a><span class="co"># List available water indices  </span></span>
+<span id="cb17-13"><a href="#cb17-13" tabindex="-1"></a><span class="fu">list_water_indices</span>(<span class="at">detailed =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb17-14"><a href="#cb17-14" tabindex="-1"></a></span>
+<span id="cb17-15"><a href="#cb17-15" tabindex="-1"></a><span class="co"># Test package installation</span></span>
+<span id="cb17-16"><a href="#cb17-16" tabindex="-1"></a><span class="fu">test_geospatialsuite_package_simple</span>()</span></code></pre></div>
+</div>
+<div id="example-complete-basic-workflow" class="section level2">
+<h2>Example: Complete Basic Workflow</h2>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="co"># Complete example: Analyze crop vegetation in Ohio</span></span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="fu">library</span>(geospatialsuite)</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a><span class="co"># 1. Calculate vegetation indices</span></span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a>vegetation <span class="ot">&lt;-</span> <span class="fu">calculate_multiple_indices</span>(</span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a>  <span class="at">red =</span> <span class="st">&quot;landsat_red.tif&quot;</span>,</span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a>  <span class="at">nir =</span> <span class="st">&quot;landsat_nir.tif&quot;</span>, </span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a>  <span class="at">blue =</span> <span class="st">&quot;landsat_blue.tif&quot;</span>,</span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a>  <span class="at">indices =</span> <span class="fu">c</span>(<span class="st">&quot;NDVI&quot;</span>, <span class="st">&quot;EVI&quot;</span>, <span class="st">&quot;SAVI&quot;</span>),</span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a>  <span class="at">region_boundary =</span> <span class="st">&quot;Ohio&quot;</span>,</span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a>  <span class="at">output_stack =</span> <span class="cn">TRUE</span></span>
+<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a>)</span>
+<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a></span>
+<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a><span class="co"># 2. Create crop mask</span></span>
+<span id="cb18-15"><a href="#cb18-15" tabindex="-1"></a>crop_mask <span class="ot">&lt;-</span> <span class="fu">create_crop_mask</span>(</span>
+<span id="cb18-16"><a href="#cb18-16" tabindex="-1"></a>  <span class="at">cdl_data =</span> <span class="st">&quot;cdl_ohio_2023.tif&quot;</span>,</span>
+<span id="cb18-17"><a href="#cb18-17" tabindex="-1"></a>  <span class="at">crop_codes =</span> <span class="fu">get_comprehensive_cdl_codes</span>(<span class="st">&quot;corn&quot;</span>),</span>
+<span id="cb18-18"><a href="#cb18-18" tabindex="-1"></a>  <span class="at">region_boundary =</span> <span class="st">&quot;Ohio&quot;</span></span>
+<span id="cb18-19"><a href="#cb18-19" tabindex="-1"></a>)</span>
+<span id="cb18-20"><a href="#cb18-20" tabindex="-1"></a></span>
+<span id="cb18-21"><a href="#cb18-21" tabindex="-1"></a><span class="co"># 3. Apply crop mask to vegetation data</span></span>
+<span id="cb18-22"><a href="#cb18-22" tabindex="-1"></a>crop_vegetation <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">mask</span>(vegetation, crop_mask)</span>
+<span id="cb18-23"><a href="#cb18-23" tabindex="-1"></a></span>
+<span id="cb18-24"><a href="#cb18-24" tabindex="-1"></a><span class="co"># 4. Create visualization</span></span>
+<span id="cb18-25"><a href="#cb18-25" tabindex="-1"></a><span class="fu">quick_map</span>(crop_vegetation<span class="sc">$</span>NDVI, <span class="at">title =</span> <span class="st">&quot;Ohio Corn NDVI&quot;</span>)</span>
+<span id="cb18-26"><a href="#cb18-26" tabindex="-1"></a></span>
+<span id="cb18-27"><a href="#cb18-27" tabindex="-1"></a><span class="co"># 5. Calculate statistics</span></span>
+<span id="cb18-28"><a href="#cb18-28" tabindex="-1"></a>crop_stats <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">global</span>(crop_vegetation, <span class="st">&quot;mean&quot;</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb18-29"><a href="#cb18-29" tabindex="-1"></a><span class="fu">print</span>(crop_stats)</span>
+<span id="cb18-30"><a href="#cb18-30" tabindex="-1"></a></span>
+<span id="cb18-31"><a href="#cb18-31" tabindex="-1"></a><span class="co"># 6. Save results</span></span>
+<span id="cb18-32"><a href="#cb18-32" tabindex="-1"></a>terra<span class="sc">::</span><span class="fu">writeRaster</span>(crop_vegetation, <span class="st">&quot;ohio_corn_vegetation.tif&quot;</span>)</span></code></pre></div>
+<p>This workflow demonstrates the core GeoSpatialSuite approach: load
+data, process with region boundaries, visualize, and analyze - all with
+minimal code and robust error handling.</p>
+</div>
+<div id="acknowledgments" class="section level2">
+<h2>Acknowledgments</h2>
+<p>This work was developed by the GeoSpatialSuite team with
+contributions from: Olatunde D. Akanbi, Vibha Mandayam, Yinghui Wu,
+Jeffrey Yarus, Erika I. Barcelos, and Roger H. French.</p>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
