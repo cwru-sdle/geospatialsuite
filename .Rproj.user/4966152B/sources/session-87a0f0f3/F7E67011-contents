@@ -1,0 +1,186 @@
+#' Get comprehensive CDL crop codes
+#'
+#' @description
+#' Get Cropland Data Layer (CDL) codes for any crop type or category.
+#' Supports individual crops, crop categories, and custom combinations.
+#'
+#' @param crop_type Crop type or category name
+#'
+#' @return Vector of CDL codes
+#'
+#' @details
+#' Supported crop types include individual crops (corn, soybeans, cotton, etc.)
+#' and categories (grains, oilseeds, fruits, vegetables, etc.).
+#'
+#' @examples
+#' \dontrun{
+#' # Individual crops
+#' corn_codes <- get_comprehensive_cdl_codes("corn")
+#' soybean_codes <- get_comprehensive_cdl_codes("soybeans")
+#'
+#' # Crop categories
+#' grain_codes <- get_comprehensive_cdl_codes("grains")
+#' fruit_codes <- get_comprehensive_cdl_codes("fruits")
+#'
+#' # All crops
+#' all_crop_codes <- get_comprehensive_cdl_codes("all")
+#' }
+#'
+#' @export
+get_comprehensive_cdl_codes <- function(crop_type = "all") {
+  # Comprehensive CDL codes database
+  cdl_database <- list(
+    # Major Field Crops
+    corn = 1, cotton = 2, rice = 3, sorghum = 4, soybeans = 5,
+    sunflower = 6, peanuts = 7, tobacco = 8, sweet_corn = 12,
+    pop_or_orn_corn = 13, mint = 14, barley = 21, durum_wheat = 22,
+    spring_wheat = 23, winter_wheat = 24, other_small_grains = 25,
+    dbl_crop_winwht_soybeans = 26, rye = 27, oats = 28, millet = 29,
+    speltz = 30, canola = 31, flaxseed = 32, safflower = 33,
+    rape_seed = 34, mustard = 35, alfalfa = 36, other_hay_non_alfalfa = 37,
+    camelina = 38, buckwheat = 39, sugarbeets = 41, dry_beans = 42,
+    potatoes = 43, other_crops = 44, sugarcane = 45, sweet_potatoes = 46,
+    misc_vegs_fruits = 47, watermelons = 48, onions = 49, cucumbers = 50,
+    chick_peas = 51, lentils = 52, peas = 53, tomatoes = 54,
+    caneberries = 55, hops = 56, herbs = 57, clover_wildflowers = 58,
+    sod_grass_seed = 59, switchgrass = 60, fallow_idle_cropland = 61,
+
+    # Fruits and Nuts
+    cherries = 66, peaches = 67, apples = 68, grapes = 69,
+    christmas_trees = 70, other_tree_crops = 71, citrus = 72,
+    pecans = 73, almonds = 74, walnuts = 75, pears = 76,
+
+    # Vegetables (200s)
+    carrots = 206, asparagus = 207, garlic = 208, cantaloupes = 209,
+    prunes = 210, olives = 211, oranges = 212, honeydew_melons = 213,
+    broccoli = 214, avocados = 215, peppers = 216, pomegranates = 217,
+    nectarines = 218, greens = 219, plums = 220, strawberries = 221,
+    squash = 222, apricots = 223, vetch = 224, dbl_crop_oats_corn = 225,
+    lettuce = 227,
+
+    # Pasture and Grassland
+    pasture_grass = 176, grassland_pasture = 181,
+
+    # Forest
+    deciduous_forest = 141, evergreen_forest = 142, mixed_forest = 143,
+
+    # Water and Wetlands
+    water = 111, perennial_ice_snow = 112, herbaceous_wetlands = 195,
+    woody_wetlands = 190,
+
+    # Developed Areas
+    developed_open_space = 121, developed_low_intensity = 122,
+    developed_med_intensity = 123, developed_high_intensity = 124,
+
+    # Other Land Cover
+    barren = 131, shrubland = 152, grassland_herbaceous = 171
+  )
+
+  # Predefined categories
+  crop_categories <- list(
+    grains = c(1, 4, 21, 22, 23, 24, 25, 27, 28, 29, 30),
+    oilseeds = c(5, 6, 31, 32, 33, 34, 35),
+    fruits = c(66, 67, 68, 69, 72, 73, 74, 75, 76, 210, 211, 212, 215, 217, 218, 220, 221, 223),
+    vegetables = c(47, 48, 49, 50, 54, 206, 207, 208, 209, 213, 214, 216, 219, 222, 227),
+    legumes = c(42, 51, 52, 53),
+    forage = c(36, 37, 58, 176, 181),
+    specialty = c(8, 14, 45, 56, 57, 70),
+    food_crops = c(1, 3, 5, 21, 22, 23, 24, 41, 42, 43, 44, 45, 46, 47, 66, 67, 68, 69),
+    feed_crops = c(36, 37, 58, 176),
+    industrial_crops = c(2, 8, 31, 32, 33, 38),
+    all_crops = c(1:8, 12:14, 21:61, 66:76, 204:227)
+  )
+
+  if (crop_type == "all") {
+    return(sort(unique(unlist(cdl_database))))
+  } else if (crop_type %in% names(crop_categories)) {
+    return(crop_categories[[crop_type]])
+  } else if (crop_type %in% names(cdl_database)) {
+    return(cdl_database[[crop_type]])
+  } else {
+    # Try partial matching
+    matches <- names(cdl_database)[grepl(crop_type, names(cdl_database), ignore.case = TRUE)]
+    if (length(matches) > 0) {
+      return(cdl_database[[matches[1]]])
+    } else {
+      message("Available crop types:")
+      print(names(cdl_database))
+      stop(paste("Crop type not found:", crop_type))
+    }
+  }
+}
+
+#' Create crop mask from CDL data
+#'
+#' @description
+#' Create a binary mask for specified crop types from CDL raster data.
+#'
+#' @param cdl_data Path to CDL raster or SpatRaster object
+#' @param crop_codes Vector of CDL crop codes to retain
+#' @param region_boundary Optional region boundary for clipping
+#'
+#' @return SpatRaster with only specified crop codes
+#'
+#' @examples
+#' \dontrun{
+#' # Create corn mask
+#' corn_codes <- get_comprehensive_cdl_codes("corn")
+#' corn_mask <- create_crop_mask("cdl_2023.tif", corn_codes)
+#'
+#' # Create grain crops mask for Ohio
+#' grain_codes <- get_comprehensive_cdl_codes("grains")
+#' grain_mask <- create_crop_mask("cdl_2023.tif", grain_codes, "Ohio")
+#' }
+#'
+#' @export
+create_crop_mask <- function(cdl_data, crop_codes, region_boundary = NULL) {
+  # Load CDL raster
+  cdl_raster <- if (is.character(cdl_data)) terra::rast(cdl_data) else cdl_data
+
+  # Mask non-crop codes
+  crop_mask <- cdl_raster
+  crop_mask[!(cdl_raster %in% crop_codes)] <- NA
+
+  # Optional regional mask
+  if (!is.null(region_boundary)) {
+    boundary <- get_region_boundary(region_boundary)
+    boundary_vect <- terra::vect(boundary)
+    crop_mask <- terra::mask(crop_mask, boundary_vect)
+  }
+
+  return(crop_mask)
+}
+
+#' Apply crop mask to raster data
+#'
+#' @description
+#' Apply a crop mask to raster data to extract values only for specified crops.
+#'
+#' @param raster_data Input raster (SpatRaster or path)
+#' @param crop_mask Crop mask raster (SpatRaster or path)
+#' @param resample_method Resampling method if alignment needed
+#'
+#' @return Masked SpatRaster
+#'
+#' @examples
+#' \dontrun{
+#' # Apply crop mask to NDVI data
+#' ndvi_crops <- apply_crop_mask("ndvi.tif", crop_mask)
+#' }
+#'
+#' @export
+apply_crop_mask <- function(raster_data, crop_mask, resample_method = "bilinear") {
+  # Load if paths are provided
+  if (is.character(raster_data)) raster_data <- terra::rast(raster_data)
+  if (is.character(crop_mask)) crop_mask <- terra::rast(crop_mask)
+
+  # Check alignment
+  if (!terra::compareGeom(raster_data, crop_mask, stopOnError = FALSE)) {
+    warning("Alignment mismatch: resampling crop_mask to match raster_data.")
+    crop_mask <- terra::resample(crop_mask, raster_data, method = resample_method)
+  }
+
+  # Apply mask
+  masked <- terra::mask(raster_data, crop_mask)
+  return(masked)
+}

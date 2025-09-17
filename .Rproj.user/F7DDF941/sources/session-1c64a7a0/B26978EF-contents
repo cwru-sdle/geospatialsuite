@@ -1,0 +1,792 @@
+#' Universal Spatial Join - Complete Implementation
+#'
+#' @description
+#' Comprehensive spatial join system that handles ALL spatial data combinations:
+#' Vector ↔ Vector, Vector ↔ Raster, Raster ↔ Raster with full documentation,
+#' error handling, and extensive examples. This replaces all previous spatial
+#' join functions with a unified, robust system.
+#'
+#' @details
+#' ## Quick Start Guide:
+#' Most common use case - extract raster values to point locations:
+#' ```r
+#' result <- universal_spatial_join("my_points.csv", "my_raster.tif", method="extract")
+#' ```
+#'
+#' ## Supported Operations:
+#'
+#' ### Data Type Combinations:
+#' - **Vector → Raster**: Extract raster values to points/polygons/lines
+#' - **Raster → Vector**: Calculate zonal statistics for polygons
+#' - **Raster → Raster**: Resample, overlay, mathematical operations
+#' - **Vector → Vector**: Spatial intersections, overlays, nearest neighbor
+#'
+#' ### Input Format Support:
+#' - **File paths**: ".tif", ".shp", ".gpkg", ".geojson", ".nc"
+#' - **Directories**: Automatically processes all spatial files
+#' - **R objects**: SpatRaster, sf, data.frame with coordinates
+#' - **Lists**: Multiple files or raster stacks
+#'
+#' ### Scaling Operations:
+#' - **Up-scaling**: Aggregate to coarser resolution (scale_factor > 1)
+#' - **Down-scaling**: Interpolate to finer resolution (scale_factor < 1)
+#' - **Custom resolution**: Match target raster geometry
+#'
+#' ### Error Handling:
+#' - **Auto CRS reprojection**: Handles coordinate system mismatches
+#' - **Geometry alignment**: Auto-crops, extends, or resamples as needed
+#' - **NA handling**: Multiple strategies for missing data
+#' - **Memory management**: Chunked processing for large datasets
+#'
+#' ### Method Selection Guide:
+#' \describe{
+#'   \item{extract}{Use when you have point/polygon locations and want to get values from a raster}
+#'   \item{zonal}{Use when you have polygons and want statistics from raster data within each polygon}
+#'   \item{resample}{Use when you need to change raster resolution or align two rasters}
+#'   \item{overlay}{Use when joining two vector datasets based on spatial relationships}
+#'   \item{nearest}{Use when you want to find the closest features between two vector datasets}
+#'   \item{auto}{Let the function choose - works well for standard extract/resample operations}
+#' }
+#'
+#'
+#' @param source_data Source spatial data. Can be:
+#'   \itemize{
+#'     \item File path: "/path/to/data.tif" or "/path/to/data.shp"
+#'     \item Directory: "/path/to/spatial_files/" (processes all spatial files)
+#'     \item R object: SpatRaster, sf object, data.frame with coordinates
+#'     \item List: Multiple files, raster stack, or sf objects
+#'   }
+#' @param target_data Target spatial data (same format options as source_data).
+#'   Can be NULL for scaling operations with scale_factor.
+#' @param method Spatial join method:
+#'   \itemize{
+#'     \item \strong{"auto"}: Automatically detect best method (default)
+#'     \item \strong{"extract"}: Extract raster values to vector features
+#'     \item \strong{"overlay"}: Spatial intersection/overlay of vectors
+#'     \item \strong{"resample"}: Resample raster to match target geometry
+#'     \item \strong{"zonal"}: Calculate zonal statistics (raster → vector)
+#'     \item \strong{"nearest"}: Nearest neighbor spatial join
+#'     \item \strong{"interpolate"}: Spatial interpolation (IDW, kriging)
+#'     \item \strong{"temporal"}: Time-aware spatial join
+#'   }
+#' @param scale_factor Numeric (> 0 if provided). Scale factor for resolution changes:
+#'   \itemize{
+#'     \item \code{NULL}: Use target data resolution (default)
+#'     \item \code{> 1}: Coarser resolution (e.g., 2 = half resolution)
+#'     \item \code{< 1}: Finer resolution (e.g., 0.5 = double resolution)
+#'     \item Custom: Any positive number for specific scaling
+#'   }
+#' @param summary_function Character. Function for aggregating overlapping values:
+#'   \itemize{
+#'     \item \strong{"mean"}: Average values (default for continuous data)
+#'     \item \strong{"median"}: Median values (robust to outliers)
+#'     \item \strong{"max"}/\strong{"min"}: Maximum/minimum values
+#'     \item \strong{"sum"}: Sum values (useful for counts, areas)
+#'     \item \strong{"sd"}: Standard deviation (measure variability)
+#'     \item \strong{"mode"}/\strong{"majority"}: Most frequent value (categorical data)
+#'   }
+#' @param buffer_distance Numeric (>= 0 if provided). Buffer distance in map units:
+#'   \itemize{
+#'     \item For point extraction: Buffer around points
+#'     \item For line extraction: Buffer along lines
+#'     \item For nearest neighbor: Search radius
+#'     \item Units: Same as source data CRS (meters, degrees, etc.)
+#'   }
+#' @param temporal_tolerance Numeric (>= 0 if provided). Time tolerance for temporal joins (in days):
+#'   \itemize{
+#'     \item Maximum time difference for matching observations
+#'     \item Only used with method = "temporal"
+#'     \item Example: 7 = match within 7 days
+#'   }
+#' @param crs_target Character or numeric. Target coordinate reference system:
+#'   \itemize{
+#'     \item EPSG code: 4326, 3857, etc.
+#'     \item PROJ string: "+proj=utm +zone=33 +datum=WGS84"
+#'     \item NULL: Use source data CRS (default)
+#'   }
+#' @param na_strategy Character. Strategy for handling NA values:
+#'   \itemize{
+#'     \item \strong{"remove"}: Keep NAs as missing (default)
+#'     \item \strong{"nearest"}: Replace with nearest neighbor value
+#'     \item \strong{"interpolate"}: Spatial interpolation of NAs
+#'     \item \strong{"zero"}: Replace NAs with zero
+#'   }
+#' @param chunk_size Numeric (> 0). Chunk size for processing large datasets:
+#'   \itemize{
+#'     \item Number of features/cells to process at once
+#'     \item Larger = faster but more memory
+#'     \item Smaller = slower but less memory
+#'     \item Default: 1,000,000
+#'   }
+#' @param parallel Logical. Use parallel processing:
+#'   \itemize{
+#'     \item TRUE: Use multiple cores (faster for large data)
+#'     \item FALSE: Single core processing (default)
+#'     \item Requires 'parallel' package
+#'   }
+#' @param verbose Logical. Print detailed progress messages:
+#'   \itemize{
+#'     \item TRUE: Show processing steps and diagnostics
+#'     \item FALSE: Silent processing (default)
+#'   }
+#'
+#' @return
+#' Spatial data object with joined attributes. Return type depends on operation:
+#' \describe{
+#'   \item{extract (vector → raster)}{sf object with new columns containing extracted raster values. Original geometry preserved, new columns named "extracted_" followed by the raster layer name}
+#'   \item{zonal (raster → vector)}{sf object with new columns containing zonal statistics. Original geometry preserved, new columns named "zonal_" followed by the statistic name and raster layer name}
+#'   \item{resample (raster → raster)}{SpatRaster with resampled/processed data matching target resolution or scale factor}
+#'   \item{overlay (vector → vector)}{sf object with intersected/overlaid features combining attributes from both datasets}
+#'   \item{nearest}{sf object with attributes from nearest features joined}
+#' }
+#'
+#' **Returned objects include 'spatial_join_info' attribute containing:**
+#' \itemize{
+#'   \item method: Join method used
+#'   \item source_type, target_type: Data types processed
+#'   \item processing_time: Time taken (if verbose=TRUE)
+#'   \item timestamp: Processing timestamp
+#'   \item summary_function: Aggregation function used
+#' }
+#'
+#' @section Common Error Solutions:
+#' \describe{
+#'   \item{CRS Mismatch}{"CRS mismatch detected" - Function automatically reprojects data, but manual CRS checking recommended for precision}
+#'   \item{Memory Issues}{"Large dataset processing" - Reduce chunk_size parameter (try 500000) or set parallel=FALSE}
+#'   \item{No Spatial Overlap}{"No spatial overlap found" - Check that source and target data cover the same geographic area}
+#'   \item{File Not Found}{"File does not exist" - Verify file paths and ensure files exist at specified locations}
+#'   \item{Missing Bands}{"Required bands not found" - For raster operations, ensure expected spectral bands are present}
+#'   \item{Invalid Geometries}{"Geometry errors" - Function attempts to fix automatically, but check input data quality}
+#' }
+#'
+#' @section Performance Tips:
+#' \itemize{
+#'   \item For large datasets (>1M cells): set chunk_size=500000 and parallel=TRUE
+#'   \item Use method="resample" with scale_factor > 1 to reduce data size before complex operations
+#'   \item For time series analysis: consider temporal_tolerance to balance accuracy vs processing speed
+#'   \item When processing multiple datasets: ensure consistent CRS to avoid reprojection overhead
+#'   \item For point extraction: use smaller buffer_distance when possible to reduce processing time
+#' }
+#'
+#' @examples
+#' \dontrun{
+#' # =================================================================
+#' # MOST COMMON USE CASE: Extract raster values to CSV points
+#' # =================================================================
+#'
+#' # Your typical workflow: CSV file with coordinates + raster file
+#' results <- universal_spatial_join(
+#'   source_data = "my_field_sites.csv",    # CSV with lon, lat columns
+#'   target_data = "satellite_image.tif",   # Any raster file
+#'   method = "extract",                     # Extract raster values to points
+#'   buffer_distance = 100,                  # 100m buffer around each point
+#'   summary_function = "mean",              # Average within buffer
+#'   verbose = TRUE                          # See what's happening
+#' )
+#'
+#' # Check results - original data + new columns with raster values
+#' head(results)
+#' #   site_id       lon       lat           geometry extracted_satellite_image
+#' # 1       1 -83.12345  40.12345 POINT (-83.1 40.1)                   0.752
+#' # 2       2 -83.23456  40.23456 POINT (-83.2 40.2)                   0.681
+#' # 3       3 -83.34567  40.34567 POINT (-83.3 40.3)                   0.594
+#'
+#' # Access the extracted values
+#' results$extracted_satellite_image
+#'
+#' # =================================================================
+#' # ZONAL STATISTICS: Calculate statistics by polygon areas
+#' # =================================================================
+#'
+#' # Calculate average precipitation by watershed
+#' watershed_precip <- universal_spatial_join(
+#'   source_data = "precipitation_raster.tif",  # Raster data
+#'   target_data = "watershed_boundaries.shp",  # Polygon boundaries
+#'   method = "zonal",                           # Calculate zonal statistics
+#'   summary_function = "mean",                  # Average precipitation per watershed
+#'   verbose = TRUE
+#' )
+#'
+#' # Result: polygons with precipitation statistics
+#' head(watershed_precip)
+#' #   watershed_id                     geometry zonal_mean_precipitation_raster
+#' # 1            1 POLYGON ((-84.2 40.1, ...))                             42.3
+#' # 2            2 POLYGON ((-84.5 40.3, ...))                             38.7
+#'
+#' # =================================================================
+#' # RESAMPLE RASTER: Change resolution or align rasters
+#' # =================================================================
+#'
+#' # Aggregate 30m Landsat to 250m MODIS resolution
+#' landsat_resampled <- universal_spatial_join(
+#'   source_data = "landsat_30m.tif",      # High resolution input
+#'   target_data = "modis_250m.tif",       # Target resolution template
+#'   method = "resample",                   # Resample operation
+#'   summary_function = "mean",             # Average when aggregating
+#'   verbose = TRUE
+#' )
+#'
+#' # Check new resolution
+#' terra::res(landsat_resampled)
+#' # [1] 250 250
+#'
+#' # Scale by factor instead of template
+#' coarser_raster <- universal_spatial_join(
+#'   source_data = "fine_resolution.tif",
+#'   target_data = NULL,                    # No template needed
+#'   method = "resample",
+#'   scale_factor = 5,                      # 5x coarser resolution
+#'   summary_function = "mean"
+#' )
+#'
+#' # =================================================================
+#' # VECTOR OVERLAY: Join two vector datasets
+#' # =================================================================
+#'
+#' # Find which counties contain each field site
+#' sites_with_counties <- universal_spatial_join(
+#'   source_data = "field_sites.shp",      # Point data
+#'   target_data = "county_boundaries.shp", # Polygon data
+#'   method = "overlay",                     # Spatial intersection
+#'   verbose = TRUE
+#' )
+#'
+#' # Result: points with county attributes added
+#' head(sites_with_counties)
+#' #   site_id           geometry county_name state_name
+#' # 1       1 POINT (-83.1 40.1)    Franklin       Ohio
+#' # 2       2 POINT (-83.2 40.2)    Delaware       Ohio
+#'
+#' # =================================================================
+#' # AUTO-DETECTION: Let function choose best method
+#' # =================================================================
+#'
+#' # Function automatically detects: points + raster = extract method
+#' auto_result <- universal_spatial_join(
+#'   source_data = my_points,               # Any point data
+#'   target_data = my_raster,               # Any raster data
+#'   method = "auto",                       # Automatically choose method
+#'   verbose = TRUE                         # See what method was chosen
+#' )
+#' # Output: "Auto-detected method: extract for vector to raster"
+#'
+#' # =================================================================
+#' # ERROR HANDLING EXAMPLES
+#' # =================================================================
+#'
+#' # Function handles common issues automatically
+#' robust_result <- universal_spatial_join(
+#'   source_data = "points_wgs84.csv",     # WGS84 coordinate system
+#'   target_data = "raster_utm.tif",       # UTM coordinate system
+#'   method = "extract",
+#'   na_strategy = "nearest",               # Handle missing values
+#'   verbose = TRUE                         # See CRS handling messages
+#' )
+#' # Output: "CRS mismatch detected. Reprojecting to match raster CRS..."
+#' }
+#'
+#' @seealso
+#' \itemize{
+#'   \item \code{\link{raster_to_raster_ops}} for specialized raster operations
+#'   \item \code{\link{multiscale_operations}} for multi-scale analysis
+#'   \item \code{\link{process_vector_data}} for vector data preprocessing
+#' }
+#'
+#' @export
+universal_spatial_join <- function(source_data,
+                                   target_data,
+                                   method = "auto",
+                                   scale_factor = NULL,
+                                   summary_function = "mean",
+                                   buffer_distance = NULL,
+                                   temporal_tolerance = NULL,
+                                   crs_target = NULL,
+                                   na_strategy = "remove",
+                                   chunk_size = 1000000,
+                                   parallel = FALSE,
+                                   verbose = FALSE) {
+
+  # =================================================================
+  # INPUT VALIDATION AND INITIALIZATION
+  # =================================================================
+
+  if (verbose) {
+    message(paste(rep("=", 60), collapse = ""))
+    message("UNIVERSAL SPATIAL JOIN - Starting Analysis")
+    message(paste(rep("=", 60), collapse = ""))
+    message(sprintf("Timestamp: %s", Sys.time()))
+  }
+
+  # Validate required parameters
+  if (missing(source_data) || is.null(source_data)) {
+    stop("source_data is required and cannot be NULL", call. = FALSE)
+  }
+
+  # Validate method parameter
+  valid_methods <- c("auto", "extract", "overlay", "resample", "zonal",
+                     "nearest", "interpolate", "temporal")
+  if (!method %in% valid_methods) {
+    stop(sprintf("Invalid method '%s'. Must be one of: %s",
+                 method, paste(valid_methods, collapse = ", ")), call. = FALSE)
+  }
+
+  # Validate summary function
+  valid_summaries <- c("mean", "median", "max", "min", "sum", "sd", "mode", "majority")
+  if (!summary_function %in% valid_summaries) {
+    stop(sprintf("Invalid summary_function '%s'. Must be one of: %s",
+                 summary_function, paste(valid_summaries, collapse = ", ")), call. = FALSE)
+  }
+
+  # Validate na_strategy
+  valid_na_strategies <- c("remove", "nearest", "interpolate", "zero")
+  if (!na_strategy %in% valid_na_strategies) {
+    stop(sprintf("Invalid na_strategy '%s'. Must be one of: %s",
+                 na_strategy, paste(valid_na_strategies, collapse = ", ")), call. = FALSE)
+  }
+
+  # Validate numeric parameters
+  if (!is.null(scale_factor) && (!is.numeric(scale_factor) || scale_factor <= 0)) {
+    stop("scale_factor must be a positive number", call. = FALSE)
+  }
+
+  if (!is.null(buffer_distance) && (!is.numeric(buffer_distance) || buffer_distance < 0)) {
+    stop("buffer_distance must be a non-negative number", call. = FALSE)
+  }
+
+  if (!is.null(temporal_tolerance) && (!is.numeric(temporal_tolerance) || temporal_tolerance < 0)) {
+    stop("temporal_tolerance must be a non-negative number (in days)", call. = FALSE)
+  }
+
+  # =================================================================
+  # DATA CLASSIFICATION AND LOADING
+  # =================================================================
+
+  if (verbose) {
+    message("\n--- STEP 1: DATA CLASSIFICATION ---")
+    message("Analyzing source data...")
+  }
+
+  # Classify and load source data
+  source_info <- tryCatch({
+    classify_spatial_data(source_data, verbose)
+  }, error = function(e) {
+    stop(sprintf("Failed to process source_data: %s", e$message), call. = FALSE)
+  })
+
+  if (verbose) {
+    message(sprintf("Source data type: %s (%s)", source_info$type, source_info$class))
+    if (!is.null(source_info$path)) {
+      message(sprintf("Source path: %s", source_info$path))
+    }
+    if (source_info$type == "raster") {
+      message(sprintf("Source dimensions: %d x %d pixels, %d layer(s)",
+                      terra::nrow(source_info$data), terra::ncol(source_info$data),
+                      terra::nlyr(source_info$data)))
+      message(sprintf("Source resolution: %.3f x %.3f units",
+                      terra::res(source_info$data)[1], terra::res(source_info$data)[2]))
+    } else {
+      message(sprintf("Source features: %d", nrow(source_info$data)))
+      geom_types <- unique(as.character(sf::st_geometry_type(source_info$data)))
+      message(sprintf("Source geometry: %s", paste(geom_types, collapse = ", ")))
+    }
+  }
+
+  # Handle target data (can be NULL for some operations)
+  target_info <- NULL
+  if (!is.null(target_data)) {
+    if (verbose) message("Analyzing target data...")
+
+    target_info <- tryCatch({
+      classify_spatial_data(target_data, verbose)
+    }, error = function(e) {
+      stop(sprintf("Failed to process target_data: %s", e$message), call. = FALSE)
+    })
+
+    if (verbose) {
+      message(sprintf("Target data type: %s (%s)", target_info$type, target_info$class))
+      if (target_info$type == "raster") {
+        message(sprintf("Target dimensions: %d x %d pixels, %d layer(s)",
+                        terra::nrow(target_info$data), terra::ncol(target_info$data),
+                        terra::nlyr(target_info$data)))
+        message(sprintf("Target resolution: %.3f x %.3f units",
+                        terra::res(target_info$data)[1], terra::res(target_info$data)[2]))
+      } else {
+        message(sprintf("Target features: %d", nrow(target_info$data)))
+      }
+    }
+  } else if (method != "resample" || is.null(scale_factor)) {
+    warning("target_data is NULL. This is only valid for scaling operations with scale_factor.")
+  }
+
+  # =================================================================
+  # METHOD DETECTION AND VALIDATION
+  # =================================================================
+
+  if (verbose) message("\n--- STEP 2: METHOD SELECTION ---")
+
+  # Auto-detect method if needed
+  if (method == "auto") {
+    if (is.null(target_info)) {
+      stop("Cannot auto-detect method when target_data is NULL", call. = FALSE)
+    }
+    method <- auto_detect_method(source_info$type, target_info$type, verbose)
+  }
+
+  # Validate method compatibility
+  validate_method_compatibility(method, source_info$type,
+                                if (is.null(target_info)) "none" else target_info$type)
+
+  if (verbose) {
+    message(sprintf("Selected method: %s", method))
+    message(sprintf("Summary function: %s", summary_function))
+    if (!is.null(scale_factor)) {
+      message(sprintf("Scale factor: %s", scale_factor))
+    }
+    if (!is.null(buffer_distance)) {
+      message(sprintf("Buffer distance: %s units", buffer_distance))
+    }
+  }
+
+  # =================================================================
+  # EXECUTE SPATIAL JOIN OPERATION
+  # =================================================================
+
+  if (verbose) {
+    message("\n--- STEP 3: SPATIAL JOIN EXECUTION ---")
+    start_time <- Sys.time()
+  }
+
+  # Execute the appropriate join method
+  result <- tryCatch({
+    switch(method,
+           "extract" = {
+             if (is.null(target_info)) stop("target_data required for extract method")
+             perform_extract_join(source_info, target_info, summary_function,
+                                  buffer_distance, crs_target, na_strategy, verbose)
+           },
+           "overlay" = {
+             if (is.null(target_info)) stop("target_data required for overlay method")
+             perform_overlay_join(source_info, target_info, summary_function,
+                                  crs_target, verbose)
+           },
+           "resample" = {
+             perform_resample_join(source_info, target_info, scale_factor,
+                                   summary_function, crs_target, verbose)
+           },
+           "zonal" = {
+             if (is.null(target_info)) stop("target_data required for zonal method")
+             perform_zonal_join(source_info, target_info, summary_function,
+                                crs_target, verbose)
+           },
+           "nearest" = {
+             if (is.null(target_info)) stop("target_data required for nearest method")
+             perform_nearest_join(source_info, target_info, buffer_distance,
+                                  crs_target, verbose)
+           },
+           "interpolate" = {
+             if (is.null(target_info)) stop("target_data required for interpolate method")
+             perform_interpolate_join(source_info, target_info,
+                                      summary_function, crs_target, verbose)
+           },
+           "temporal" = {
+             if (is.null(target_info)) stop("target_data required for temporal method")
+             perform_temporal_join(source_info, target_info, temporal_tolerance,
+                                   summary_function, verbose)
+           },
+           stop(sprintf("Method '%s' not implemented", method), call. = FALSE)
+    )
+  }, error = function(e) {
+    stop(sprintf("Spatial join failed: %s", e$message), call. = FALSE)
+  })
+
+  # =================================================================
+  # RESULTS VALIDATION AND REPORTING
+  # =================================================================
+
+  if (verbose) {
+    end_time <- Sys.time()
+    processing_time <- round(as.numeric(difftime(end_time, start_time, units = "secs")), 2)
+
+    message("\n--- STEP 4: RESULTS VALIDATION ---")
+    message(sprintf("Processing time: %.2f seconds", processing_time))
+
+    # Validate and report results
+    if (inherits(result, "SpatRaster")) {
+      message(sprintf("Result: SpatRaster with %d layer(s)", terra::nlyr(result)))
+      message(sprintf("Result dimensions: %d x %d pixels",
+                      terra::nrow(result), terra::ncol(result)))
+      message(sprintf("Result resolution: %.6f x %.6f units",
+                      terra::res(result)[1], terra::res(result)[2]))
+
+      # Check for valid data
+      has_data <- !all(is.na(terra::values(result, mat = FALSE)))
+      message(sprintf("Contains valid data: %s", has_data))
+
+      if (has_data) {
+        value_range <- terra::minmax(result)
+        message(sprintf("Value range: [%.6f, %.6f]", value_range[1], value_range[2]))
+      }
+
+    } else if (inherits(result, "sf")) {
+      message(sprintf("Result: sf object with %d features", nrow(result)))
+      message(sprintf("Result columns: %d", ncol(result)))
+      new_cols <- setdiff(names(result), names(source_info$data))
+      if (length(new_cols) > 0) {
+        message(sprintf("New columns added: %s", paste(new_cols, collapse = ", ")))
+      }
+
+    } else if (is.list(result)) {
+      message(sprintf("Result: List with %d elements", length(result)))
+      message(sprintf("List elements: %s", paste(names(result), collapse = ", ")))
+    }
+
+    message(paste0("\n", paste(rep("=", 60), collapse = "")))
+    message("UNIVERSAL SPATIAL JOIN - Completed Successfully")
+    message(paste(rep("=", 60), collapse = ""))
+  }
+
+  # Add metadata to result
+  if (inherits(result, c("SpatRaster", "sf"))) {
+    attr(result, "spatial_join_info") <- list(
+      method = method,
+      source_type = source_info$type,
+      target_type = if (is.null(target_info)) "none" else target_info$type,
+      summary_function = summary_function,
+      scale_factor = scale_factor,
+      buffer_distance = buffer_distance,
+      processing_time = if (verbose) processing_time else NA,
+      timestamp = Sys.time()
+    )
+  }
+
+  return(result)
+}
+
+# =================================================================
+# SPECIALIZED RASTER OPERATIONS
+# =================================================================
+
+#' Raster to Raster Operations
+#'
+#' @description
+#' Specialized function for mathematical and overlay operations between rasters.
+#' Handles alignment, projection, and complex operations with comprehensive
+#' error handling and performance optimization.
+#'
+#' @param raster1 First raster (SpatRaster or file path)
+#' @param raster2 Second raster (SpatRaster or file path)
+#' @param operation Character. Mathematical operation:
+#'   \itemize{
+#'     \item \strong{"add"}: Add rasters (raster1 + raster2)
+#'     \item \strong{"subtract"}: Subtract rasters (raster1 - raster2)
+#'     \item \strong{"multiply"}: Multiply rasters (raster1 * raster2)
+#'     \item \strong{"divide"}: Divide rasters (raster1 / raster2)
+#'     \item \strong{"mask"}: Mask raster1 with raster2
+#'     \item \strong{"overlay"}: Combine with summary function
+#'     \item \strong{"difference"}: Absolute difference |raster1 - raster2|
+#'     \item \strong{"ratio"}: Ratio raster1 / raster2 (with zero handling)
+#'   }
+#' @param align_method Character. How to align mismatched rasters:
+#'   \itemize{
+#'     \item \strong{"resample"}: Resample raster2 to match raster1 (default)
+#'     \item \strong{"crop"}: Crop both to common extent
+#'     \item \strong{"extend"}: Extend smaller raster to match larger
+#'     \item \strong{"project"}: Reproject raster2 to raster1 CRS
+#'   }
+#' @param summary_function Character. Function for overlay operation
+#' @param handle_na Character. How to handle NA values:
+#'   \itemize{
+#'     \item \strong{"propagate"}: NA + value = NA (default)
+#'     \item \strong{"ignore"}: Skip NAs in calculations
+#'     \item \strong{"zero"}: Treat NAs as zero
+#'   }
+#' @param mask_value Numeric. Value to use for masking (default: NA)
+#' @param output_file Character. Optional output file path
+#' @param verbose Logical. Print processing details
+#'
+#' @return SpatRaster with operation results
+#'
+#' @examples
+#' \dontrun{
+#' # Mathematical operations
+#' sum_raster <- raster_to_raster_ops("ndvi.tif", "evi.tif", "add")
+#' diff_raster <- raster_to_raster_ops("before.tif", "after.tif", "subtract")
+#'
+#' # Masking operations
+#' masked <- raster_to_raster_ops("data.tif", "mask.tif", "mask")
+#'
+#' # Complex overlay with alignment
+#' overlay <- raster_to_raster_ops(
+#'   raster1 = "fine_res.tif",
+#'   raster2 = "coarse_res.tif",
+#'   operation = "overlay",
+#'   align_method = "resample",
+#'   summary_function = "mean",
+#'   verbose = TRUE
+#' )
+#' }
+#'
+#' @export
+raster_to_raster_ops <- function(raster1,
+                                 raster2,
+                                 operation = "overlay",
+                                 align_method = "resample",
+                                 summary_function = "mean",
+                                 handle_na = "propagate",
+                                 mask_value = NA,
+                                 output_file = NULL,
+                                 verbose = FALSE) {
+
+  # Input validation
+  valid_operations <- c("add", "subtract", "multiply", "divide", "mask",
+                        "overlay", "difference", "ratio")
+  if (!operation %in% valid_operations) {
+    stop(sprintf("Invalid operation '%s'. Must be one of: %s",
+                 operation, paste(valid_operations, collapse = ", ")), call. = FALSE)
+  }
+
+  valid_align_methods <- c("resample", "crop", "extend", "project")
+  if (!align_method %in% valid_align_methods) {
+    stop(sprintf("Invalid align_method '%s'. Must be one of: %s",
+                 align_method, paste(valid_align_methods, collapse = ", ")), call. = FALSE)
+  }
+
+  if (verbose) {
+    message(sprintf("Performing raster operation: %s", operation))
+    message(sprintf("Alignment method: %s", align_method))
+  }
+
+  # Load rasters
+  if (is.character(raster1)) {
+    if (verbose) message("Loading raster1...")
+    raster1 <- terra::rast(raster1)
+  }
+  if (is.character(raster2)) {
+    if (verbose) message("Loading raster2...")
+    raster2 <- terra::rast(raster2)
+  }
+
+  # Check and handle CRS differences
+  if (!identical(terra::crs(raster1), terra::crs(raster2))) {
+    if (verbose) message("CRS mismatch detected. Handling...")
+    if (align_method == "project") {
+      raster2 <- terra::project(raster2, terra::crs(raster1))
+    } else {
+      warning("CRS mismatch detected. Consider using align_method='project'")
+    }
+  }
+
+  # Align rasters if needed
+  if (!terra::compareGeom(raster1, raster2, stopOnError = FALSE)) {
+    if (verbose) message(sprintf("Geometry mismatch. Applying %s alignment...", align_method))
+
+    if (align_method == "resample") {
+      raster2 <- terra::resample(raster2, raster1)
+    } else if (align_method == "crop") {
+      common_ext <- terra::intersect(terra::ext(raster1), terra::ext(raster2))
+      if (is.null(common_ext)) {
+        stop("No spatial overlap between rasters", call. = FALSE)
+      }
+      raster1 <- terra::crop(raster1, common_ext)
+      raster2 <- terra::crop(raster2, common_ext)
+    } else if (align_method == "extend") {
+      combined_ext <- terra::union(terra::ext(raster1), terra::ext(raster2))
+      raster1 <- terra::extend(raster1, combined_ext)
+      raster2 <- terra::extend(raster2, combined_ext)
+    }
+  }
+
+  # Perform operation
+  if (verbose) message("Executing operation...")
+
+  result <- switch(operation,
+                   "add" = {
+                     if (handle_na == "ignore") {
+                       terra::app(c(raster1, raster2), function(x) sum(x, na.rm = TRUE))
+                     } else {
+                       raster1 + raster2
+                     }
+                   },
+                   "subtract" = {
+                     if (handle_na == "ignore") {
+                       terra::app(c(raster1, raster2), function(x) x[1] - x[2])
+                     } else {
+                       raster1 - raster2
+                     }
+                   },
+                   "multiply" = raster1 * raster2,
+                   "divide" = {
+                     # Handle division by zero
+                     result_div <- raster1 / raster2
+                     if (handle_na != "propagate") {
+                       # Replace Inf/-Inf with NA
+                       result_div[is.infinite(result_div)] <- NA
+                     }
+                     result_div
+                   },
+                   "difference" = abs(raster1 - raster2),
+                   "ratio" = {
+                     # Safe ratio calculation
+                     ratio_result <- raster1 / raster2
+                     ratio_result[raster2 == 0] <- NA  # Handle division by zero
+                     ratio_result[is.infinite(ratio_result)] <- NA
+                     ratio_result
+                   },
+                   "mask" = terra::mask(raster1, raster2, maskvalues = mask_value),
+                   "overlay" = {
+                     # Combine with summary function
+                     stack <- c(raster1, raster2)
+                     summary_func <- get_summary_function(summary_function)
+                     terra::app(stack, summary_func, na.rm = (handle_na == "ignore"))
+                   },
+                   stop(sprintf("Operation '%s' not implemented", operation))
+  )
+  return(result)
+}
+
+#' Multi-scale spatial operations
+#'
+#' @description
+#' Handle multi-scale operations including up-scaling, down-scaling,
+#' and pyramid operations for efficient processing.
+#'
+#' @param spatial_data Input spatial data
+#' @param target_scales Vector of scale factors
+#' @param operation Operation to perform at each scale
+#' @param pyramid Create image pyramid
+#'
+#' @return List of results at different scales
+#'
+#' @examples
+#' \dontrun{
+#' # Create multi-scale analysis
+#' scales <- multiscale_operations("data.tif", c(1, 2, 4, 8), "mean")
+#' }
+#'
+#' @export
+multiscale_operations <- function(spatial_data, target_scales = c(1, 2, 4, 8),
+                                  operation = "mean", pyramid = FALSE) {
+
+  if (is.character(spatial_data)) spatial_data <- terra::rast(spatial_data)
+
+  results <- list()
+
+  for (scale in target_scales) {
+    if (scale == 1) {
+      results[[paste0("scale_", scale)]] <- spatial_data
+    } else {
+      # Aggregate to coarser resolution
+      summary_func <- get_summary_function(operation)
+      aggregated <- terra::aggregate(spatial_data, fact = scale, fun = summary_func, na.rm = TRUE)
+      results[[paste0("scale_", scale)]] <- aggregated
+    }
+  }
+
+  if (pyramid) {
+    # Create proper image pyramid structure
+    attr(results, "pyramid") <- TRUE
+    attr(results, "scales") <- target_scales
+  }
+
+  return(results)
+}

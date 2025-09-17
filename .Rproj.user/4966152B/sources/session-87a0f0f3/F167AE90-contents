@@ -1,0 +1,644 @@
+#' Calculate NDVI from red and NIR bands (COMPLETE IMPROVED VERSION)
+#'
+#' @description
+#' Calculate Normalized Difference Vegetation Index (NDVI) from red and NIR bands
+#' with automatic matching by date if filenames contain date information.
+#' Includes comprehensive error handling, validation, and progress reporting.
+#'
+#' @param red_data Red band data (files, directory, or raster objects)
+#' @param nir_data NIR band data (files, directory, or raster objects)
+#' @param clamp_range Range to clamp NDVI values (default: c(-0.2, 1))
+#' @param match_by_date Logical: match rasters by date using filenames
+#' @param verbose Print progress messages
+#' @param date_patterns Custom date patterns for matching (optional)
+#'
+#' @return SpatRaster with NDVI layers
+#'
+#' @examples
+#' \dontrun{
+#' # Calculate NDVI from directories with date matching
+#' ndvi <- calculate_ndvi("red_bands/", "nir_bands/", match_by_date = TRUE)
+#'
+#' # Calculate with custom clamp range and no date matching
+#' ndvi <- calculate_ndvi(red_files, nir_files,
+#'                       clamp_range = c(-1, 1),
+#'                       match_by_date = FALSE)
+#'
+#' # With verbose progress reporting
+#' ndvi <- calculate_ndvi("red/", "nir/", verbose = TRUE)
+#' }
+#'
+#' @export
+calculate_ndvi <- function(red_data, nir_data, clamp_range = c(-0.2, 1),
+                           match_by_date = TRUE, verbose = FALSE, date_patterns = NULL) {
+
+  # Input validation
+  validate_raster_input(red_data, "red_data")
+  validate_raster_input(nir_data, "nir_data")
+
+  if (!is.null(clamp_range)) {
+    validate_numeric_range(clamp_range, param_name = "clamp_range")
+    if (length(clamp_range) != 2) {
+      stop("clamp_range must be a vector of length 2 (min, max)", call. = FALSE)
+    }
+    if (clamp_range[1] >= clamp_range[2]) {
+      stop("clamp_range[1] must be less than clamp_range[2]", call. = FALSE)
+    }
+  }
+
+  if (verbose) message("Starting NDVI calculation with comprehensive error handling...")
+
+  # Match rasters by date if requested
+  if (match_by_date) {
+    if (verbose) message("Matching red and NIR bands by date...")
+
+    matched_df <- tryCatch({
+      match_rasters_by_date(red_data, nir_data, date_patterns, verbose)
+    }, error = function(e) {
+      stop(sprintf("Failed to match rasters by date: %s", e$message), call. = FALSE)
+    })
+
+    if (nrow(matched_df) == 0) {
+      stop("No red-NIR matches found by date. Check filename patterns or set match_by_date=FALSE",
+           call. = FALSE)
+    }
+
+    if (verbose) message(sprintf("Found %d matching red-NIR pairs", nrow(matched_df)))
+
+    red_files <- matched_df$red
+    nir_files <- matched_df$nir
+    layer_dates <- matched_df$date
+  } else {
+    red_files <- red_data
+    nir_files <- nir_data
+    layer_dates <- paste0("Layer_", seq_along(red_files))
+
+    if (verbose) message("Processing files without date matching...")
+  }
+
+  # Load rasters with error handling
+  red_rasters <- tryCatch({
+    load_raster_data(red_files, verbose = verbose)
+  }, error = function(e) {
+    stop(sprintf("Failed to load red band data: %s", e$message), call. = FALSE)
+  })
+
+  nir_rasters <- tryCatch({
+    load_raster_data(nir_files, verbose = verbose)
+  }, error = function(e) {
+    stop(sprintf("Failed to load NIR band data: %s", e$message), call. = FALSE)
+  })
+
+  # Validate matching number of rasters
+  if (length(red_rasters) != length(nir_rasters)) {
+    stop(sprintf("Number of red (%d) and NIR (%d) rasters must match",
+                 length(red_rasters), length(nir_rasters)), call. = FALSE)
+  }
+
+  if (verbose) message(sprintf("Processing %d red-NIR pairs...", length(red_rasters)))
+
+  # Calculate NDVI for each pair
+  ndvi_list <- vector("list", length(red_rasters))
+
+  for (i in seq_along(red_rasters)) {
+    if (verbose && (i %% 5 == 0 || i == length(red_rasters))) {
+      message(sprintf("Processing pair %d/%d (%s)...", i, length(red_rasters), layer_dates[i]))
+    }
+
+    tryCatch({
+      red <- red_rasters[[i]]
+      nir <- nir_rasters[[i]]
+
+      # Handle multi-layer rasters
+      if (terra::nlyr(red) > 1) {
+        if (verbose) message(sprintf("Red raster has %d layers, using first layer", terra::nlyr(red)))
+        red <- red[[1]]
+      }
+      if (terra::nlyr(nir) > 1) {
+        if (verbose) message(sprintf("NIR raster has %d layers, using first layer", terra::nlyr(nir)))
+        nir <- nir[[1]]
+      }
+
+      # Check compatibility and align if necessary
+      nir <- check_raster_compatibility(red, nir, auto_align = TRUE)
+
+      # Calculate NDVI
+      ndvi <- (nir - red) / (nir + red)
+
+      # Handle special cases
+      # Division by zero check (where red + nir = 0)
+      zero_sum_mask <- (red + nir) == 0
+      if (any(terra::values(zero_sum_mask), na.rm = TRUE)) {
+        ndvi[zero_sum_mask] <- NA
+        if (verbose) message(sprintf("Set %d pixels to NA due to zero denominator",
+                                     sum(terra::values(zero_sum_mask), na.rm = TRUE)))
+      }
+
+      # Apply clamp range if specified
+      if (!is.null(clamp_range)) {
+        ndvi <- terra::clamp(ndvi, clamp_range[1], clamp_range[2])
+      }
+
+      # Check for reasonable results
+      n_valid <- sum(!is.na(terra::values(ndvi)))
+      n_total <- terra::ncell(ndvi)
+
+      if (n_valid == 0) {
+        warning(sprintf("NDVI layer %d (%s) has no valid values", i, layer_dates[i]))
+      } else if (n_valid < n_total * 0.1) {
+        warning(sprintf("NDVI layer %d (%s) has only %.1f%% valid values",
+                        i, layer_dates[i], (n_valid/n_total)*100))
+      }
+
+      # Check value ranges
+      if (n_valid > 0) {
+        value_range <- range(terra::values(ndvi), na.rm = TRUE)
+        if (value_range[1] < -1 || value_range[2] > 1) {
+          warning(sprintf("NDVI layer %d has values outside expected range [-1, 1]: [%.3f, %.3f]",
+                          i, value_range[1], value_range[2]))
+        }
+      }
+
+      names(ndvi) <- paste0("NDVI_", gsub("[^A-Za-z0-9_]", "_", layer_dates[i]))
+      ndvi_list[[i]] <- ndvi
+
+    }, error = function(e) {
+      stop(sprintf("Failed to calculate NDVI for pair %d (%s): %s",
+                   i, layer_dates[i], e$message), call. = FALSE)
+    })
+  }
+
+  # Combine results
+  result <- if (length(ndvi_list) == 1) {
+    ndvi_list[[1]]
+  } else {
+    tryCatch({
+      terra::rast(ndvi_list)
+    }, error = function(e) {
+      stop(sprintf("Failed to combine NDVI layers: %s", e$message), call. = FALSE)
+    })
+  }
+
+  if (verbose) {
+    n_layers <- terra::nlyr(result)
+    total_valid <- sum(!is.na(terra::values(result)))
+    total_cells <- terra::ncell(result) * n_layers
+
+    message(sprintf("NDVI calculation completed successfully:"))
+    message(sprintf("  - %d layer(s) created", n_layers))
+    message(sprintf("  - %.1f%% valid pixels overall", (total_valid/total_cells)*100))
+    message(sprintf("  - Value range: [%.3f, %.3f]",
+                    min(terra::values(result), na.rm = TRUE),
+                    max(terra::values(result), na.rm = TRUE)))
+  }
+
+  return(result)
+}
+
+#' Calculate vegetation indices from spectral bands (COMPLETE IMPROVED VERSION)
+#'
+#' @description
+#' Calculate various vegetation indices including NDVI, EVI, SAVI, and many others
+#' with robust input validation, error handling, and automatic band alignment.
+#'
+#' @param red Red band SpatRaster or file path
+#' @param nir NIR band SpatRaster or file path
+#' @param blue Optional blue band
+#' @param green Optional green band
+#' @param swir1 Optional SWIR1 band (1.6 μm)
+#' @param swir2 Optional SWIR2 band (2.2 μm)
+#' @param red_edge Optional Red Edge band (0.74 μm)
+#' @param index_type Index name (see list_vegetation_indices() for options)
+#' @param ndvi_min Minimum NDVI for VCI calculation
+#' @param ndvi_max Maximum NDVI for VCI calculation
+#' @param verbose Print progress messages
+#'
+#' @return SpatRaster of vegetation index
+#'
+#' @examples
+#' \dontrun{
+#' # Calculate NDVI with robust error handling
+#' ndvi <- calculate_vegetation_index(red, nir, index_type = "NDVI")
+#'
+#' # Calculate EVI (requires blue band)
+#' evi <- calculate_vegetation_index(red, nir, blue, index_type = "EVI")
+#'
+#' # Calculate SAVI with verbose output
+#' savi <- calculate_vegetation_index(red, nir, index_type = "SAVI", verbose = TRUE)
+#' }
+#'
+#' @export
+calculate_vegetation_index <- function(red, nir, blue = NULL, green = NULL,
+                                       swir1 = NULL, swir2 = NULL, red_edge = NULL,
+                                       index_type = "NDVI",
+                                       ndvi_min = NULL, ndvi_max = NULL,
+                                       verbose = FALSE) {
+
+  if (verbose) message(sprintf("Starting %s calculation with comprehensive validation...", index_type))
+
+  # Input validation
+  validate_raster_input(red, "red")
+  validate_raster_input(nir, "nir")
+  validate_raster_input(blue, "blue", allow_null = TRUE)
+  validate_raster_input(green, "green", allow_null = TRUE)
+  validate_raster_input(swir1, "swir1", allow_null = TRUE)
+  validate_raster_input(swir2, "swir2", allow_null = TRUE)
+  validate_raster_input(red_edge, "red_edge", allow_null = TRUE)
+
+  # Validate index type
+  valid_indices <- c("NDVI", "EVI", "SAVI", "GNDVI", "ARVI", "MSAVI", "DVI", "RVI", "OSAVI")
+  validate_method(index_type, valid_indices, "index_type")
+
+  # Index-specific validation
+  if (index_type == "EVI" && is.null(blue)) {
+    stop("EVI calculation requires blue band. Please provide blue parameter.", call. = FALSE)
+  }
+  if (index_type == "GNDVI" && is.null(green)) {
+    stop("GNDVI calculation requires green band. Please provide green parameter.", call. = FALSE)
+  }
+  if (index_type == "ARVI" && is.null(blue)) {
+    stop("ARVI calculation requires blue band. Please provide blue parameter.", call. = FALSE)
+  }
+
+  # Load rasters with error handling
+  if (verbose) message("Loading and validating input bands...")
+
+  red <- load_raster_safe(red, "red band")
+  nir <- load_raster_safe(nir, "NIR band")
+
+  # Check spatial compatibility and align if necessary
+  if (verbose) message("Checking spatial compatibility...")
+  nir <- check_raster_compatibility(red, nir, auto_align = TRUE)
+
+  # Load optional bands if provided
+  if (!is.null(blue)) {
+    blue <- load_raster_safe(blue, "blue band")
+    blue <- check_raster_compatibility(red, blue, auto_align = TRUE)
+  }
+
+  if (!is.null(green)) {
+    green <- load_raster_safe(green, "green band")
+    green <- check_raster_compatibility(red, green, auto_align = TRUE)
+  }
+
+  if (!is.null(swir1)) {
+    swir1 <- load_raster_safe(swir1, "SWIR1 band")
+    swir1 <- check_raster_compatibility(red, swir1, auto_align = TRUE)
+  }
+
+  if (!is.null(swir2)) {
+    swir2 <- load_raster_safe(swir2, "SWIR2 band")
+    swir2 <- check_raster_compatibility(red, swir2, auto_align = TRUE)
+  }
+
+  if (!is.null(red_edge)) {
+    red_edge <- load_raster_safe(red_edge, "red edge band")
+    red_edge <- check_raster_compatibility(red, red_edge, auto_align = TRUE)
+  }
+
+  # Calculate index with comprehensive error handling
+  if (verbose) message(sprintf("Computing %s index...", index_type))
+
+  index <- tryCatch({
+    result <- switch(index_type,
+                     "NDVI" = (nir - red) / (nir + red),
+                     "EVI" = 2.5 * ((nir - red) / (nir + 6 * red - 7.5 * blue + 1)),
+                     "SAVI" = {
+                       L <- 0.5
+                       ((nir - red) / (nir + red + L)) * (1 + L)
+                     },
+                     "GNDVI" = (nir - green) / (nir + green),
+                     "ARVI" = (nir - (2 * red - blue)) / (nir + (2 * red - blue)),
+                     "MSAVI" = 0.5 * (2 * nir + 1 - sqrt((2 * nir + 1)^2 - 8 * (nir - red))),
+                     "DVI" = nir - red,
+                     "RVI" = nir / red,
+                     "OSAVI" = (nir - red) / (nir + red + 0.16),
+                     stop(sprintf("Unsupported index type: %s", index_type), call. = FALSE)
+    )
+
+    # Handle special cases for specific indices
+    if (index_type == "RVI") {
+      # Handle division by zero in RVI
+      zero_mask <- red == 0
+      if (any(terra::values(zero_mask), na.rm = TRUE)) {
+        result[zero_mask] <- NA
+        if (verbose) message("Set pixels with zero red reflectance to NA for RVI calculation")
+      }
+    }
+
+    if (index_type %in% c("NDVI", "GNDVI", "SAVI", "OSAVI", "ARVI")) {
+      # Handle division by zero in normalized indices
+      if (index_type == "NDVI") {
+        zero_sum_mask <- (red + nir) == 0
+      } else if (index_type == "GNDVI") {
+        zero_sum_mask <- (green + nir) == 0
+      } else if (index_type == "SAVI") {
+        zero_sum_mask <- (nir + red + 0.5) == 0
+      } else if (index_type == "OSAVI") {
+        zero_sum_mask <- (nir + red + 0.16) == 0
+      } else if (index_type == "ARVI") {
+        zero_sum_mask <- (nir + (2 * red - blue)) == 0
+      }
+
+      if (exists("zero_sum_mask") && any(terra::values(zero_sum_mask), na.rm = TRUE)) {
+        result[zero_sum_mask] <- NA
+        if (verbose) message(sprintf("Set %d pixels to NA due to zero denominator",
+                                     sum(terra::values(zero_sum_mask), na.rm = TRUE)))
+      }
+    }
+
+    if (index_type == "MSAVI") {
+      # Handle negative square root in MSAVI
+      negative_sqrt_mask <- (2 * nir + 1)^2 - 8 * (nir - red) < 0
+      if (any(terra::values(negative_sqrt_mask), na.rm = TRUE)) {
+        result[negative_sqrt_mask] <- NA
+        if (verbose) message("Set pixels with negative square root to NA for MSAVI calculation")
+      }
+    }
+
+    result
+
+  }, error = function(e) {
+    stop(sprintf("Failed to calculate %s index: %s", index_type, e$message), call. = FALSE)
+  })
+
+  # Validate results
+  n_valid <- sum(!is.na(terra::values(index)))
+  n_total <- terra::ncell(index)
+
+  if (n_valid == 0) {
+    stop(sprintf("All %s values are invalid/NA. Check input data quality and compatibility.",
+                 index_type), call. = FALSE)
+  } else if (n_valid < n_total * 0.1) {
+    warning(sprintf("Only %.1f%% of %s values are valid. Check input data quality.",
+                    (n_valid/n_total)*100, index_type))
+  }
+
+  # Check for reasonable value ranges
+  if (index_type %in% c("NDVI", "GNDVI", "SAVI", "OSAVI", "ARVI")) {
+    values_range <- range(terra::values(index), na.rm = TRUE)
+    if (values_range[1] < -1 || values_range[2] > 1) {
+      warning(sprintf("%s values outside expected range [-1, 1]: [%.3f, %.3f]",
+                      index_type, values_range[1], values_range[2]))
+    }
+  } else if (index_type == "EVI") {
+    values_range <- range(terra::values(index), na.rm = TRUE)
+    if (values_range[1] < -1 || values_range[2] > 3) {
+      warning(sprintf("EVI values outside typical range [-1, 3]: [%.3f, %.3f]",
+                      values_range[1], values_range[2]))
+    }
+  } else if (index_type == "RVI") {
+    values_range <- range(terra::values(index), na.rm = TRUE)
+    if (values_range[1] < 0 || values_range[2] > 30) {
+      warning(sprintf("RVI values outside typical range [0, 30]: [%.3f, %.3f]",
+                      values_range[1], values_range[2]))
+    }
+  }
+
+  names(index) <- index_type
+
+  if (verbose) {
+    message(sprintf("%s calculation completed successfully:", index_type))
+    message(sprintf("  - Valid pixels: %d/%d (%.1f%%)", n_valid, n_total, (n_valid/n_total)*100))
+    message(sprintf("  - Value range: [%.3f, %.3f]",
+                    min(terra::values(index), na.rm = TRUE),
+                    max(terra::values(index), na.rm = TRUE)))
+  }
+
+  return(index)
+}
+
+#' Get list of available vegetation indices (ENHANCED VERSION)
+#'
+#' @description
+#' Returns a comprehensive data frame with information about all available vegetation indices,
+#' including required bands, formulas, and references.
+#'
+#' @param detailed Return detailed information including formulas and references
+#'
+#' @return Data frame with index names, required bands, and descriptions
+#'
+#' @examples
+#' \dontrun{
+#' # Basic information
+#' indices_info <- list_vegetation_indices()
+#' print(indices_info)
+#'
+#' # Detailed information with formulas
+#' detailed_info <- list_vegetation_indices(detailed = TRUE)
+#' print(detailed_info)
+#' }
+#'
+#' @export
+list_vegetation_indices <- function(detailed = FALSE) {
+
+  basic_info <- data.frame(
+    Index = c("NDVI", "EVI", "SAVI", "GNDVI", "ARVI", "MSAVI", "DVI", "RVI", "OSAVI"),
+    Type = c(rep("Vegetation", 9)),
+    Required_Bands = c("Red, NIR", "Red, NIR, Blue", "Red, NIR", "Green, NIR",
+                       "Red, NIR, Blue", "Red, NIR", "Red, NIR", "Red, NIR", "Red, NIR"),
+    Description = c("Normalized Difference Vegetation Index",
+                    "Enhanced Vegetation Index",
+                    "Soil Adjusted Vegetation Index",
+                    "Green NDVI",
+                    "Atmospherically Resistant Vegetation Index",
+                    "Modified Soil Adjusted Vegetation Index",
+                    "Difference Vegetation Index",
+                    "Ratio Vegetation Index",
+                    "Optimized Soil Adjusted Vegetation Index"),
+    Typical_Range = c("[-1, 1]", "[-1, 3]", "[-1, 1.5]", "[-1, 1]", "[-1, 1]",
+                      "[0, 2]", "[-0.5, 1.0]", "[0, 30]", "[-1, 1]"),
+    stringsAsFactors = FALSE
+  )
+
+  if (detailed) {
+    detailed_info <- data.frame(
+      basic_info,
+      Formula = c("(NIR - Red) / (NIR + Red)",
+                  "2.5 * ((NIR - Red) / (NIR + 6*Red - 7.5*Blue + 1))",
+                  "((NIR - Red) / (NIR + Red + L)) * (1 + L), L=0.5",
+                  "(NIR - Green) / (NIR + Green)",
+                  "(NIR - (2*Red - Blue)) / (NIR + (2*Red - Blue))",
+                  "0.5 * (2*NIR + 1 - sqrt((2*NIR + 1)^2 - 8*(NIR - Red)))",
+                  "NIR - Red",
+                  "NIR / Red",
+                  "(NIR - Red) / (NIR + Red + 0.16)"),
+      Reference = c("Rouse et al. 1974", "Huete et al. 1997", "Huete 1988",
+                    "Gitelson et al. 1996", "Kaufman & Tanré 1992", "Qi et al. 1994",
+                    "Richardson & Wiegand 1977", "Birth & McVey 1968", "Rondeaux et al. 1996"),
+      Application = c("General vegetation monitoring", "Dense vegetation, atmospheric correction",
+                      "Sparse vegetation, soil influence", "Chlorophyll estimation",
+                      "Atmospheric effects reduction", "Soil background minimization",
+                      "Biomass estimation", "Simple vegetation detection",
+                      "Optimized soil adjustment"),
+      stringsAsFactors = FALSE
+    )
+    return(detailed_info)
+  }
+
+  return(basic_info)
+}
+
+#' Match red and NIR raster files by extracted date (ENHANCED VERSION)
+#'
+#' @description
+#' Internal function to match red and NIR files based on dates extracted from filenames.
+#' Enhanced with better error handling and more flexible date pattern matching.
+#'
+#' @param red_data Character vector (files or folder)
+#' @param nir_data Character vector (files or folder)
+#' @param date_patterns Optional custom date patterns
+#' @param verbose Print progress messages
+#'
+#' @return Data frame with matched red and NIR file paths and dates
+#'
+#' @keywords internal
+match_rasters_by_date <- function(red_data, nir_data, date_patterns = NULL, verbose = FALSE) {
+
+  if (verbose) message("Matching red and NIR rasters by date...")
+
+  # Get file lists
+  red_files <- if (length(red_data) == 1 && dir.exists(red_data)) {
+    list.files(red_data, pattern = "\\.(tif|tiff)$", full.names = TRUE, ignore.case = TRUE)
+  } else {
+    red_data
+  }
+
+  nir_files <- if (length(nir_data) == 1 && dir.exists(nir_data)) {
+    list.files(nir_data, pattern = "\\.(tif|tiff)$", full.names = TRUE, ignore.case = TRUE)
+  } else {
+    nir_data
+  }
+
+  if (length(red_files) == 0) {
+    stop("No red band files found", call. = FALSE)
+  }
+  if (length(nir_files) == 0) {
+    stop("No NIR band files found", call. = FALSE)
+  }
+
+  if (verbose) {
+    message(sprintf("Found %d red files and %d NIR files", length(red_files), length(nir_files)))
+  }
+
+  # Extract dates
+  red_dates <- extract_dates_universal(red_files, date_patterns, verbose = verbose)
+  nir_dates <- extract_dates_universal(nir_files, date_patterns, verbose = verbose)
+
+  # Create data frames
+  red_df <- data.frame(
+    date = red_dates,
+    red = red_files,
+    stringsAsFactors = FALSE
+  )
+
+  nir_df <- data.frame(
+    date = nir_dates,
+    nir = nir_files,
+    stringsAsFactors = FALSE
+  )
+
+  # Remove "Unknown" dates for matching
+  red_df_clean <- red_df[!grepl("^Unknown_", red_df$date), ]
+  nir_df_clean <- nir_df[!grepl("^Unknown_", nir_df$date), ]
+
+  if (verbose) {
+    message(sprintf("After date extraction: %d red files and %d NIR files with valid dates",
+                    nrow(red_df_clean), nrow(nir_df_clean)))
+  }
+
+  if (nrow(red_df_clean) == 0 || nrow(nir_df_clean) == 0) {
+    stop("No files with extractable dates found. Check filename patterns or use custom date_patterns",
+         call. = FALSE)
+  }
+
+  # Perform matching
+  matched <- merge(red_df_clean, nir_df_clean, by = "date", all = FALSE)
+
+  if (nrow(matched) == 0) {
+    # Try fuzzy matching for similar dates
+    if (verbose) message("No exact date matches found, attempting fuzzy matching...")
+
+    matched <- fuzzy_date_match(red_df_clean, nir_df_clean, verbose)
+  }
+
+  if (nrow(matched) == 0) {
+    # Provide helpful error message
+    available_red_dates <- paste(head(sort(unique(red_df_clean$date)), 10), collapse = ", ")
+    available_nir_dates <- paste(head(sort(unique(nir_df_clean$date)), 10), collapse = ", ")
+
+    stop(sprintf("No matching red and NIR rasters found based on dates.\nSample red dates: %s\nSample NIR dates: %s\nConsider using custom date_patterns or set match_by_date=FALSE",
+                 available_red_dates, available_nir_dates), call. = FALSE)
+  }
+
+  # Sort by date
+  matched <- matched[order(matched$date), ]
+
+  if (verbose) {
+    message(sprintf("Successfully matched %d red-NIR pairs by date", nrow(matched)))
+    if (nrow(matched) <= 10) {
+      message("Matched dates: ", paste(matched$date, collapse = ", "))
+    } else {
+      message("Date range: ", min(matched$date), " to ", max(matched$date))
+    }
+  }
+
+  return(matched)
+}
+
+#' Fuzzy date matching for similar dates
+#'
+#' @description
+#' Internal function to perform fuzzy matching when exact date matches fail.
+#'
+#' @param red_df Red files data frame
+#' @param nir_df NIR files data frame
+#' @param verbose Print messages
+#'
+#' @return Data frame with fuzzy matched files
+#'
+#' @keywords internal
+fuzzy_date_match <- function(red_df, nir_df, verbose = FALSE) {
+
+  matched_pairs <- list()
+
+  for (i in 1:nrow(red_df)) {
+    red_date <- red_df$date[i]
+
+    # Try to find close matches (within a few days)
+    for (j in 1:nrow(nir_df)) {
+      nir_date <- nir_df$date[j]
+
+      # Try to parse dates for comparison
+      red_parsed <- tryCatch(as.Date(red_date), error = function(e) NULL)
+      nir_parsed <- tryCatch(as.Date(nir_date), error = function(e) NULL)
+
+      if (!is.null(red_parsed) && !is.null(nir_parsed)) {
+        date_diff <- abs(as.numeric(red_parsed - nir_parsed))
+
+        # Match if within 3 days
+        if (date_diff <= 3) {
+          matched_pairs[[length(matched_pairs) + 1]] <- data.frame(
+            date = red_date,  # Use red date as reference
+            red = red_df$red[i],
+            nir = nir_df$nir[j],
+            stringsAsFactors = FALSE
+          )
+          if (verbose && date_diff > 0) {
+            message(sprintf("Fuzzy matched: %s (red) with %s (nir), %d days apart",
+                            red_date, nir_date, date_diff))
+          }
+          break  # Take first match
+        }
+      }
+    }
+  }
+
+  if (length(matched_pairs) > 0) {
+    result <- do.call(rbind, matched_pairs)
+    return(result)
+  }
+
+  return(data.frame(date = character(), red = character(), nir = character(),
+                    stringsAsFactors = FALSE))
+}

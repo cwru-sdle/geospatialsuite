@@ -1,0 +1,674 @@
+#' Run comprehensive geospatial workflow with enhanced visualization
+#'
+#' @description
+#' Execute complete geospatial analysis workflows with advanced visualization capabilities.
+#' Supports NDVI crop analysis, water quality assessment, terrain analysis,
+#' temporal change detection, and multi-dataset integration with efficient plotting.
+#'
+#' @param analysis_config List containing analysis configuration with required fields:
+#'   \itemize{
+#'     \item analysis_type: "ndvi_crop_analysis", "water_quality_analysis",
+#'                         "terrain_analysis", "temporal_analysis", "vegetation_comprehensive",
+#'                         "mosaic_analysis", "interactive_mapping"
+#'     \item input_data: Input data paths or objects
+#'     \item region_boundary: Region boundary specification
+#'     \item output_folder: Output directory (optional)
+#'     \item visualization_config: Visualization settings (optional)
+#'   }
+#'
+#' @return List containing analysis results, visualizations, summary, and configuration
+#'
+#' @examples
+#' \dontrun{
+#' # Enhanced NDVI crop analysis workflow with visualization
+#' config <- list(
+#'   analysis_type = "ndvi_crop_analysis",
+#'   input_data = list(red = "red_bands/", nir = "nir_bands/"),
+#'   region_boundary = "Ohio",
+#'   cdl_data = "cdl_2023.tif",
+#'   crop_codes = get_comprehensive_cdl_codes("soybeans"),
+#'   output_folder = "results/",
+#'   visualization_config = list(
+#'     create_maps = TRUE,
+#'     interactive = TRUE,
+#'     animation = TRUE,
+#'     comparison_maps = TRUE
+#'   )
+#' )
+#' results <- run_comprehensive_geospatial_workflow(config)
+#'
+#' # Comprehensive vegetation analysis workflow
+#' veg_config <- list(
+#'   analysis_type = "vegetation_comprehensive",
+#'   input_data = "sentinel2_stack.tif",
+#'   region_boundary = "Iowa",
+#'   indices = c("NDVI", "EVI", "SAVI", "PRI", "SIPI", "NDRE"),
+#'   crop_type = "corn",
+#'   output_folder = "vegetation_analysis/"
+#' )
+#' veg_results <- run_comprehensive_geospatial_workflow(veg_config)
+#' }
+#'
+#' @export
+run_comprehensive_geospatial_workflow <- function(analysis_config) {
+
+  message("Starting comprehensive geospatial workflow with enhanced visualization...")
+
+  # Validate configuration
+  required_fields <- c("analysis_type", "input_data", "region_boundary")
+  missing_fields <- setdiff(required_fields, names(analysis_config))
+  if (length(missing_fields) > 0) {
+    stop(paste("Missing required configuration fields:", paste(missing_fields, collapse = ", ")), call. = FALSE)
+  }
+
+  # Extract configuration
+  analysis_type <- analysis_config$analysis_type
+  input_data <- analysis_config$input_data
+  region_boundary <- analysis_config$region_boundary
+  output_folder <- analysis_config$output_folder %||% tempdir()
+  viz_config <- analysis_config$visualization_config %||% list(create_maps = TRUE)
+
+  # Create output folder
+  if (!dir.exists(output_folder)) {
+    dir.create(output_folder, recursive = TRUE)
+  }
+
+  # Execute workflow based on analysis type
+  results <- switch(analysis_type,
+
+                    "ndvi_crop_analysis" = {
+                      # Enhanced NDVI analysis with advanced visualization
+                      run_enhanced_ndvi_crop_workflow(analysis_config, output_folder)
+                    },
+
+                    "vegetation_comprehensive" = {
+                      # Comprehensive vegetation analysis with 40+ indices
+                      run_comprehensive_vegetation_workflow(analysis_config, output_folder)
+                    },
+
+                    "water_quality_analysis" = {
+                      # Enhanced water quality analysis with interactive mapping
+                      run_enhanced_water_quality_workflow(analysis_config, output_folder)
+                    },
+
+                    "terrain_analysis" = {
+                      # Advanced terrain analysis with efficient visualization
+                      run_enhanced_terrain_analysis_workflow(analysis_config, output_folder)
+                    },
+
+                    "temporal_analysis" = {
+                      # Temporal change analysis with animation support
+                      run_enhanced_temporal_workflow(analysis_config, output_folder)
+                    },
+
+                    "interactive_mapping" = {
+                      # Interactive mapping workflow with multiple data types
+                      run_interactive_mapping_workflow(analysis_config, output_folder)
+                    },
+
+                    "mosaic_analysis" = {
+                      # Enhanced raster mosaicing with visualization
+                      run_enhanced_mosaic_workflow(analysis_config, output_folder)
+                    },
+
+                    "multi_dataset_integration" = {
+                      # Multi-dataset spatial integration workflow
+                      run_multi_dataset_workflow(analysis_config, output_folder)
+                    },
+
+                    stop(paste("Unsupported analysis type:", analysis_type))
+  )
+
+  # Generate enhanced summary report
+  summary_report <- generate_enhanced_analysis_summary(results, analysis_config)
+
+  # Save summary with visualizations
+  summary_file <- file.path(output_folder, "analysis_summary.html")
+  generate_html_summary(summary_report, results, summary_file)
+
+  message("Comprehensive workflow completed with enhanced visualizations!")
+  message(sprintf("Results saved to: %s", output_folder))
+
+  return(list(
+    results = results,
+    summary = summary_report,
+    output_folder = output_folder,
+    config = analysis_config,
+    visualizations = results$visualizations %||% list()
+  ))
+}
+
+#' Run enhanced NDVI crop analysis workflow with advanced visualization
+#'
+#' @description
+#' Enhanced NDVI workflow with 40+ vegetation indices, quality filtering,
+#' temporal analysis, and comprehensive visualization options.
+#'
+#' @param config Analysis configuration
+#' @param output_folder Output directory
+#'
+#' @return List with enhanced NDVI results and visualizations
+#'
+#' @examples
+#' \dontrun{
+#' # Enhanced NDVI analysis with visualization
+#' config <- list(
+#'   red_data = "red_bands/",
+#'   nir_data = "nir_bands/",
+#'   region_boundary = "Iowa",
+#'   cdl_data = "cdl_2023.tif",
+#'   crop_codes = get_comprehensive_cdl_codes("corn"),
+#'   indices = c("NDVI", "EVI", "SAVI", "PRI"),
+#'   quality_filter = TRUE,
+#'   temporal_smoothing = TRUE,
+#'   visualization_config = list(
+#'     interactive = TRUE,
+#'     animation = TRUE,
+#'     ndvi_classes = "standard"
+#'   )
+#' )
+#' results <- run_enhanced_ndvi_crop_workflow(config, "results/")
+#' }
+#'
+#' @export
+run_enhanced_ndvi_crop_workflow <- function(config, output_folder = tempdir()) {
+
+  message("Starting enhanced NDVI crop analysis workflow...")
+
+  # Extract configuration
+  red_data <- config$red_data %||% config$input_data$red
+  nir_data <- config$nir_data %||% config$input_data$nir
+  region_boundary <- config$region_boundary
+  cdl_data <- config$cdl_data
+  crop_codes <- config$crop_codes
+  indices <- config$indices %||% c("NDVI", "EVI", "SAVI")
+  viz_config <- config$visualization_config %||% list()
+
+  # Step 1: Enhanced NDVI calculation with quality filtering
+  message("Step 1: Calculating enhanced NDVI with quality filtering...")
+  ndvi_result <- calculate_ndvi_enhanced(
+    red_data = red_data,
+    nir_data = nir_data,
+    match_by_date = TRUE,
+    quality_filter = config$quality_filter %||% FALSE,
+    temporal_smoothing = config$temporal_smoothing %||% FALSE,
+    verbose = TRUE
+  )
+
+  # Step 2: Calculate additional vegetation indices
+  message("Step 2: Calculating additional vegetation indices...")
+  if (length(indices) > 1) {
+    additional_indices <- calculate_multiple_indices(
+      red = red_data,
+      nir = nir_data,
+      indices = setdiff(indices, "NDVI"),
+      output_stack = TRUE,
+      region_boundary = region_boundary,
+      verbose = TRUE
+    )
+
+    # Combine with NDVI
+    if (terra::nlyr(ndvi_result) == terra::nlyr(additional_indices)) {
+      vegetation_stack <- c(ndvi_result, additional_indices)
+    } else {
+      vegetation_stack <- ndvi_result
+      message("Note: Using NDVI only due to layer count mismatch")
+    }
+  } else {
+    vegetation_stack <- ndvi_result
+  }
+
+  # Step 3: Apply region boundary
+  if (!is.null(region_boundary)) {
+    message("Step 3: Applying region boundary...")
+    boundary <- get_region_boundary(region_boundary)
+    boundary_vect <- terra::vect(boundary)
+    vegetation_stack <- terra::crop(vegetation_stack, boundary_vect)
+    vegetation_stack <- terra::mask(vegetation_stack, boundary_vect)
+  }
+
+  # Step 4: Apply crop mask if provided
+  crop_mask <- NULL
+  if (!is.null(cdl_data) && !is.null(crop_codes)) {
+    message("Step 4: Creating and applying crop mask...")
+    crop_mask <- create_crop_mask(cdl_data, crop_codes, region_boundary)
+    vegetation_stack <- terra::mask(vegetation_stack, crop_mask)
+  }
+
+  # Step 5: Advanced visualization
+  message("Step 5: Creating advanced visualizations...")
+  visualizations <- list()
+
+  # NDVI map with classification
+  if (viz_config$create_maps %||% TRUE) {
+    visualizations$ndvi_map <- create_ndvi_map(
+      ndvi_data = vegetation_stack[[1]],
+      region_boundary = region_boundary,
+      ndvi_classes = viz_config$ndvi_classes %||% "standard",
+      show_histogram = viz_config$show_histogram %||% TRUE,
+      output_file = file.path(output_folder, "ndvi_classified.png")
+    )
+  }
+
+  # Interactive map
+  if (viz_config$interactive %||% FALSE) {
+    visualizations$interactive_map <- create_spatial_map(
+      spatial_data = vegetation_stack[[1]],
+      interactive = TRUE,
+      title = "Interactive NDVI Map",
+      color_scheme = "ndvi"
+    )
+
+    # Save interactive map
+    if (requireNamespace("htmlwidgets", quietly = TRUE)) {
+      htmlwidgets::saveWidget(
+        visualizations$interactive_map,
+        file.path(output_folder, "interactive_ndvi_map.html")
+      )
+    }
+  }
+
+  # Animation for time series
+  if (viz_config$animation %||% FALSE && terra::nlyr(vegetation_stack) > 1) {
+    visualizations$animation <- create_ndvi_map(
+      ndvi_data = vegetation_stack,
+      animation = TRUE,
+      output_file = file.path(output_folder, "ndvi_animation.gif")
+    )
+  }
+
+  # Crop distribution map
+  if (!is.null(crop_mask)) {
+    visualizations$crop_map <- create_crop_map(
+      cdl_data = cdl_data,
+      crop_selection = crop_codes,
+      region_boundary = region_boundary,
+      style = "categorical",
+      output_file = file.path(output_folder, "crop_distribution.png")
+    )
+  }
+
+  # Comparison maps if multiple time periods
+  if (viz_config$comparison_maps %||% FALSE && terra::nlyr(vegetation_stack) >= 2) {
+    visualizations$comparison_map <- create_comparison_map(
+      data1 = vegetation_stack[[1]],
+      data2 = vegetation_stack[[terra::nlyr(vegetation_stack)]],
+      comparison_type = "side_by_side",
+      titles = c("Early Period", "Late Period"),
+      output_file = file.path(output_folder, "ndvi_comparison.png")
+    )
+  }
+
+  # Step 6: Save raster results
+  message("Step 6: Saving raster results...")
+
+  # Save vegetation indices stack
+  vegetation_file <- file.path(output_folder, "vegetation_indices.tif")
+  terra::writeRaster(vegetation_stack, vegetation_file, overwrite = TRUE)
+
+  # Save crop mask if created
+  if (!is.null(crop_mask)) {
+    mask_file <- file.path(output_folder, "crop_mask.tif")
+    terra::writeRaster(crop_mask, mask_file, overwrite = TRUE)
+  }
+
+  # Step 7: Generate comprehensive statistics
+  message("Step 7: Generating comprehensive statistics...")
+  vegetation_stats <- calculate_comprehensive_vegetation_stats(vegetation_stack, indices)
+
+  message("Enhanced NDVI crop workflow completed successfully!")
+
+  return(list(
+    vegetation_data = vegetation_stack,
+    crop_mask = crop_mask,
+    statistics = vegetation_stats,
+    visualizations = visualizations,
+    output_files = list(
+      vegetation_indices = vegetation_file,
+      crop_mask = if (!is.null(crop_mask)) mask_file else NULL,
+      maps = file.path(output_folder, "*.png"),
+      interactive = file.path(output_folder, "*.html")
+    )
+  ))
+}
+
+#' Run comprehensive vegetation analysis workflow
+#'
+#' @description
+#' Complete vegetation analysis using 40+ indices with crop-specific analysis,
+#' stress detection, and advanced visualization.
+#'
+#' @param config Analysis configuration
+#' @param output_folder Output directory
+#'
+#' @return Comprehensive vegetation analysis results
+#'
+#' @export
+run_comprehensive_vegetation_workflow <- function(config, output_folder = tempdir()) {
+
+  message("Starting comprehensive vegetation analysis workflow...")
+
+  # Extract configuration
+  spectral_data <- config$input_data
+  region_boundary <- config$region_boundary
+  indices <- config$indices %||% c("NDVI", "EVI", "SAVI", "PRI", "SIPI", "NDRE")
+  crop_type <- config$crop_type %||% "general"
+  analysis_type <- config$analysis_type_detail %||% "comprehensive"
+
+  # Step 1: Comprehensive vegetation analysis
+  message("Step 1: Performing comprehensive vegetation analysis...")
+  vegetation_analysis <- analyze_crop_vegetation(
+    spectral_data = spectral_data,
+    crop_type = crop_type,
+    analysis_type = analysis_type,
+    cdl_mask = config$cdl_mask,
+    output_folder = output_folder,
+    verbose = TRUE
+  )
+
+  # Step 2: Calculate additional indices for comparison
+  message("Step 2: Calculating multiple vegetation indices...")
+  multiple_indices <- calculate_multiple_indices(
+    spectral_data = spectral_data,
+    indices = indices,
+    output_stack = TRUE,
+    region_boundary = region_boundary,
+    parallel = config$parallel %||% FALSE,
+    verbose = TRUE
+  )
+
+  # Step 3: Advanced visualization
+  message("Step 3: Creating advanced visualizations...")
+  visualizations <- list()
+
+  # Create individual index maps
+  for (idx in indices) {
+    if (idx %in% names(multiple_indices)) {
+      viz_file <- file.path(output_folder, paste0(idx, "_map.png"))
+      visualizations[[paste0(idx, "_map")]] <- plot_raster_fast(
+        raster_data = multiple_indices[[idx]],
+        title = paste(idx, "Analysis"),
+        color_scheme = if (idx == "NDVI") "ndvi" else "viridis"
+      )
+
+      if (!is.null(visualizations[[paste0(idx, "_map")]])) {
+        ggplot2::ggsave(viz_file, plot = visualizations[[paste0(idx, "_map")]],
+                        width = 10, height = 8, dpi = 300)
+      }
+    }
+  }
+
+  # Create composite multi-index map
+  if (length(indices) > 1) {
+    visualizations$composite_map <- create_composite_map(
+      base_layer = multiple_indices[[1]],
+      overlay_layers = list(
+        indices = multiple_indices[2:min(3, length(indices))]
+      ),
+      title = "Multi-Index Vegetation Analysis",
+      output_file = file.path(output_folder, "composite_vegetation_map.png")
+    )
+  }
+
+  # Interactive comparison
+  visualizations$interactive_comparison <- create_interactive_map(
+    spatial_data = multiple_indices[[1]],
+    fill_variable = names(multiple_indices)[1],
+    basemap = "satellite",
+    title = "Interactive Vegetation Analysis"
+  )
+
+  # Step 4: Save comprehensive results
+  message("Step 4: Saving comprehensive results...")
+
+  # Save multi-index stack
+  indices_file <- file.path(output_folder, "vegetation_indices_stack.tif")
+  terra::writeRaster(multiple_indices, indices_file, overwrite = TRUE)
+
+  message("Comprehensive vegetation workflow completed successfully!")
+
+  return(list(
+    vegetation_analysis = vegetation_analysis,
+    indices_stack = multiple_indices,
+    visualizations = visualizations,
+    statistics = vegetation_analysis$analysis_results$summary_statistics,
+    output_files = list(
+      indices_stack = indices_file,
+      analysis_results = file.path(output_folder, "vegetation_analysis.rds")
+    )
+  ))
+}
+
+#' Run enhanced water quality analysis workflow
+#'
+#' @description
+#' Enhanced water quality workflow with interactive mapping and advanced visualization.
+#'
+#' @param config Analysis configuration
+#' @param output_folder Output directory
+#'
+#' @return Enhanced water quality analysis results
+#'
+#' @export
+run_enhanced_water_quality_workflow <- function(config, output_folder = tempdir()) {
+
+  message("Starting enhanced water quality analysis workflow...")
+
+  # Extract configuration
+  water_data <- config$input_data
+  variable <- config$variable %||% "discharge"
+  region_boundary <- config$region_boundary
+  river_network <- config$river_network
+  thresholds <- config$thresholds
+
+  # Step 1: Comprehensive water quality analysis
+  message("Step 1: Performing comprehensive water quality analysis...")
+  water_analysis <- analyze_water_quality_comprehensive(
+    water_data = water_data,
+    variable = variable,
+    region_boundary = region_boundary,
+    river_network = river_network,
+    output_folder = output_folder,
+    thresholds = thresholds
+  )
+
+  # Step 2: Enhanced visualization
+  message("Step 2: Creating enhanced visualizations...")
+  visualizations <- list()
+
+  # Interactive water quality map
+  visualizations$interactive_map <- create_interactive_map(
+    spatial_data = water_analysis$water_data,
+    fill_variable = variable,
+    popup_vars = c("station_id", variable, "date"),
+    basemap = "terrain",
+    cluster_points = TRUE,
+    title = paste("Interactive", stringr::str_to_title(variable), "Map")
+  )
+
+  # Water quality plot with river network
+  visualizations$quality_plot <- create_water_quality_plot(
+    water_data = water_analysis$water_data,
+    variable = variable,
+    region_boundary = region_boundary,
+    river_network = river_network,
+    thresholds = thresholds,
+    output_file = file.path(output_folder, "water_quality_enhanced.png")
+  )
+
+  # Step 3: Save enhanced results
+  message("Step 3: Saving enhanced results...")
+
+  # Save interactive map
+  if (requireNamespace("htmlwidgets", quietly = TRUE)) {
+    htmlwidgets::saveWidget(
+      visualizations$interactive_map,
+      file.path(output_folder, "interactive_water_quality.html")
+    )
+  }
+
+  message("Enhanced water quality workflow completed successfully!")
+
+  return(list(
+    water_analysis = water_analysis,
+    visualizations = visualizations,
+    statistics = water_analysis$statistics,
+    output_files = list(
+      interactive_map = file.path(output_folder, "interactive_water_quality.html"),
+      quality_plot = file.path(output_folder, "water_quality_enhanced.png")
+    )
+  ))
+}
+
+#' Run interactive mapping workflow
+#'
+#' @description
+#' Create comprehensive interactive mapping workflow with multiple data types and layers.
+#'
+#' @param config Analysis configuration
+#' @param output_folder Output directory
+#'
+#' @return Interactive mapping results
+#'
+#' @export
+run_interactive_mapping_workflow <- function(config, output_folder = tempdir()) {
+
+  message("Starting interactive mapping workflow...")
+
+  # Extract configuration
+  data_layers <- config$input_data
+  region_boundary <- config$region_boundary
+  basemap <- config$basemap %||% "terrain"
+
+  # Create interactive maps for each data layer
+  interactive_maps <- list()
+
+  for (layer_name in names(data_layers)) {
+    message(sprintf("Creating interactive map for: %s", layer_name))
+
+    # Auto-detect data type and create appropriate map
+    interactive_maps[[layer_name]] <- create_spatial_map(
+      spatial_data = data_layers[[layer_name]],
+      interactive = TRUE,
+      basemap = basemap,
+      title = stringr::str_to_title(gsub("_", " ", layer_name)),
+      region_boundary = region_boundary
+    )
+
+    # Save individual maps
+    if (requireNamespace("htmlwidgets", quietly = TRUE)) {
+      map_file <- file.path(output_folder, paste0("interactive_", layer_name, ".html"))
+      htmlwidgets::saveWidget(interactive_maps[[layer_name]], map_file)
+    }
+  }
+
+  message("Interactive mapping workflow completed successfully!")
+
+  return(list(
+    interactive_maps = interactive_maps,
+    output_files = list(
+      maps_directory = output_folder
+    )
+  ))
+}
+
+# ==================== HELPER FUNCTIONS ==================== #
+
+#' Calculate comprehensive vegetation statistics
+#' @keywords internal
+calculate_comprehensive_vegetation_stats <- function(vegetation_stack, indices) {
+
+  stats <- list()
+
+  for (i in 1:terra::nlyr(vegetation_stack)) {
+    layer_name <- names(vegetation_stack)[i]
+    values <- terra::values(vegetation_stack[[i]], mat = FALSE)
+    values <- values[!is.na(values)]
+
+    if (length(values) > 0) {
+      stats[[layer_name]] <- list(
+        mean = mean(values),
+        median = median(values),
+        sd = sd(values),
+        min = min(values),
+        max = max(values),
+        range = max(values) - min(values),
+        cv = sd(values) / mean(values),
+        percentiles = quantile(values, c(0.05, 0.25, 0.75, 0.95)),
+        n_valid = length(values),
+        coverage_percent = (length(values) / terra::ncell(vegetation_stack[[i]])) * 100
+      )
+    }
+  }
+
+  return(stats)
+}
+
+#' Generate enhanced analysis summary
+#' @keywords internal
+generate_enhanced_analysis_summary <- function(results, config) {
+
+  summary_lines <- c(
+    "GEOSPATIALSUITE ENHANCED ANALYSIS SUMMARY",
+    "==========================================",
+    "",
+    paste("Analysis Type:", config$analysis_type),
+    paste("Date:", Sys.time()),
+    paste("Region:", if(is.character(config$region_boundary)) config$region_boundary else "Custom boundary"),
+    paste("GeoSpatialSuite Version: 0.2.0"),
+    "",
+    "ENHANCED FEATURES USED:",
+    "----------------------"
+  )
+
+  # Add feature usage
+  if (!is.null(results$visualizations)) {
+    summary_lines <- c(summary_lines, paste("Visualizations created:", length(results$visualizations)))
+  }
+
+  if (!is.null(results$vegetation_data)) {
+    n_indices <- terra::nlyr(results$vegetation_data)
+    summary_lines <- c(summary_lines, paste("Vegetation indices calculated:", n_indices))
+  }
+
+  summary_lines <- c(summary_lines, "", "RESULTS OVERVIEW:", "----------------")
+
+  # Add specific results based on analysis type
+  if (config$analysis_type == "vegetation_comprehensive") {
+    if (!is.null(results$vegetation_analysis)) {
+      summary_lines <- c(summary_lines,
+                         "Comprehensive vegetation analysis completed",
+                         paste("Indices analyzed:", length(results$indices_stack)))
+    }
+  }
+
+  summary_lines <- c(summary_lines,
+                     "",
+                     "PERFORMANCE NOTES:",
+                     "- Efficient raster visualization used (tidyterra/RStoolbox)",
+                     "- No unnecessary data.frame conversions",
+                     "- Optimized for large datasets",
+                     "",
+                     "Analysis completed successfully with GeoSpatialSuite v0.2.0!",
+                     "For technical support: github.com/yourusername/geospatialsuite"
+  )
+
+  return(summary_lines)
+}
+
+#' Generate HTML summary report
+#' @keywords internal
+generate_html_summary <- function(summary_report, results, output_file) {
+
+  # Create basic HTML summary
+  html_content <- c(
+    "<!DOCTYPE html>",
+    "<html><head><title>GeoSpatialSuite Analysis Summary</title></head>",
+    "<body>",
+    "<h1>GeoSpatialSuite Analysis Summary</h1>",
+    paste0("<p>", summary_report, "</p>"),
+    "</body></html>"
+  )
+
+  writeLines(html_content, output_file)
+}

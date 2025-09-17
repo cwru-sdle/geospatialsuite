@@ -1,0 +1,466 @@
+#' Universal spatial join between vector and raster data
+#'
+#' @description
+#' Universal function for spatial joins that works with ANY vector geometry
+#' (points, lines, polygons) and ANY raster data type (NDVI, soil, climate, etc.).
+#' Automatically handles different input formats and coordinate systems with
+#' robust error handling and validation.
+#'
+#' @param vector_data Vector data (sf object, data.frame with coordinates, or file path)
+#' @param raster_data Single raster, list of rasters, or directory path
+#' @param coord_cols Column names for coordinates (if vector_data is data.frame)
+#' @param method Extraction method: "simple", "buffer", "bilinear", "nearest"
+#' @param buffer_size Buffer size for buffer method (in map units)
+#' @param summary_function Function for buffer extraction: "mean", "median", "max", "min", "sum"
+#' @param crs_code CRS code for coordinate columns (default: 4326)
+#' @param variable_names Optional names for raster variables
+#' @param geometry_type Type of vector geometry: "points", "lines", "polygons", "auto"
+#' @param verbose Print progress messages
+#'
+#' @return sf object with extracted raster values
+#'
+#' @examples
+#' \dontrun{
+#' # Join ANY vector data with ANY raster data
+#' result <- spatial_join_universal(
+#'   vector_data = "study_sites.csv",
+#'   raster_data = "ndvi_time_series/",
+#'   method = "buffer",
+#'   buffer_size = 1000
+#' )
+#' }
+#'
+#' @export
+spatial_join_universal <- function(vector_data, raster_data, coord_cols = c("lon", "lat"),
+                                   method = "simple", buffer_size = 1000,
+                                   summary_function = "mean", crs_code = 4326,
+                                   variable_names = NULL, geometry_type = "auto",
+                                   verbose = FALSE) {
+
+  if (verbose) message("Starting universal spatial join with robust error handling...")
+
+  # Input validation
+  validate_vector_input(vector_data, "vector_data")
+  validate_raster_input(raster_data, "raster_data")
+
+  valid_methods <- c("simple", "buffer", "bilinear", "nearest")
+  validate_method(method, valid_methods, "method")
+
+  valid_summary <- c("mean", "median", "max", "min", "sum", "sd", "mode")
+  validate_method(summary_function, valid_summary, "summary_function")
+
+  validate_numeric_range(buffer_size, min_val = 0, param_name = "buffer_size")
+  validate_numeric_range(crs_code, min_val = 1000, max_val = 32767, param_name = "crs_code")
+
+  # Load and process raster data (handles multiple formats)
+  if (verbose) message("Loading raster data...")
+  raster_list <- tryCatch({
+    load_raster_data(raster_data)
+  }, error = function(e) {
+    stop(sprintf("Failed to load raster data: %s\nInput: %s",
+                 e$message, paste(head(as.character(raster_data), 3), collapse = ", ")),
+         call. = FALSE)
+  })
+
+  if (length(raster_list) == 0) {
+    stop("No valid raster data found", call. = FALSE)
+  }
+
+  if (verbose) message(sprintf("Loaded %d raster layer(s)", length(raster_list)))
+
+  # Create variable names if not provided
+  if (is.null(variable_names)) {
+    if (is.character(raster_data) && length(raster_data) == 1 && dir.exists(raster_data)) {
+      files <- list.files(raster_data, pattern = "\\.(tif|tiff)$", full.names = FALSE, ignore.case = TRUE)
+      variable_names <- tools::file_path_sans_ext(files)
+    } else if (is.character(raster_data)) {
+      variable_names <- tools::file_path_sans_ext(basename(as.character(raster_data)))
+    } else {
+      variable_names <- paste0("variable_", seq_along(raster_list))
+    }
+  }
+
+  # Ensure variable names match number of rasters
+  if (length(variable_names) != length(raster_list)) {
+    if (verbose) message("Adjusting variable names to match number of rasters...")
+    variable_names <- paste0("variable_", seq_along(raster_list))
+  }
+
+  # Clean variable names (make valid R names)
+  variable_names <- make.names(gsub("[^A-Za-z0-9_]", "_", variable_names))
+
+  # Process vector data (handles multiple formats)
+  if (verbose) message("Processing vector data...")
+  vector_sf <- tryCatch({
+    process_vector_data_robust(vector_data, coord_cols, crs_code, verbose)
+  }, error = function(e) {
+    stop(sprintf("Failed to process vector data: %s", e$message), call. = FALSE)
+  })
+
+  # Validate vector data has features
+  if (nrow(vector_sf) == 0) {
+    stop("Vector data contains no features", call. = FALSE)
+  }
+
+  if (verbose) message(sprintf("Processing %d vector features", nrow(vector_sf)))
+
+  # Determine geometry type
+  if (geometry_type == "auto") {
+    geom_type <- as.character(sf::st_geometry_type(vector_sf, by_geometry = FALSE))
+    geometry_type <- tolower(gsub("MULTI", "", geom_type))
+  }
+
+  if (verbose) message(sprintf("Processing %s geometry with %d raster layer(s)",
+                               geometry_type, length(raster_list)))
+
+  # Perform extraction for each raster
+  for (i in seq_along(raster_list)) {
+    raster_layer <- raster_list[[i]]
+    var_name <- variable_names[i]
+
+    if (verbose && (i %% 5 == 0 || i == length(raster_list))) {
+      message(sprintf("Extracting values for layer %d/%d: %s", i, length(raster_list), var_name))
+    }
+
+    tryCatch({
+      # Check if raster has valid data
+      if (all(is.na(terra::values(raster_layer)))) {
+        warning(sprintf("Raster layer '%s' contains only NA values", var_name))
+        vector_sf[[var_name]] <- NA
+        next
+      }
+
+      # Ensure CRS compatibility
+      vector_crs <- sf::st_crs(vector_sf)
+      raster_crs <- sf::st_crs(raster_layer)
+
+      if (!identical(vector_crs, raster_crs)) {
+        if (verbose) message(sprintf("Reprojecting vector data to match raster CRS for layer %s...", var_name))
+        vector_sf_temp <- tryCatch({
+          sf::st_transform(vector_sf, crs = raster_crs)
+        }, error = function(e) {
+          stop(sprintf("Cannot reproject vector data to match raster CRS: %s", e$message),
+               call. = FALSE)
+        })
+      } else {
+        vector_sf_temp <- vector_sf
+      }
+
+      # Extract values based on method and geometry type
+      extracted_values <- perform_extraction_robust(vector_sf_temp, raster_layer, method,
+                                                    buffer_size, summary_function, geometry_type)
+
+      # Add extracted values to vector data
+      vector_sf[[var_name]] <- extracted_values
+
+      # Report extraction success
+      n_valid <- sum(!is.na(extracted_values))
+      if (verbose && n_valid < nrow(vector_sf) * 0.9) {
+        message(sprintf("Warning: Only %d/%d features have valid values for %s",
+                        n_valid, nrow(vector_sf), var_name))
+      }
+
+    }, error = function(e) {
+      warning(sprintf("Failed to extract values for layer '%s': %s", var_name, e$message))
+      vector_sf[[var_name]] <- NA
+    })
+  }
+
+  if (verbose) message("Universal spatial join completed successfully!")
+  return(vector_sf)
+}
+
+#' Process vector data from various input formats (ROBUST VERSION)
+#'
+#' @param vector_data Vector data input
+#' @param coord_cols Coordinate column names
+#' @param crs_code CRS code
+#' @param verbose Print messages
+#'
+#' @return sf object
+#'
+#' @keywords internal
+process_vector_data_robust <- function(vector_data, coord_cols = c("lon", "lat"),
+                                       crs_code = 4326, verbose = FALSE) {
+
+  if (is.character(vector_data)) {
+    # File path provided
+    if (!file.exists(vector_data)) {
+      stop(sprintf("Vector data file does not exist: %s", vector_data), call. = FALSE)
+    }
+
+    if (grepl("\\.(csv|txt)$", vector_data, ignore.case = TRUE)) {
+      # CSV/text file
+      if (verbose) message(sprintf("Reading CSV file: %s", vector_data))
+
+      df <- tryCatch({
+        read.csv(vector_data, stringsAsFactors = FALSE)
+      }, error = function(e) {
+        stop(sprintf("Failed to read CSV file: %s", e$message), call. = FALSE)
+      })
+
+      if (nrow(df) == 0) {
+        stop("CSV file contains no data rows", call. = FALSE)
+      }
+
+      # Try to detect coordinate columns automatically
+      if (!all(coord_cols %in% names(df))) {
+        if (verbose) message("Attempting to auto-detect coordinate columns...")
+
+        # Look for common coordinate column names
+        lon_candidates <- c("lon", "longitude", "lng", "x", "X", "LongitudeMeasure", "long")
+        lat_candidates <- c("lat", "latitude", "y", "Y", "LatitudeMeasure")
+
+        lon_col <- intersect(lon_candidates, names(df))[1]
+        lat_col <- intersect(lat_candidates, names(df))[1]
+
+        if (!is.na(lon_col) && !is.na(lat_col)) {
+          coord_cols <- c(lon_col, lat_col)
+          if (verbose) message(sprintf("Auto-detected coordinate columns: %s, %s", lon_col, lat_col))
+        } else {
+          available_cols <- paste(names(df), collapse = ", ")
+          stop(sprintf("Cannot find coordinate columns %s in data. Available columns: %s",
+                       paste(coord_cols, collapse = ", "), available_cols), call. = FALSE)
+        }
+      }
+
+      # Validate coordinate columns contain numeric data
+      for (col in coord_cols) {
+        if (!is.numeric(df[[col]])) {
+          df[[col]] <- tryCatch({
+            as.numeric(df[[col]])
+          }, error = function(e) {
+            stop(sprintf("Coordinate column '%s' cannot be converted to numeric", col), call. = FALSE)
+          }, warning = function(w) {
+            warning(sprintf("Some values in coordinate column '%s' converted to NA", col))
+            suppressWarnings(as.numeric(df[[col]]))
+          })
+        }
+      }
+
+      # Remove rows with missing coordinates
+      missing_coords <- is.na(df[[coord_cols[1]]]) | is.na(df[[coord_cols[2]]])
+      if (any(missing_coords)) {
+        n_missing <- sum(missing_coords)
+        warning(sprintf("Removing %d rows with missing coordinates", n_missing))
+        df <- df[!missing_coords, ]
+      }
+
+      if (nrow(df) == 0) {
+        stop("No rows with valid coordinates remain", call. = FALSE)
+      }
+
+      # Check coordinate ranges for reasonableness
+      lon_range <- range(df[[coord_cols[1]]], na.rm = TRUE)
+      lat_range <- range(df[[coord_cols[2]]], na.rm = TRUE)
+
+      if (lon_range[1] < -180 || lon_range[2] > 180) {
+        warning(sprintf("Longitude values outside expected range [-180, 180]: [%.3f, %.3f]",
+                        lon_range[1], lon_range[2]))
+      }
+      if (lat_range[1] < -90 || lat_range[2] > 90) {
+        warning(sprintf("Latitude values outside expected range [-90, 90]: [%.3f, %.3f]",
+                        lat_range[1], lat_range[2]))
+      }
+
+      vector_sf <- sf::st_as_sf(df, coords = coord_cols, crs = crs_code)
+
+    } else {
+      # Spatial file (shapefile, geojson, etc.)
+      if (verbose) message(sprintf("Reading spatial file: %s", vector_data))
+
+      vector_sf <- tryCatch({
+        sf::st_read(vector_data, quiet = !verbose)
+      }, error = function(e) {
+        stop(sprintf("Failed to read spatial file: %s", e$message), call. = FALSE)
+      })
+    }
+
+  } else if (is.data.frame(vector_data) && !inherits(vector_data, "sf")) {
+    # Data frame with coordinates
+    if (verbose) message("Processing data.frame with coordinates...")
+
+    if (nrow(vector_data) == 0) {
+      stop("Data frame contains no rows", call. = FALSE)
+    }
+
+    # Check coordinate columns exist
+    missing_coords <- setdiff(coord_cols, names(vector_data))
+    if (length(missing_coords) > 0) {
+      available_cols <- paste(names(vector_data), collapse = ", ")
+      stop(sprintf("Coordinate columns not found: %s. Available columns: %s",
+                   paste(missing_coords, collapse = ", "), available_cols), call. = FALSE)
+    }
+
+    # Validate and convert coordinates
+    for (col in coord_cols) {
+      if (!is.numeric(vector_data[[col]])) {
+        vector_data[[col]] <- tryCatch({
+          as.numeric(vector_data[[col]])
+        }, error = function(e) {
+          stop(sprintf("Coordinate column '%s' cannot be converted to numeric", col), call. = FALSE)
+        })
+      }
+    }
+
+    # Remove missing coordinates
+    missing_coords <- is.na(vector_data[[coord_cols[1]]]) | is.na(vector_data[[coord_cols[2]]])
+    if (any(missing_coords)) {
+      n_missing <- sum(missing_coords)
+      warning(sprintf("Removing %d rows with missing coordinates", n_missing))
+      vector_data <- vector_data[!missing_coords, ]
+    }
+
+    if (nrow(vector_data) == 0) {
+      stop("No rows with valid coordinates remain", call. = FALSE)
+    }
+
+    vector_sf <- sf::st_as_sf(vector_data, coords = coord_cols, crs = crs_code)
+
+  } else if (inherits(vector_data, "sf")) {
+    # Already an sf object
+    vector_sf <- vector_data
+
+    if (nrow(vector_sf) == 0) {
+      stop("sf object contains no features", call. = FALSE)
+    }
+
+    # Check for valid geometries
+    valid_geoms <- sf::st_is_valid(vector_sf)
+    if (any(!valid_geoms)) {
+      n_invalid <- sum(!valid_geoms)
+      warning(sprintf("Found %d invalid geometries. Attempting to fix...", n_invalid))
+
+      vector_sf <- tryCatch({
+        sf::st_make_valid(vector_sf)
+      }, error = function(e) {
+        warning("Could not fix invalid geometries, proceeding with original data")
+        vector_sf
+      })
+    }
+
+  } else {
+    stop("Unsupported vector_data format. Must be file path, data.frame, or sf object.",
+         call. = FALSE)
+  }
+
+  # Final validation
+  if (nrow(vector_sf) == 0) {
+    stop("Processed vector data contains no features", call. = FALSE)
+  }
+
+  # Check CRS
+  if (is.na(sf::st_crs(vector_sf))) {
+    warning(sprintf("Vector data has no CRS. Setting to EPSG:%d", crs_code))
+    sf::st_crs(vector_sf) <- crs_code
+  }
+
+  if (verbose) message(sprintf("Successfully processed vector data: %d features", nrow(vector_sf)))
+
+  return(vector_sf)
+}
+
+#' Perform extraction based on method and geometry type (ROBUST VERSION)
+#'
+#' @param vector_sf sf object
+#' @param raster_layer SpatRaster
+#' @param method Extraction method
+#' @param buffer_size Buffer size
+#' @param summary_function Summary function
+#' @param geometry_type Geometry type
+#'
+#' @return Vector of extracted values
+#'
+#' @keywords internal
+perform_extraction_robust <- function(vector_sf, raster_layer, method, buffer_size,
+                                      summary_function, geometry_type) {
+
+  # Convert summary_function string to actual function
+  summary_func <- switch(summary_function,
+                         "mean" = function(x) mean(x, na.rm = TRUE),
+                         "median" = function(x) median(x, na.rm = TRUE),
+                         "max" = function(x) max(x, na.rm = TRUE),
+                         "min" = function(x) min(x, na.rm = TRUE),
+                         "sum" = function(x) sum(x, na.rm = TRUE),
+                         "sd" = function(x) sd(x, na.rm = TRUE),
+                         "mode" = function(x) {
+                           ux <- unique(x[!is.na(x)])
+                           if (length(ux) == 0) return(NA)
+                           ux[which.max(tabulate(match(x, ux)))]
+                         },
+                         function(x) mean(x, na.rm = TRUE)  # Default to mean
+  )
+
+  # Check if vector data overlaps with raster extent
+  vector_bbox <- sf::st_bbox(vector_sf)
+  raster_ext <- as.vector(terra::ext(raster_layer))
+
+  # Check for spatial overlap
+  no_overlap <- (vector_bbox["xmax"] < raster_ext[1] || vector_bbox["xmin"] > raster_ext[2] ||
+                   vector_bbox["ymax"] < raster_ext[3] || vector_bbox["ymin"] > raster_ext[4])
+
+  if (no_overlap) {
+    warning("No spatial overlap between vector data and raster. All values will be NA.")
+    return(rep(NA, nrow(vector_sf)))
+  }
+
+  extracted_values <- tryCatch({
+    switch(method,
+
+           "simple" = {
+             # Simple point extraction (works for all geometry types)
+             if (geometry_type == "polygon") {
+               # For polygons, extract all values within and summarize
+               terra::extract(raster_layer, vector_sf, fun = summary_func, df = TRUE, ID = FALSE)
+             } else {
+               # For points/lines, extract at exact locations
+               result <- terra::extract(raster_layer, vector_sf, df = TRUE, ID = FALSE)
+             }
+           },
+
+           "buffer" = {
+             # Buffer-based extraction (works for all geometry types)
+             if (buffer_size <= 0) {
+               stop("buffer_size must be greater than 0 for buffer method", call. = FALSE)
+             }
+
+             buffered_geom <- sf::st_buffer(vector_sf, dist = buffer_size)
+             terra::extract(raster_layer, buffered_geom, fun = summary_func, df = TRUE, ID = FALSE)
+           },
+
+           "bilinear" = {
+             # Bilinear interpolation (mainly for points)
+             if (geometry_type != "point") {
+               warning("Bilinear method is designed for point geometries. Results may be unexpected.")
+             }
+             terra::extract(raster_layer, vector_sf, method = "bilinear", df = TRUE, ID = FALSE)
+           },
+
+           "nearest" = {
+             # Nearest neighbor (works for all)
+             terra::extract(raster_layer, vector_sf, method = "simple", df = TRUE, ID = FALSE)
+           },
+
+           stop(paste("Unsupported extraction method:", method), call. = FALSE)
+    )
+  }, error = function(e) {
+    stop(sprintf("Extraction failed: %s", e$message), call. = FALSE)
+  })
+
+  # Handle the results - terra::extract returns a data.frame
+  if (is.data.frame(extracted_values)) {
+    # Get the values column (should be the second column after ID)
+    value_col <- ncol(extracted_values)  # Usually the last column
+    values <- extracted_values[, value_col]
+  } else {
+    values <- extracted_values
+  }
+
+  # Ensure we have the right number of values
+  if (length(values) != nrow(vector_sf)) {
+    stop(sprintf("Extraction returned %d values but expected %d",
+                 length(values), nrow(vector_sf)), call. = FALSE)
+  }
+
+  return(values)
+}

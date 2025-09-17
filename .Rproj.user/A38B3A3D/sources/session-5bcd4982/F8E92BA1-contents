@@ -1,0 +1,347 @@
+---
+title: "Untitled"
+output: html_document
+date: "2025-09-11"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+
+```{r}
+
+# Script to Add Dynamic Comments to \dontrun{} Examples
+# Based on CRAN requirement to explain why examples cannot be run
+
+# Get all R files
+files <- list.files("R", pattern = "\\.R$", full.names = TRUE, recursive = TRUE)
+
+# Define comment templates for different scenarios
+comment_templates <- list(
+  file_paths = "# These examples require external data files not included with the package",
+  large_data = "# These examples require large geospatial datasets (>100MB)",
+  user_data = "# These examples demonstrate workflows with user's own spatial data",
+  satellite = "# These examples require satellite imagery files (Landsat/Sentinel data etc.)",
+  directory = "# These examples require directory structures with multiple data files",
+  api_keys = "# These examples require API keys or external services",
+  system_deps = "# These examples require external software or system dependencies",
+  interactive = "# These examples require user interaction or external databases"
+)
+
+# Function to detect appropriate comment based on example content
+detect_comment_type <- function(example_text) {
+  example_lower <- tolower(example_text)
+  
+  # Check for different patterns
+  if (grepl("\\.tif|\\.shp|\\.csv|/path/to/", example_text)) {
+    if (grepl("landsat|sentinel|satellite|imagery|modis", example_lower)) {
+      return("satellite")
+    } else if (grepl("directory|folder", example_lower)) {
+      return("directory") 
+    } else {
+      return("file_paths")
+    }
+  }
+  
+  if (grepl("large|big|multi-temporal|time.series|cdl", example_lower)) {
+    return("large_data")
+  }
+  
+  if (grepl("your|user|my_|custom", example_lower)) {
+    return("user_data")
+  }
+  
+  if (grepl("api|key|service|database", example_lower)) {
+    return("api_keys")
+  }
+  
+  # Default
+  return("file_paths")
+}
+
+# Function to process a single file
+process_file <- function(file_path) {
+  cat("Processing:", file_path, "\n")
+  
+  lines <- readLines(file_path, warn = FALSE)
+  modified <- FALSE
+  
+  i <- 1
+  while (i <= length(lines)) {
+    line <- lines[i]
+    
+    # Look for \dontrun{ that doesn't already have a comment
+    if (grepl("\\\\dontrun\\{", line)) {
+      # Check if next line is already a comment explaining why
+      next_line_idx <- i + 1
+      if (next_line_idx <= length(lines)) {
+        next_line <- trimws(lines[next_line_idx])
+        
+        # If next line doesn't start with #' and contain explanation, add comment
+        if (!grepl("^#'.*require|^#'.*need|^#'.*cannot|^#'.*example", next_line, ignore.case = TRUE)) {
+          
+          # Extract the example content to determine appropriate comment
+          example_start <- i + 1
+          example_end <- i + 1
+          brace_count <- 1
+          
+          # Find the end of the \dontrun{} block
+          while (example_end <= length(lines) && brace_count > 0) {
+            if (grepl("\\{", lines[example_end])) {
+              brace_count <- brace_count + str_count(lines[example_end], "\\{")
+            }
+            if (grepl("\\}", lines[example_end])) {
+              brace_count <- brace_count - str_count(lines[example_end], "\\}")
+            }
+            example_end <- example_end + 1
+          }
+          
+          # Get example content
+          example_content <- paste(lines[example_start:(example_end-1)], collapse = " ")
+          
+          # Detect appropriate comment
+          comment_type <- detect_comment_type(example_content)
+          comment_text <- comment_templates[[comment_type]]
+          
+          # Insert the comment
+          lines <- c(
+            lines[1:i],
+            paste0("#' ", comment_text),
+            lines[(i+1):length(lines)]
+          )
+          
+          modified <- TRUE
+          cat("  Added comment:", comment_text, "\n")
+          i <- i + 1  # Skip the newly added line
+        }
+      }
+    }
+    i <- i + 1
+  }
+  
+  # Write back if modified
+  if (modified) {
+    writeLines(lines, file_path)
+    cat("  File updated!\n")
+  } else {
+    cat("  No changes needed\n")
+  }
+}
+
+# Load stringr for str_count function
+if (!requireNamespace("stringr", quietly = TRUE)) {
+  install.packages("stringr")
+}
+library(stringr)
+
+# Process all files
+cat("Starting to add \dontrun{} comments...\n\n")
+
+for (file in files) {
+  process_file(file)
+  cat("\n")
+}
+
+cat("Completed adding \dontrun{} comments!\n")
+
+# Alternative: Simple manual approach for specific patterns
+cat("\n=== MANUAL APPROACH ===\n")
+cat("If the automatic approach doesn't work well, use these find/replace patterns:\n\n")
+
+manual_patterns <- list(
+  "\\\\dontrun\\{\\s*\\n(#'\\s*)?\\s*([^#])" = "\\\\dontrun{\\n#' These examples require external data files not included with the package\\n\\2",
+  "\\\\dontrun\\{\\s*\\n#'\\s*#" = "\\\\dontrun{\\n#' These examples demonstrate workflows with user's own spatial data\\n#'",
+  "\\\\dontrun\\{\\s*\\n#'\\s*[^T]" = "\\\\dontrun{\\n#' These examples require external data files not included with the package\\n#'"
+)
+
+cat("Manual find/replace patterns:\n")
+for (pattern in names(manual_patterns)) {
+  cat("Find:   ", pattern, "\n")
+  cat("Replace:", manual_patterns[[pattern]], "\n\n")
+}
+
+# Specific templates you can copy-paste
+cat("=== COPY-PASTE TEMPLATES ===\n")
+cat("Use these based on your example content:\n\n")
+
+for (name in names(comment_templates)) {
+  cat(sprintf("# For %s examples:\n", name))
+  cat(sprintf("#' %s\n", comment_templates[[name]]))
+  cat("\n")
+}
+
+
+```
+```{r}
+
+
+# Verification Script: Check ALL \dontrun{} have explanatory comments
+# This will find any \dontrun{} that doesn't have a proper comment
+
+# Get all R files
+files <- list.files("R", pattern = "\\.R$", full.names = TRUE, recursive = TRUE)
+
+# Function to check a single file for missing comments
+check_file_dontrun_comments <- function(file_path) {
+  lines <- readLines(file_path, warn = FALSE)
+  issues <- data.frame(
+    file = character(),
+    line_number = integer(),
+    issue = character(),
+    example_preview = character(),
+    stringsAsFactors = FALSE
+  )
+  
+  for (i in 1:length(lines)) {
+    line <- lines[i]
+    
+    # Find \dontrun{
+    if (grepl("\\\\dontrun\\{", line)) {
+      # Check if the next line has an explanatory comment
+      if (i + 1 <= length(lines)) {
+        next_line <- trimws(lines[i + 1])
+        
+        # Check if next line is a proper explanatory comment
+        valid_comment_patterns <- c(
+          "these examples require",
+          "these examples demonstrate", 
+          "these examples need",
+          "requires external",
+          "requires satellite",
+          "requires large",
+          "requires directory",
+          "requires api",
+          "cannot be run",
+          "not included with"
+        )
+        
+        has_valid_comment <- any(sapply(valid_comment_patterns, function(pattern) {
+          grepl(pattern, next_line, ignore.case = TRUE)
+        }))
+        
+        if (!has_valid_comment) {
+          # Get preview of the example content
+          preview_lines <- lines[max(1, i-1):min(length(lines), i+3)]
+          preview <- paste(preview_lines, collapse = " ")
+          preview <- substr(preview, 1, 100)  # Limit length
+          
+          issues <- rbind(issues, data.frame(
+            file = basename(file_path),
+            line_number = i,
+            issue = "Missing explanatory comment",
+            example_preview = preview,
+            stringsAsFactors = FALSE
+          ))
+        }
+      }
+    }
+  }
+  
+  return(issues)
+}
+
+# Check all files
+cat("Checking all \\dontrun{} examples for explanatory comments...\n")
+cat("=" , rep("=", 60), "\n", sep = "")
+
+all_issues <- data.frame()
+files_with_dontrun <- 0
+total_dontrun <- 0
+
+for (file in files) {
+  issues <- check_file_dontrun_comments(file)
+  
+  # Count \dontrun{} in this file
+  file_content <- paste(readLines(file, warn = FALSE), collapse = "\n")
+  dontrun_count <- length(gregexpr("\\\\dontrun\\{", file_content)[[1]])
+  if (dontrun_count > 0 && !grepl("-1", dontrun_count)) {
+    files_with_dontrun <- files_with_dontrun + 1
+    total_dontrun <- total_dontrun + dontrun_count
+  }
+  
+  if (nrow(issues) > 0) {
+    all_issues <- rbind(all_issues, issues)
+    cat("❌ ISSUES in", basename(file), ":\n")
+    for (j in 1:nrow(issues)) {
+      cat(sprintf("   Line %d: %s\n", issues$line_number[j], issues$issue[j]))
+      cat(sprintf("   Preview: %s...\n", issues$example_preview[j]))
+    }
+    cat("\n")
+  } else {
+    # Check if file has any \dontrun{} at all
+    if (dontrun_count > 0 && !grepl("-1", dontrun_count)) {
+      cat("✅", basename(file), "- All \\dontrun{} have comments\n")
+    }
+  }
+}
+
+# Summary
+cat("\n")
+cat("=" , rep("=", 60), "\n", sep = "")
+cat("VERIFICATION SUMMARY\n")
+cat("=" , rep("=", 60), "\n", sep = "")
+cat(sprintf("Files processed: %d\n", length(files)))
+cat(sprintf("Files with \\dontrun{}: %d\n", files_with_dontrun))
+cat(sprintf("Total \\dontrun{} examples: %d\n", total_dontrun))
+cat(sprintf("Missing comments: %d\n", nrow(all_issues)))
+
+if (nrow(all_issues) == 0) {
+  cat("\n🎉 SUCCESS: All \\dontrun{} examples have explanatory comments!\n")
+  cat("Your package is ready for CRAN resubmission.\n")
+} else {
+  cat("\n⚠️  ISSUES FOUND: Some \\dontrun{} examples need comments\n")
+  cat("Please add explanatory comments to the examples listed above.\n")
+  
+  # Show suggested fixes
+  cat("\n--- SUGGESTED FIXES ---\n")
+  for (i in 1:nrow(all_issues)) {
+    cat(sprintf("File: %s, Line %d\n", all_issues$file[i], all_issues$line_number[i]))
+    cat("Add after \\dontrun{:\n")
+    cat("#' These examples require external data files not included with the package\n\n")
+  }
+}
+
+# Additional check: Look for any \donttest{} without comments (optional)
+cat("\n--- BONUS CHECK: \\donttest{} status ---\n")
+donttest_without_comments <- 0
+for (file in files) {
+  lines <- readLines(file, warn = FALSE)
+  for (i in 1:length(lines)) {
+    if (grepl("\\\\donttest\\{", lines[i])) {
+      # \donttest{} examples don't require comments, but let's count them
+      donttest_without_comments <- donttest_without_comments + 1
+    }
+  }
+}
+cat(sprintf("\\donttest{} examples found: %d (these don't need comments)\n", donttest_without_comments))
+
+# Return the issues for manual inspection if needed
+if (nrow(all_issues) > 0) {
+  cat("\nDETAILED ISSUES:\n")
+  print(all_issues)
+}
+```
+

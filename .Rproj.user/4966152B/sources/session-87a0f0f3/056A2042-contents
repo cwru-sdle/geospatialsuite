@@ -1,0 +1,17 @@
+Package: geospatialsuite
+Title: Comprehensive Geospatial Analysis and Modeling Toolkit for Multimodal Data
+Version: 0.1.0
+Authors@R: 
+    person("Olatunde", "Akanbi", , "oda10@case.edu", role = c("aut", "cre"))
+Description: A comprehensive toolkit for geospatial analysis including vegetation indices 
+    (NDVI, EVI, SAVI and 20+ others), water quality analysis, both NDWI variants, 
+    raster mosaicking, universal spatial joins, CDL crop analysis with comprehensive 
+    crop codes, spatial interpolation, temporal analysis, terrain analysis, and 
+    dynamic visualization. Designed for agricultural research, environmental monitoring, 
+    water quality assessment, and land use analysis with support for any geographic 
+    region and robust error handling.
+License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
+    license
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2

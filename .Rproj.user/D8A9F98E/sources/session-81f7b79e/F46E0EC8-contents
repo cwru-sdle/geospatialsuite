@@ -1,0 +1,911 @@
+#' Create universal spatial map -
+#'
+#' @description
+#' Universal mapping function that works with any spatial data type including
+#' points, polygons, and rasters. Uses standard terra plotting for reliability.
+#'
+#' @param spatial_data sf object, data.frame with coordinates, file path, or SpatRaster
+#' @param fill_variable Variable to use for fill/color (for vector data)
+#' @param coord_cols Coordinate column names if data.frame provided
+#' @param region_boundary Optional region boundary
+#' @param map_type Type of map: "points", "polygons", "raster", "auto"
+#' @param color_scheme Color scheme: "viridis", "plasma", "ndvi", "terrain", "categorical"
+#' @param basemap Add basemap: "none", "terrain", "satellite", "osm"
+#' @param interactive Create interactive map using leaflet
+#' @param title Map title
+#' @param point_size Size of points (for point data)
+#' @param alpha Transparency level (0-1)
+#' @param output_file Optional output file path
+#'
+#' @return ggplot2 object, leaflet map, or file path
+#'
+#' @examples
+#' \dontrun{
+#' # Simple point map
+#' create_spatial_map(study_sites, fill_variable = "ndvi_mean")
+#'
+#' # Interactive polygon map with satellite basemap
+#' create_spatial_map(counties, fill_variable = "population",
+#'                   interactive = TRUE, basemap = "satellite")
+#'
+#' # Raster map with region boundary
+#' create_spatial_map(ndvi_raster, region_boundary = "Ohio",
+#'                   color_scheme = "ndvi")
+#' }
+#'
+#' @export
+create_spatial_map <- function(spatial_data, fill_variable = NULL, coord_cols = c("lon", "lat"),
+                               region_boundary = NULL, map_type = "auto",
+                               color_scheme = "viridis", basemap = "none",
+                               interactive = FALSE, title = NULL, point_size = 3,
+                               alpha = 0.8, output_file = NULL) {
+
+  message("Creating spatial map with standard plotting...")
+
+  # Handle different input types
+  if (inherits(spatial_data, "SpatRaster")) {
+    return(create_raster_map_simple(spatial_data, region_boundary, color_scheme,
+                                    interactive, title, output_file))
+  }
+
+  # Process vector data
+  if (is.character(spatial_data)) {
+    if (tools::file_ext(spatial_data) %in% c("tif", "tiff")) {
+      # It's a raster file
+      raster_data <- terra::rast(spatial_data)
+      return(create_raster_map_simple(raster_data, region_boundary, color_scheme,
+                                      interactive, title, output_file))
+    } else {
+      # It's a vector file
+      spatial_sf <- sf::st_read(spatial_data, quiet = TRUE)
+    }
+  } else if (is.data.frame(spatial_data) && !inherits(spatial_data, "sf")) {
+    # Convert data.frame to sf
+    spatial_sf <- process_vector_data(spatial_data, coord_cols = coord_cols)
+  } else if (inherits(spatial_data, "sf")) {
+    spatial_sf <- spatial_data
+  } else {
+    stop("Unsupported spatial data format")
+  }
+
+  # Auto-detect map type
+  if (map_type == "auto") {
+    geom_types <- sf::st_geometry_type(spatial_sf)
+    if (all(grepl("POINT", geom_types))) {
+      map_type <- "points"
+    } else if (all(grepl("POLYGON", geom_types))) {
+      map_type <- "polygons"
+    } else if (all(grepl("LINESTRING", geom_types))) {
+      map_type <- "lines"
+    } else {
+      map_type <- "mixed"
+    }
+  }
+
+  # Create interactive map
+  if (interactive && requireNamespace("leaflet", quietly = TRUE)) {
+    result <- create_interactive_map_simple(spatial_sf, fill_variable, map_type,
+                                            basemap, title, point_size)
+    if (!is.null(output_file)) {
+      if (requireNamespace("htmlwidgets", quietly = TRUE)) {
+        htmlwidgets::saveWidget(result, output_file)
+        message(sprintf("Interactive map saved to: %s", output_file))
+        return(output_file)
+      }
+    }
+    return(result)
+  }
+
+  # Create static map using ggplot2
+  if (requireNamespace("ggplot2", quietly = TRUE)) {
+    p <- create_static_map_ggplot(spatial_sf, fill_variable, map_type, region_boundary,
+                                  color_scheme, title, point_size, alpha)
+
+    # Save if output file specified
+    if (!is.null(output_file)) {
+      ggplot2::ggsave(output_file, plot = p, width = 12, height = 8, dpi = 300)
+      message(sprintf("Map saved to: %s", output_file))
+      return(output_file)
+    }
+
+    return(p)
+  } else {
+    # Fallback to base plotting
+    warning("ggplot2 not available, using base plotting")
+    plot(spatial_sf, main = title %||% "Spatial Map")
+    return(invisible(NULL))
+  }
+}
+
+#' Quick map function - one-line mapping -
+#'
+#' @description
+#' Ultra-simple function for quick spatial mapping. Auto-detects data type and creates appropriate map.
+#'
+#' @param spatial_data Any spatial data
+#' @param variable Variable to visualize (optional, auto-detected)
+#' @param ... Additional arguments passed to create_spatial_map
+#'
+#' @return Map object
+#'
+#' @examples
+#' \dontrun{
+#' quick_map("data.shp")
+#' quick_map(my_raster)
+#' quick_map(points_data, interactive = TRUE)
+#' }
+#'
+#' @export
+quick_map <- function(spatial_data, variable = NULL, ...) {
+  # Auto-detect variable if not provided
+  if (is.null(variable)) {
+    if (inherits(spatial_data, "sf")) {
+      numeric_vars <- names(spatial_data)[sapply(spatial_data, is.numeric)]
+      variable <- numeric_vars[1]
+    } else if (is.data.frame(spatial_data)) {
+      numeric_vars <- names(spatial_data)[sapply(spatial_data, is.numeric)]
+      # Skip coordinate columns
+      numeric_vars <- setdiff(numeric_vars, c("lon", "lat", "x", "y", "longitude", "latitude"))
+      variable <- numeric_vars[1]
+    }
+  }
+
+  create_spatial_map(spatial_data, fill_variable = variable, map_type = "auto",
+                     color_scheme = "viridis", ...)
+}
+
+#' Create NDVI time series map - SIMPLIFIED
+#'
+#' @description
+#' Specialized function for creating NDVI maps with time series support,
+#' proper NDVI color schemes, and vegetation analysis features.
+#'
+#' @param ndvi_data NDVI raster data (single or multi-layer) or file path
+#' @param region_boundary Region boundary
+#' @param time_layer Which time layer to display (for multi-layer rasters)
+#' @param animation Create animated time series (requires gganimate)
+#' @param vector_overlay Optional vector data to overlay (study sites, boundaries, etc.)
+#' @param ndvi_classes Create NDVI classification: "none", "standard", "custom"
+#' @param class_breaks Custom classification breaks (if ndvi_classes = "custom")
+#' @param title Map title
+#' @param show_histogram Add NDVI value histogram
+#' @param output_file Optional output file path
+#'
+#' @return ggplot2 object, animation, or file path
+#'
+#' @examples
+#' \dontrun{
+#' # Simple NDVI map
+#' create_ndvi_map("ndvi_2023.tif", region_boundary = "Iowa")
+#'
+#' # Time series with vector overlay
+#' create_ndvi_map(ndvi_stack, time_layer = 5,
+#'                vector_overlay = "field_boundaries.shp")
+#' }
+#'
+#' @export
+create_ndvi_map <- function(ndvi_data, region_boundary = NULL, time_layer = 1,
+                            animation = FALSE, vector_overlay = NULL,
+                            ndvi_classes = "none", class_breaks = c(-0.2, 0.2, 0.4, 0.6, 0.8, 1.0),
+                            title = NULL, show_histogram = FALSE, output_file = NULL) {
+
+  message("Creating NDVI map using standard terra plotting...")
+
+  # Load NDVI data
+  if (is.character(ndvi_data)) {
+    ndvi_raster <- terra::rast(ndvi_data)
+  } else {
+    ndvi_raster <- ndvi_data
+  }
+
+  # Apply region boundary
+  if (!is.null(region_boundary)) {
+    boundary <- get_region_boundary(region_boundary)
+    boundary_vect <- terra::vect(boundary)
+    ndvi_raster <- terra::crop(ndvi_raster, boundary_vect)
+    ndvi_raster <- terra::mask(ndvi_raster, boundary_vect)
+  }
+
+  # Handle multi-layer rasters
+  if (terra::nlyr(ndvi_raster) > 1) {
+    if (animation) {
+      warning("Animation not supported with simplified plotting. Using first layer.")
+    }
+    ndvi_raster <- ndvi_raster[[time_layer]]
+    if (is.null(title)) {
+      title <- paste("NDVI - Layer", time_layer)
+    }
+  }
+
+  # Set default title
+  if (is.null(title)) {
+    title <- "NDVI Analysis"
+  }
+
+  # Create NDVI color scheme
+  ndvi_colors <- colorRampPalette(c("brown", "#FFFF99", "#90EE90", "#006400"))(100)
+
+  # Apply classification if requested
+  if (ndvi_classes == "standard") {
+    # Classify NDVI
+    rcl_matrix <- cbind(
+      c(-1, 0, 0.2, 0.4, 0.6),
+      c(0, 0.2, 0.4, 0.6, 1),
+      c(1, 2, 3, 4, 5)
+    )
+    ndvi_classified <- terra::classify(ndvi_raster, rcl_matrix)
+
+    # Plot classified
+    class_colors <- c("brown", "#FFFF99", "#90EE90", "#228B22", "#006400")
+    terra::plot(ndvi_classified, main = title, col = class_colors,
+                legend = c("Non-Vegetation", "Sparse", "Moderate", "Dense", "Very Dense"))
+  } else {
+    # Plot continuous NDVI
+    terra::plot(ndvi_raster, main = title, col = ndvi_colors)
+  }
+
+  # Add vector overlay if provided
+  if (!is.null(vector_overlay)) {
+    if (is.character(vector_overlay)) {
+      overlay_sf <- sf::st_read(vector_overlay, quiet = TRUE)
+    } else {
+      overlay_sf <- vector_overlay
+    }
+    # Convert to terra vector and add to plot
+    overlay_vect <- terra::vect(overlay_sf)
+    terra::plot(overlay_vect, add = TRUE, border = "white", lwd = 2)
+  }
+
+  # Save if output file specified
+  if (!is.null(output_file)) {
+    # For terra plots, we need to use dev.copy or similar
+    if (tools::file_ext(output_file) == "png") {
+      png(output_file, width = 1200, height = 800, res = 300)
+      if (ndvi_classes == "standard") {
+        terra::plot(ndvi_classified, main = title, col = class_colors)
+      } else {
+        terra::plot(ndvi_raster, main = title, col = ndvi_colors)
+      }
+      if (!is.null(vector_overlay)) {
+        terra::plot(overlay_vect, add = TRUE, border = "white", lwd = 2)
+      }
+      dev.off()
+      message(sprintf("NDVI map saved to: %s", output_file))
+      return(output_file)
+    }
+  }
+
+  return(invisible(NULL))
+}
+
+#' Create crop distribution map from CDL data - SIMPLIFIED
+#'
+#' @description
+#' Create comprehensive crop distribution maps from USDA CDL data with
+#' support for multiple crops, classification styles, and statistical overlays.
+#'
+#' @param cdl_data CDL raster data or file path
+#' @param crop_selection Crops to highlight (names, codes, or "all")
+#' @param region_boundary Region boundary
+#' @param style Mapping style: "categorical", "dominant", "diversity", "area"
+#' @param aggregation_level Spatial aggregation: "pixel", "county", "watershed"
+#' @param show_statistics Add crop statistics overlay
+#' @param color_palette Color palette for crops
+#' @param title Map title
+#' @param legend_position Legend position: "right", "bottom", "none"
+#' @param output_file Optional output file path
+#'
+#' @return ggplot2 object or file path
+#'
+#' @examples
+#' \dontrun{
+#' # Simple crop map
+#' create_crop_map("cdl_2023.tif", crop_selection = "corn",
+#'                region_boundary = "Iowa")
+#'
+#' # Multi-crop categorical map
+#' create_crop_map(cdl_data, crop_selection = c("corn", "soybeans", "wheat"),
+#'                style = "categorical", show_statistics = TRUE)
+#' }
+#'
+#' @export
+create_crop_map <- function(cdl_data, crop_selection = "major_crops",
+                            region_boundary = NULL, style = "categorical",
+                            aggregation_level = "pixel", show_statistics = FALSE,
+                            color_palette = "Set3", title = NULL,
+                            legend_position = "right", output_file = NULL) {
+
+  message("Creating crop distribution map...")
+
+  # Load CDL data
+  if (is.character(cdl_data)) {
+    cdl_raster <- terra::rast(cdl_data)
+  } else {
+    cdl_raster <- cdl_data
+  }
+
+  # Get crop codes
+  if (crop_selection == "major_crops") {
+    crop_codes <- get_comprehensive_cdl_codes("food_crops")
+    crop_names <- c("Corn", "Soybeans", "Wheat", "Cotton", "Rice")
+  } else if (crop_selection == "all") {
+    crop_codes <- get_comprehensive_cdl_codes("all_crops")
+    crop_names <- names(get_comprehensive_cdl_codes("all_crops"))
+  } else if (is.character(crop_selection)) {
+    if (length(crop_selection) == 1) {
+      crop_codes <- get_comprehensive_cdl_codes(crop_selection)
+      crop_names <- crop_selection
+    } else {
+      crop_codes <- unlist(lapply(crop_selection, get_comprehensive_cdl_codes))
+      crop_names <- crop_selection
+    }
+  } else {
+    crop_codes <- crop_selection
+    crop_names <- paste("Crop", crop_codes)
+  }
+
+  # Apply region boundary
+  if (!is.null(region_boundary)) {
+    boundary <- get_region_boundary(region_boundary)
+    boundary_vect <- terra::vect(boundary)
+    cdl_raster <- terra::crop(cdl_raster, boundary_vect)
+    cdl_raster <- terra::mask(cdl_raster, boundary_vect)
+  }
+
+  # Set default title
+  if (is.null(title)) {
+    title <- paste("Crop Distribution -", paste(crop_names[1:min(3, length(crop_names))],
+                                                collapse = ", "))
+    if (length(crop_names) > 3) title <- paste(title, "...")
+  }
+
+  # Create map based on style using terra plotting
+  if (style == "categorical") {
+    # Create crop mask
+    crop_mask <- cdl_raster
+    crop_mask[!(cdl_raster %in% crop_codes)] <- NA
+
+    # Use rainbow colors for different crops
+    n_crops <- length(crop_codes)
+    crop_colors <- rainbow(n_crops)
+
+    terra::plot(crop_mask, main = title, col = crop_colors)
+
+  } else if (style == "dominant") {
+    create_dominant_crop_map(cdl_raster, crop_codes, crop_names, boundary)
+
+  } else if (style == "diversity") {
+    create_crop_diversity_map(cdl_raster, crop_codes, boundary)
+
+  } else if (style == "area") {
+    create_crop_area_map(cdl_raster, crop_codes, crop_names, boundary)
+
+  } else {
+    stop("Unsupported style. Use: categorical, dominant, diversity, or area")
+  }
+
+  # Add statistics if requested
+  if (show_statistics) {
+    crop_freq <- terra::freq(cdl_raster)
+    crop_pixels <- sum(crop_freq$count[crop_freq$value %in% crop_codes], na.rm = TRUE)
+    total_pixels <- sum(crop_freq$count, na.rm = TRUE)
+    message(sprintf("Crop Statistics: %d crop pixels out of %d total (%.1f%%)",
+                    crop_pixels, total_pixels, (crop_pixels/total_pixels)*100))
+  }
+
+  # Save if output file specified
+  if (!is.null(output_file)) {
+    if (tools::file_ext(output_file) == "png") {
+      png(output_file, width = 1200, height = 800, res = 300)
+      if (style == "categorical") {
+        terra::plot(crop_mask, main = title, col = crop_colors)
+      }
+      dev.off()
+      message(sprintf("Crop map saved to: %s", output_file))
+      return(output_file)
+    }
+  }
+
+  return(invisible(NULL))
+}
+
+#' Create fast raster plot using terra - SIMPLIFIED
+#'
+#' @description
+#' Create efficient raster plots using terra's native plotting capabilities.
+#' Fast and reliable without external dependencies.
+#'
+#' @param raster_data SpatRaster to plot
+#' @param title Plot title
+#' @param color_scheme Color scheme to apply
+#' @param use_ggplot Return ggplot object or use base plot (ignored - always uses terra)
+#' @param region_boundary Optional boundary to overlay
+#' @param breaks Custom breaks for classification
+#' @param labels Custom labels for breaks
+#'
+#' @return NULL (plots directly to device)
+#'
+#' @examples
+#' \dontrun{
+#' # Simple raster plot
+#' plot_raster_fast(ndvi_raster, "NDVI Analysis", "ndvi")
+#'
+#' # With custom breaks
+#' plot_raster_fast(elevation, "Elevation", "terrain",
+#'                 breaks = c(0, 500, 1000, 1500, 2000))
+#' }
+#'
+#' @export
+plot_raster_fast <- function(raster_data, title = "Raster Plot", color_scheme = "viridis",
+                             use_ggplot = FALSE, region_boundary = NULL,
+                             breaks = NULL, labels = NULL) {
+
+  # Always use terra plotting for reliability
+  colors <- get_terra_colors(color_scheme)
+
+  if (!is.null(breaks)) {
+    terra::plot(raster_data, main = title, col = colors, breaks = breaks)
+  } else {
+    terra::plot(raster_data, main = title, col = colors)
+  }
+
+  # Add boundary if specified
+  if (!is.null(region_boundary)) {
+    boundary <- get_region_boundary(region_boundary)
+    terra::plot(terra::vect(boundary), add = TRUE, border = "black", lwd = 2)
+  }
+
+  return(invisible(NULL))
+}
+
+#' Create multi-band raster RGB plot - SIMPLIFIED
+#'
+#' @description
+#' Create RGB plots from multi-band rasters using terra's native RGB plotting.
+#' Reliable and fast without external dependencies.
+#'
+#' @param raster_data Multi-band SpatRaster
+#' @param r Red band index (default: 1)
+#' @param g Green band index (default: 2)
+#' @param b Blue band index (default: 3)
+#' @param stretch Stretch method: "lin", "hist", "minmax", "perc"
+#' @param title Plot title
+#' @param quantiles Quantiles for percentile stretch (if stretch = "perc")
+#'
+#' @return NULL (plots directly to device)
+#'
+#' @examples
+#' \dontrun{
+#' # True color composite
+#' plot_rgb_raster(satellite_data, r = 3, g = 2, b = 1, title = "True Color")
+#'
+#' # False color composite with histogram stretch
+#' plot_rgb_raster(landsat_data, r = 4, g = 3, b = 2, stretch = "hist",
+#'                title = "False Color Composite")
+#' }
+#'
+#' @export
+plot_rgb_raster <- function(raster_data, r = 1, g = 2, b = 3, stretch = "lin",
+                            title = "RGB Composite", quantiles = c(0.02, 0.98)) {
+
+  message("Creating RGB composite using terra...")
+
+  # Validate inputs
+  if (!inherits(raster_data, "SpatRaster")) {
+    stop("raster_data must be a SpatRaster object")
+  }
+
+  if (terra::nlyr(raster_data) < max(r, g, b)) {
+    stop("Raster does not have enough bands for RGB composite")
+  }
+
+  # Use terra's native RGB plotting - most reliable
+  terra::plotRGB(raster_data, r = r, g = g, b = b, stretch = stretch, main = title)
+
+  return(invisible(NULL))
+}
+
+#' Create interactive map using leaflet -
+#'
+#' @description
+#' Create interactive maps with leaflet integration, supporting multiple
+#' basemaps, popups, and layer controls.
+#'
+#' @param spatial_data Spatial data to map (sf object)
+#' @param fill_variable Variable for coloring/filling
+#' @param popup_vars Variables to show in popups
+#' @param basemap Basemap type: "terrain", "satellite", "osm", "dark", "light"
+#' @param color_scheme Color scheme for continuous variables
+#' @param cluster_points Cluster point markers (for point data)
+#' @param layer_control Add layer control widget
+#' @param title Map title
+#'
+#' @return leaflet map object
+#'
+#' @examples
+#' \dontrun{
+#' # Simple interactive point map
+#' create_interactive_map(study_sites, fill_variable = "ndvi_mean")
+#'
+#' # Polygon map with custom popups
+#' create_interactive_map(counties, fill_variable = "population",
+#'                       popup_vars = c("name", "population", "area"),
+#'                       basemap = "satellite")
+#' }
+#'
+#' @export
+create_interactive_map <- function(spatial_data, fill_variable = NULL,
+                                   popup_vars = NULL, basemap = "terrain",
+                                   color_scheme = "viridis", cluster_points = FALSE,
+                                   layer_control = FALSE, title = "Interactive Map") {
+
+  if (!requireNamespace("leaflet", quietly = TRUE)) {
+    stop("leaflet package required for interactive maps")
+  }
+
+  message("Creating interactive map...")
+
+  # Ensure data is in WGS84 for leaflet
+  if (sf::st_crs(spatial_data) != 4326) {
+    spatial_data <- sf::st_transform(spatial_data, crs = 4326)
+  }
+
+  # Get map bounds
+  bbox <- sf::st_bbox(spatial_data)
+
+  # Create base leaflet map
+  m <- leaflet::leaflet(spatial_data) %>%
+    leaflet::setView(lng = mean(c(bbox$xmin, bbox$xmax)),
+                     lat = mean(c(bbox$ymin, bbox$ymax)), zoom = 7)
+
+  # Add basemap
+  m <- add_basemap_to_leaflet(m, basemap)
+
+  # Detect geometry type
+  geom_types <- sf::st_geometry_type(spatial_data)
+
+  # Add spatial data layers
+  if (all(grepl("POINT", geom_types))) {
+    m <- add_points_to_leaflet(m, spatial_data, fill_variable, popup_vars,
+                               color_scheme, cluster_points)
+  } else if (all(grepl("POLYGON", geom_types))) {
+    m <- add_polygons_to_leaflet(m, spatial_data, fill_variable, popup_vars,
+                                 color_scheme)
+  } else if (all(grepl("LINESTRING", geom_types))) {
+    m <- add_lines_to_leaflet(m, spatial_data, fill_variable, popup_vars,
+                              color_scheme)
+  }
+
+  # Add layer control if requested
+  if (layer_control) {
+    m <- m %>% leaflet::addLayersControl(
+      baseGroups = c("Terrain", "Satellite", "OpenStreetMap"),
+      options = leaflet::layersControlOptions(collapsed = FALSE)
+    )
+  }
+
+  # Add title
+  if (!is.null(title)) {
+    m <- m %>% leaflet::addControl(title, position = "topright")
+  }
+
+  return(m)
+}
+
+#' Create comparison map (before/after, side-by-side) - SIMPLIFIED
+#'
+#' @description
+#' Create comparison maps showing before/after analysis, side-by-side comparisons,
+#' or difference maps using terra plotting.
+#'
+#' @param data1 First dataset (before, reference)
+#' @param data2 Second dataset (after, comparison)
+#' @param comparison_type Type: "side_by_side", "difference", "overlay"
+#' @param titles Titles for each dataset
+#' @param region_boundary Optional region boundary
+#' @param color_scheme Color scheme for datasets
+#' @param difference_palette Palette for difference maps
+#' @param output_file Optional output file path
+#'
+#' @return NULL (plots directly to device) or file path
+#'
+#' @examples
+#' \dontrun{
+#' # Before/after NDVI comparison
+#' create_comparison_map("ndvi_2020.tif", "ndvi_2023.tif",
+#'                      comparison_type = "side_by_side",
+#'                      titles = c("2020", "2023"))
+#' }
+#'
+#' @export
+create_comparison_map <- function(data1, data2, comparison_type = "side_by_side",
+                                  titles = c("Dataset 1", "Dataset 2"),
+                                  region_boundary = NULL, color_scheme = "viridis",
+                                  difference_palette = "RdBu", output_file = NULL) {
+
+  message("Creating comparison map...")
+
+  # Load data
+  if (is.character(data1)) data1 <- terra::rast(data1)
+  if (is.character(data2)) data2 <- terra::rast(data2)
+
+  # Apply region boundary if provided
+  if (!is.null(region_boundary)) {
+    boundary <- get_region_boundary(region_boundary)
+    boundary_vect <- terra::vect(boundary)
+    data1 <- terra::crop(data1, boundary_vect)
+    data1 <- terra::mask(data1, boundary_vect)
+    data2 <- terra::crop(data2, boundary_vect)
+    data2 <- terra::mask(data2, boundary_vect)
+  }
+
+  # Get colors
+  colors <- get_terra_colors(color_scheme)
+
+  # Create comparison based on type
+  if (comparison_type == "side_by_side") {
+    # Side-by-side plotting
+    par(mfrow = c(1, 2))
+    terra::plot(data1, main = titles[1], col = colors)
+    terra::plot(data2, main = titles[2], col = colors)
+    par(mfrow = c(1, 1))
+
+  } else if (comparison_type == "difference") {
+    # Difference map
+    diff_raster <- data2 - data1
+    diff_colors <- get_terra_colors(difference_palette)
+    terra::plot(diff_raster, main = paste("Difference:", titles[2], "-", titles[1]),
+                col = diff_colors)
+
+  } else if (comparison_type == "overlay") {
+    # Simple overlay (plot first, then second with transparency)
+    terra::plot(data1, main = paste("Overlay:", paste(titles, collapse = " + ")), col = colors)
+    # Note: terra doesn't easily support transparency overlays, so we'll just show the warning
+    message("Note: True overlay with transparency not supported with terra plotting. Showing first dataset only.")
+
+  } else {
+    stop("Unsupported comparison type. Use: side_by_side, difference, or overlay")
+  }
+
+  # Save if output file specified
+  if (!is.null(output_file)) {
+    if (tools::file_ext(output_file) == "png") {
+      png(output_file, width = 1600, height = 800, res = 300)
+      if (comparison_type == "side_by_side") {
+        par(mfrow = c(1, 2))
+        terra::plot(data1, main = titles[1], col = colors)
+        terra::plot(data2, main = titles[2], col = colors)
+        par(mfrow = c(1, 1))
+      } else if (comparison_type == "difference") {
+        diff_raster <- data2 - data1
+        diff_colors <- get_terra_colors(difference_palette)
+        terra::plot(diff_raster, main = paste("Difference:", titles[2], "-", titles[1]),
+                    col = diff_colors)
+      }
+      dev.off()
+      message(sprintf("Comparison map saved to: %s", output_file))
+      return(output_file)
+    }
+  }
+
+  return(invisible(NULL))
+}
+
+# ==================== HELPER FUNCTIONS (INTERNAL) ==================== #
+
+#' Create simple raster map
+#' @keywords internal
+create_raster_map_simple <- function(raster_data, region_boundary, color_scheme,
+                                     interactive, title, output_file) {
+
+  if (is.null(title)) title <- "Raster Map"
+
+  # Apply region boundary
+  if (!is.null(region_boundary)) {
+    boundary <- get_region_boundary(region_boundary)
+    boundary_vect <- terra::vect(boundary)
+    raster_data <- terra::crop(raster_data, boundary_vect)
+    raster_data <- terra::mask(raster_data, boundary_vect)
+  }
+
+  # Use terra's native plotting
+  colors <- get_terra_colors(color_scheme)
+  terra::plot(raster_data, main = title, col = colors)
+
+  # Add boundary if provided
+  if (!is.null(region_boundary)) {
+    terra::plot(boundary_vect, add = TRUE, border = "black", lwd = 2)
+  }
+
+  # Save if requested
+  if (!is.null(output_file)) {
+    if (tools::file_ext(output_file) == "png") {
+      png(output_file, width = 1200, height = 800, res = 300)
+      terra::plot(raster_data, main = title, col = colors)
+      if (!is.null(region_boundary)) {
+        terra::plot(boundary_vect, add = TRUE, border = "black", lwd = 2)
+      }
+      dev.off()
+      message(sprintf("Raster map saved to: %s", output_file))
+      return(output_file)
+    }
+  }
+
+  return(invisible(NULL))
+}
+
+#' Create static map with ggplot2
+#' @keywords internal
+create_static_map_ggplot <- function(spatial_sf, fill_variable, map_type, region_boundary,
+                                     color_scheme, title, point_size, alpha) {
+
+  if (is.null(title)) title <- "Spatial Map"
+
+  # Create base plot
+  p <- ggplot2::ggplot()
+
+  # Add region boundary first (as background)
+  if (!is.null(region_boundary)) {
+    boundary <- get_region_boundary(region_boundary)
+    p <- p + ggplot2::geom_sf(data = boundary, fill = "gray95", color = "black",
+                              size = 0.5, alpha = 0.8)
+  }
+
+  # Add spatial data layer
+  if (map_type == "points") {
+    if (!is.null(fill_variable) && fill_variable %in% names(spatial_sf)) {
+      p <- p + ggplot2::geom_sf(data = spatial_sf,
+                                ggplot2::aes(color = .data[[fill_variable]]),
+                                size = point_size, alpha = alpha)
+      p <- apply_color_scheme_ggplot(p, color_scheme, "color")
+    } else {
+      p <- p + ggplot2::geom_sf(data = spatial_sf, size = point_size, alpha = alpha)
+    }
+  } else if (map_type == "polygons") {
+    if (!is.null(fill_variable) && fill_variable %in% names(spatial_sf)) {
+      p <- p + ggplot2::geom_sf(data = spatial_sf,
+                                ggplot2::aes(fill = .data[[fill_variable]]),
+                                color = "white", size = 0.2, alpha = alpha)
+      p <- apply_color_scheme_ggplot(p, color_scheme, "fill")
+    } else {
+      p <- p + ggplot2::geom_sf(data = spatial_sf, alpha = alpha)
+    }
+  } else if (map_type == "lines") {
+    if (!is.null(fill_variable) && fill_variable %in% names(spatial_sf)) {
+      p <- p + ggplot2::geom_sf(data = spatial_sf,
+                                ggplot2::aes(color = .data[[fill_variable]]),
+                                size = 1, alpha = alpha)
+      p <- apply_color_scheme_ggplot(p, color_scheme, "color")
+    } else {
+      p <- p + ggplot2::geom_sf(data = spatial_sf, size = 1, alpha = alpha)
+    }
+  }
+
+  # Add styling
+  p <- p + ggplot2::coord_sf() +
+    ggplot2::theme_minimal() +
+    ggplot2::labs(title = title, x = "Longitude", y = "Latitude") +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(hjust = 0.5, size = 14, face = "bold"),
+      axis.text = ggplot2::element_text(size = 10)
+    )
+
+  return(p)
+}
+
+#' Apply color scheme to ggplot
+#' @keywords internal
+apply_color_scheme_ggplot <- function(plot, color_scheme, aesthetic = "fill") {
+
+  if (aesthetic == "fill") {
+    switch(color_scheme,
+           "ndvi" = plot + ggplot2::scale_fill_gradient2(
+             low = "brown", mid = "#FFFF99", high = "#006400",
+             midpoint = 0.4, name = "NDVI", na.value = "transparent"
+           ),
+           "water" = plot + ggplot2::scale_fill_gradient2(
+             low = "brown", mid = "lightblue", high = "darkblue",
+             midpoint = 0, name = "Water Index", na.value = "transparent"
+           ),
+           "terrain" = plot + ggplot2::scale_fill_gradientn(
+             colors = terrain.colors(100), name = "Elevation", na.value = "transparent"
+           ),
+           "plasma" = plot + ggplot2::scale_fill_viridis_c(
+             option = "plasma", name = "Value", na.value = "transparent"
+           ),
+           "categorical" = plot + ggplot2::scale_fill_brewer(type = "qual", palette = "Set3"),
+           plot + ggplot2::scale_fill_viridis_c(name = "Value", na.value = "transparent")
+    )
+  } else if (aesthetic == "color") {
+    switch(color_scheme,
+           "ndvi" = plot + ggplot2::scale_color_gradient2(
+             low = "brown", mid = "#FFFF99", high = "#006400",
+             midpoint = 0.4, name = "NDVI", na.value = "transparent"
+           ),
+           "water" = plot + ggplot2::scale_color_gradient2(
+             low = "brown", mid = "lightblue", high = "darkblue",
+             midpoint = 0, name = "Water Index", na.value = "transparent"
+           ),
+           "terrain" = plot + ggplot2::scale_color_gradientn(
+             colors = terrain.colors(100), name = "Elevation", na.value = "transparent"
+           ),
+           "plasma" = plot + ggplot2::scale_color_viridis_c(
+             option = "plasma", name = "Value", na.value = "transparent"
+           ),
+           "categorical" = plot + ggplot2::scale_color_brewer(type = "qual", palette = "Set3"),
+           plot + ggplot2::scale_color_viridis_c(name = "Value", na.value = "transparent")
+    )
+  }
+}
+
+#' Create simple interactive map
+#' @keywords internal
+create_interactive_map_simple <- function(spatial_sf, fill_variable, map_type,
+                                          basemap, title, point_size) {
+
+  if (!requireNamespace("leaflet", quietly = TRUE)) {
+    warning("leaflet package required for interactive maps. Using static plot.")
+    plot(spatial_sf, main = title)
+    return(invisible(NULL))
+  }
+
+  # Ensure WGS84 for leaflet
+  if (sf::st_crs(spatial_sf) != 4326) {
+    spatial_sf <- sf::st_transform(spatial_sf, crs = 4326)
+  }
+
+  # Get bounds
+  bbox <- sf::st_bbox(spatial_sf)
+
+  # Create base map
+  m <- leaflet::leaflet(spatial_sf) %>%
+    leaflet::setView(lng = mean(c(bbox$xmin, bbox$xmax)),
+                     lat = mean(c(bbox$ymin, bbox$ymax)), zoom = 8)
+
+  # Add basemap
+  m <- add_basemap_to_leaflet(m, basemap)
+
+  # Add data layer based on geometry type
+  if (map_type == "points") {
+    m <- m %>% leaflet::addCircleMarkers(radius = point_size)
+  } else if (map_type == "polygons") {
+    m <- m %>% leaflet::addPolygons()
+  } else if (map_type == "lines") {
+    m <- m %>% leaflet::addPolylines()
+  }
+
+  return(m)
+}
+
+#' Add basemap to leaflet
+#' @keywords internal
+add_basemap_to_leaflet <- function(map, basemap) {
+  switch(basemap,
+         "terrain" = map %>% leaflet::addProviderTiles("OpenTopoMap"),
+         "satellite" = map %>% leaflet::addProviderTiles("Esri.WorldImagery"),
+         "osm" = map %>% leaflet::addTiles(),
+         "dark" = map %>% leaflet::addProviderTiles("CartoDB.DarkMatter"),
+         "light" = map %>% leaflet::addProviderTiles("CartoDB.Positron"),
+         map %>% leaflet::addTiles()
+  )
+}
+
+#' Get terra colors for native plotting
+#' @keywords internal
+get_terra_colors <- function(color_scheme, n = 100) {
+  switch(color_scheme,
+         "ndvi" = {
+           # NDVI-specific colors
+           colorRampPalette(c("brown", "#FFFF99", "#90EE90", "#006400"))(n)
+         },
+         "water" = {
+           colorRampPalette(c("brown", "lightblue", "darkblue"))(n)
+         },
+         "terrain" = terrain.colors(n),
+         "plasma" = viridis::plasma(n),
+         "viridis" = viridis::viridis(n),
+         "categorical" = rainbow(n),
+         "RdBu" = colorRampPalette(c("red", "white", "blue"))(n),
+         viridis::viridis(n)
+  )
+}

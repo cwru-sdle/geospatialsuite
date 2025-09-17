@@ -1,0 +1,26 @@
+{
+    "id": "9BBC6627",
+    "path": "~/CSE_MSE_RXF131/staging/casf/EE/geospatialsuite-r/packages/geospatialsuite/R/02-vegetation-indices.R",
+    "project_path": "R/02-vegetation-indices.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1753370711292.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "1159,3",
+        "scrollLine": "1142"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1753370960,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1753370960105,
+    "read_only": false,
+    "read_only_alternatives": []
+}

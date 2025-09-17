@@ -1,0 +1,154 @@
+#' Perform spatial interpolation for missing data
+#'
+#' @description
+#' Perform spatial interpolation using various methods to fill missing values
+#' in spatial datasets. Supports IDW, kriging, and multivariate imputation.
+#'
+#' @param spatial_data sf object with some missing values
+#' @param target_variables Variables to interpolate
+#' @param method Interpolation method: "IDW", "kriging", "mice"
+#' @param idw_power Power parameter for IDW (default: 2)
+#' @param mice_method MICE method for multivariate imputation
+#'
+#' @return sf object with interpolated values
+#'
+#' @examples
+#' \dontrun{
+#' # Interpolate missing soil values using IDW
+#' interpolated_soil <- spatial_interpolation(
+#'   soil_data,
+#'   target_variables = c("nitrogen", "carbon"),
+#'   method = "IDW"
+#' )
+#'
+#' # Use MICE for multivariate imputation
+#' interpolated_multi <- spatial_interpolation(
+#'   environmental_data,
+#'   target_variables = c("temp", "humidity", "pressure"),
+#'   method = "mice"
+#' )
+#' }
+#'
+#' @export
+spatial_interpolation <- function(spatial_data, target_variables, method = "IDW",
+                                  idw_power = 2, mice_method = "pmm") {
+
+  message(sprintf("Starting spatial interpolation using %s method...", method))
+
+  if (!inherits(spatial_data, "sf")) {
+    stop("spatial_data must be an sf object")
+  }
+
+  for (var in target_variables) {
+    if (!var %in% names(spatial_data)) {
+      warning(sprintf("Variable %s not found in data", var))
+      next
+    }
+
+    message(sprintf("Interpolating variable: %s", var))
+
+    # Separate known and unknown points
+    known_points <- spatial_data[!is.na(spatial_data[[var]]), ]
+    unknown_points <- spatial_data[is.na(spatial_data[[var]]), ]
+
+    if (nrow(unknown_points) == 0) {
+      message(sprintf("No missing values found for %s", var))
+      next
+    }
+
+    # Perform interpolation based on method
+    if (method == "IDW") {
+      # Inverse Distance Weighting
+      if (!requireNamespace("gstat", quietly = TRUE)) {
+        stop("gstat package required for IDW interpolation")
+      }
+
+      formula_str <- paste(var, "~ 1")
+      idw_result <- gstat::idw(
+        formula = as.formula(formula_str),
+        locations = known_points,
+        newdata = unknown_points,
+        idp = idw_power
+      )
+
+      # Update original data
+      spatial_data[is.na(spatial_data[[var]]), var] <- idw_result$var1.pred
+
+    } else if (method == "mice") {
+      # Multivariate imputation
+      if (!requireNamespace("mice", quietly = TRUE)) {
+        stop("mice package required for MICE interpolation")
+      }
+
+      # Extract coordinates and data
+      coords <- sf::st_coordinates(spatial_data)
+      data_df <- sf::st_drop_geometry(spatial_data)
+      data_df$x <- coords[, 1]
+      data_df$y <- coords[, 2]
+
+      # Perform MICE imputation
+      mice_result <- mice::mice(data_df, method = mice_method, m = 1,
+                                maxit = 10, printFlag = FALSE)
+      imputed_data <- mice::complete(mice_result)
+
+      # Update spatial data
+      spatial_data[[var]] <- imputed_data[[var]]
+
+    } else {
+      stop(paste("Unsupported interpolation method:", method))
+    }
+  }
+
+  message("Spatial interpolation completed!")
+  return(spatial_data)
+}
+
+#' IDW extraction helper function
+#'
+#' @description
+#' Internal function for IDW-based raster value extraction.
+#'
+#' @param points_sf sf points object
+#' @param raster_data SpatRaster
+#'
+#' @return Vector of extracted values
+#'
+#' @keywords internal
+perform_idw_extraction <- function(points_sf, raster_data) {
+  # Convert raster to points
+  raster_points <- as.data.frame(raster_data, xy = TRUE)
+  raster_points <- raster_points[complete.cases(raster_points), ]
+
+  if (nrow(raster_points) == 0) {
+    stop("No valid raster data points found")
+  }
+
+  # Convert to sf
+  raster_sf <- sf::st_as_sf(raster_points, coords = c("x", "y"), crs = sf::st_crs(raster_data))
+
+  # Perform IDW for each point
+  extracted_values <- numeric(nrow(points_sf))
+
+  for (i in seq_len(nrow(points_sf))) {
+    point <- points_sf[i, ]
+
+    # Calculate distances
+    distances <- sf::st_distance(point, raster_sf)
+    distances <- as.numeric(distances)
+
+    # Avoid division by zero
+    distances[distances == 0] <- 1e-10
+
+    # IDW weights
+    weights <- 1 / (distances^2)
+    weights <- weights / sum(weights)
+
+    # Get raster values
+    raster_values <- raster_points[, ncol(raster_points)]
+
+    # Calculate weighted average
+    extracted_values[i] <- sum(weights * raster_values, na.rm = TRUE)
+  }
+
+  return(extracted_values)
+}

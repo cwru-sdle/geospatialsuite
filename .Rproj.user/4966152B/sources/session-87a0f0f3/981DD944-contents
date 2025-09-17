@@ -1,0 +1,412 @@
+#' Run comprehensive geospatial workflow
+#'
+#' @description
+#' Execute complete geospatial analysis workflows based on configuration.
+#' Supports NDVI crop analysis, water quality assessment, terrain analysis,
+#' and temporal change detection.
+#'
+#' @param analysis_config List containing analysis configuration with required fields:
+#'   \itemize{
+#'     \item analysis_type: "ndvi_crop_analysis", "water_quality_analysis",
+#'                         "terrain_analysis", "temporal_analysis", "mosaic_analysis"
+#'     \item input_data: Input data paths or objects
+#'     \item region_boundary: Region boundary specification
+#'     \item output_folder: Output directory (optional)
+#'   }
+#'
+#' @return List containing analysis results, summary, and configuration
+#'
+#' @examples
+#' \dontrun{
+#' # NDVI crop analysis workflow
+#' config <- list(
+#'   analysis_type = "ndvi_crop_analysis",
+#'   input_data = list(red = "red_bands/", nir = "nir_bands/"),
+#'   region_boundary = "Ohio",
+#'   cdl_data = "cdl_2023.tif",
+#'   crop_codes = get_comprehensive_cdl_codes("soybeans"),
+#'   output_folder = "results/"
+#' )
+#' results <- run_comprehensive_geospatial_workflow(config)
+#' }
+#'
+#' @export
+run_comprehensive_geospatial_workflow <- function(analysis_config) {
+
+  message("Starting comprehensive geospatial workflow...")
+
+  # Validate configuration
+  required_fields <- c("analysis_type", "input_data", "region_boundary")
+  missing_fields <- setdiff(required_fields, names(analysis_config))
+  if (length(missing_fields) > 0) {
+    stop(paste("Missing required configuration fields:", paste(missing_fields, collapse = ", ")), call. = FALSE)
+  }
+
+  # Extract configuration
+  analysis_type <- analysis_config$analysis_type
+  input_data <- analysis_config$input_data
+  region_boundary <- analysis_config$region_boundary
+  output_folder <- analysis_config$output_folder %||% tempdir()
+
+  # Create output folder
+  if (!dir.exists(output_folder)) {
+    dir.create(output_folder, recursive = TRUE)
+  }
+
+  # Execute workflow based on analysis type
+  results <- switch(analysis_type,
+
+                    "ndvi_crop_analysis" = {
+                      # NDVI analysis with crop masking
+                      red_data <- analysis_config$red_data %||% input_data$red
+                      nir_data <- analysis_config$nir_data %||% input_data$nir
+                      cdl_data <- analysis_config$cdl_data
+                      crop_codes <- analysis_config$crop_codes
+
+                      run_ndvi_crop_workflow(red_data, nir_data, region_boundary,
+                                             cdl_data, crop_codes, output_folder)
+                    },
+
+                    "water_quality_analysis" = {
+                      # Water quality analysis
+                      water_data <- input_data
+                      variable <- analysis_config$variable %||% "discharge"
+                      river_network <- analysis_config$river_network
+
+                      analyze_water_quality_comprehensive(water_data, variable, region_boundary,
+                                                          river_network, output_folder)
+                    },
+
+                    "terrain_analysis" = {
+                      # Comprehensive terrain analysis
+                      elevation_data <- input_data
+                      vector_data <- analysis_config$vector_data
+
+                      run_terrain_analysis_workflow(elevation_data, vector_data, region_boundary, output_folder)
+                    },
+
+                    "temporal_analysis" = {
+                      # Temporal change analysis
+                      temporal_data <- input_data
+                      dates <- analysis_config$dates
+                      temporal_type <- analysis_config$temporal_type %||% "trend"
+
+                      analyze_temporal_changes(temporal_data, dates, region_boundary, temporal_type, output_folder)
+                    },
+
+                    "mosaic_analysis" = {
+                      # Raster mosaicing
+                      mosaic_method <- analysis_config$method %||% "merge"
+
+                      create_raster_mosaic(input_data, mosaic_method, region_boundary,
+                                           file.path(output_folder, "mosaic_result.tif"))
+                    },
+
+                    "spatial_integration" = {
+                      # Spatial join analysis
+                      vector_data <- analysis_config$vector_data
+                      join_method <- analysis_config$join_method %||% "simple"
+
+                      spatial_join_universal(vector_data, input_data, method = join_method)
+                    },
+
+                    stop(paste("Unsupported analysis type:", analysis_type))
+  )
+
+  # Generate summary report
+  summary_report <- generate_analysis_summary(results, analysis_config)
+
+  # Save summary
+  summary_file <- file.path(output_folder, "analysis_summary.txt")
+  writeLines(summary_report, summary_file)
+
+  message("Comprehensive workflow completed!")
+  message(sprintf("Results saved to: %s", output_folder))
+
+  return(list(
+    results = results,
+    summary = summary_report,
+    output_folder = output_folder,
+    config = analysis_config
+  ))
+}
+
+#' Run NDVI crop analysis workflow
+#'
+#' @description
+#' Complete workflow for NDVI analysis with crop masking and temporal analysis.
+#'
+#' @param red_data Red band data (files, directory, or raster objects)
+#' @param nir_data NIR band data (files, directory, or raster objects)
+#' @param region_boundary Region boundary
+#' @param cdl_data CDL raster data (optional)
+#' @param crop_codes Crop codes for masking (optional)
+#' @param output_folder Output directory
+#'
+#' @return List with NDVI results and crop analysis
+#'
+#' @examples
+#' \dontrun{
+#' # Run NDVI crop workflow
+#' results <- run_ndvi_crop_workflow(
+#'   red_data = "red_bands/",
+#'   nir_data = "nir_bands/",
+#'   region_boundary = "Iowa",
+#'   cdl_data = "cdl_2023.tif",
+#'   crop_codes = get_comprehensive_cdl_codes("corn"),
+#'   output_folder = "ndvi_analysis/"
+#' )
+#' }
+#'
+#' @export
+run_ndvi_crop_workflow <- function(red_data, nir_data, region_boundary,
+                                   cdl_data = NULL, crop_codes = NULL,
+                                   output_folder = tempdir()) {
+
+  message("Starting NDVI crop analysis workflow...")
+
+  # Step 1: Calculate NDVI
+  message("Step 1: Calculating NDVI...")
+  ndvi_result <- calculate_ndvi(red_data, nir_data, match_by_date = TRUE)
+
+  # Step 2: Apply region boundary
+  if (!is.null(region_boundary)) {
+    message("Step 2: Applying region boundary...")
+    boundary <- get_region_boundary(region_boundary)
+    boundary_vect <- terra::vect(boundary)
+    ndvi_result <- terra::crop(ndvi_result, boundary_vect)
+    ndvi_result <- terra::mask(ndvi_result, boundary_vect)
+  }
+
+  # Step 3: Apply crop mask if provided
+  crop_mask <- NULL
+  if (!is.null(cdl_data) && !is.null(crop_codes)) {
+    message("Step 3: Creating and applying crop mask...")
+    crop_mask <- create_crop_mask(cdl_data, crop_codes, region_boundary)
+    ndvi_result <- terra::mask(ndvi_result, crop_mask)
+  }
+
+  # Step 4: Save results
+  message("Step 4: Saving results...")
+  if (!dir.exists(output_folder)) {
+    dir.create(output_folder, recursive = TRUE)
+  }
+
+  # Save NDVI
+  ndvi_file <- file.path(output_folder, "ndvi_result.tif")
+  terra::writeRaster(ndvi_result, ndvi_file, overwrite = TRUE)
+
+  # Save crop mask if created
+  if (!is.null(crop_mask)) {
+    mask_file <- file.path(output_folder, "crop_mask.tif")
+    terra::writeRaster(crop_mask, mask_file, overwrite = TRUE)
+  }
+
+  # Step 5: Generate summary statistics
+  message("Step 5: Generating summary statistics...")
+  ndvi_stats <- list(
+    mean_ndvi = terra::global(ndvi_result, "mean", na.rm = TRUE),
+    median_ndvi = terra::global(ndvi_result, "median", na.rm = TRUE),
+    max_ndvi = terra::global(ndvi_result, "max", na.rm = TRUE),
+    min_ndvi = terra::global(ndvi_result, "min", na.rm = TRUE),
+    coverage_percent = sum(!is.na(terra::values(ndvi_result))) / terra::ncell(ndvi_result) * 100
+  )
+
+  message("NDVI crop workflow completed successfully!")
+
+  return(list(
+    ndvi_data = ndvi_result,
+    crop_mask = crop_mask,
+    statistics = ndvi_stats,
+    output_files = list(
+      ndvi = ndvi_file,
+      mask = if (!is.null(crop_mask)) mask_file else NULL
+    )
+  ))
+}
+
+#' Run terrain analysis workflow
+#'
+#' @description
+#' Complete workflow for terrain analysis including slope, aspect, and other variables.
+#'
+#' @param elevation_data Digital elevation model
+#' @param vector_data Vector data for extraction (optional)
+#' @param region_boundary Region boundary
+#' @param output_folder Output directory
+#' @param terrain_vars Terrain variables to calculate
+#'
+#' @return List with terrain analysis results
+#'
+#' @examples
+#' \dontrun{
+#' # Run terrain analysis workflow
+#' terrain_results <- run_terrain_analysis_workflow(
+#'   elevation_data = "dem.tif",
+#'   vector_data = "study_sites.csv",
+#'   region_boundary = "Ohio",
+#'   output_folder = "terrain_analysis/"
+#' )
+#' }
+#'
+#' @export
+run_terrain_analysis_workflow <- function(elevation_data, vector_data = NULL,
+                                          region_boundary = NULL, output_folder = tempdir(),
+                                          terrain_vars = c("slope", "aspect", "TRI", "TPI", "flowdir")) {
+
+  message("Starting terrain analysis workflow...")
+
+  # Step 1: Load elevation data
+  message("Step 1: Loading elevation data...")
+  if (is.character(elevation_data)) {
+    elevation_raster <- terra::rast(elevation_data)
+  } else {
+    elevation_raster <- elevation_data
+  }
+
+  # Step 2: Apply region boundary
+  if (!is.null(region_boundary)) {
+    message("Step 2: Applying region boundary...")
+    boundary <- get_region_boundary(region_boundary)
+    boundary_vect <- terra::vect(boundary)
+    elevation_raster <- terra::crop(elevation_raster, boundary_vect)
+    elevation_raster <- terra::mask(elevation_raster, boundary_vect)
+  }
+
+  # Step 3: Calculate terrain variables
+  message("Step 3: Calculating terrain variables...")
+  terrain_rasters <- list()
+
+  for (var in terrain_vars) {
+    message(sprintf("  Calculating %s...", var))
+
+    terrain_raster <- switch(var,
+                             "slope" = terra::terrain(elevation_raster, v = "slope", unit = "degrees"),
+                             "aspect" = terra::terrain(elevation_raster, v = "aspect", unit = "degrees"),
+                             "TRI" = terra::terrain(elevation_raster, v = "TRI"),
+                             "TPI" = terra::terrain(elevation_raster, v = "TPI"),
+                             "flowdir" = terra::terrain(elevation_raster, v = "flowdir"),
+                             "roughness" = terra::terrain(elevation_raster, v = "roughness"),
+                             stop(paste("Unsupported terrain variable:", var))
+    )
+
+    terrain_rasters[[var]] <- terrain_raster
+  }
+
+  # Step 4: Extract values for vector data if provided
+  extracted_data <- NULL
+  if (!is.null(vector_data)) {
+    message("Step 4: Extracting terrain values for vector data...")
+    extracted_data <- integrate_terrain_analysis(
+      vector_data = vector_data,
+      elevation_raster = elevation_raster,
+      terrain_vars = terrain_vars
+    )
+  }
+
+  # Step 5: Save results
+  message("Step 5: Saving results...")
+  if (!dir.exists(output_folder)) {
+    dir.create(output_folder, recursive = TRUE)
+  }
+
+  # Save elevation
+  elevation_file <- file.path(output_folder, "elevation.tif")
+  terra::writeRaster(elevation_raster, elevation_file, overwrite = TRUE)
+
+  # Save terrain variables
+  terrain_files <- list()
+  for (var in names(terrain_rasters)) {
+    terrain_file <- file.path(output_folder, paste0(var, ".tif"))
+    terra::writeRaster(terrain_rasters[[var]], terrain_file, overwrite = TRUE)
+    terrain_files[[var]] <- terrain_file
+  }
+
+  # Save extracted data if available
+  if (!is.null(extracted_data)) {
+    extracted_file <- file.path(output_folder, "terrain_extracted.csv")
+    sf::st_write(extracted_data, extracted_file, delete_dsn = TRUE)
+  }
+
+  message("Terrain analysis workflow completed successfully!")
+
+  return(list(
+    elevation = elevation_raster,
+    terrain_variables = terrain_rasters,
+    extracted_data = extracted_data,
+    output_files = list(
+      elevation = elevation_file,
+      terrain = terrain_files,
+      extracted = if (!is.null(extracted_data)) extracted_file else NULL
+    )
+  ))
+}
+
+#' Generate analysis summary report
+#'
+#' @description
+#' Generate a comprehensive summary report for analysis results.
+#'
+#' @param results Analysis results object
+#' @param config Analysis configuration
+#'
+#' @return Character vector with summary lines
+#'
+#' @keywords internal
+generate_analysis_summary <- function(results, config) {
+
+  summary_lines <- c(
+    "GEOSPATIALSUITE ANALYSIS SUMMARY",
+    "=================================",
+    "",
+    paste("Analysis Type:", config$analysis_type),
+    paste("Date:", Sys.time()),
+    paste("Region:", if(is.character(config$region_boundary)) config$region_boundary else "Custom boundary"),
+    "",
+    "CONFIGURATION:",
+    "-------------"
+  )
+
+  # Add configuration details
+  for (key in names(config)) {
+    if (key != "analysis_type" && key != "region_boundary") {
+      value <- config[[key]]
+      if (is.character(value) && length(value) == 1) {
+        summary_lines <- c(summary_lines, paste(key, ":", value))
+      } else if (is.numeric(value) && length(value) <= 5) {
+        summary_lines <- c(summary_lines, paste(key, ":", paste(value, collapse = ", ")))
+      } else {
+        summary_lines <- c(summary_lines, paste(key, ": [complex object]"))
+      }
+    }
+  }
+
+  summary_lines <- c(summary_lines, "", "RESULTS OVERVIEW:", "----------------")
+
+  # Add specific results based on analysis type
+  if (config$analysis_type == "ndvi_crop_analysis") {
+    if ("statistics" %in% names(results)) {
+      stats <- results$statistics
+      summary_lines <- c(summary_lines,
+                         paste("Mean NDVI:", round(stats$mean_ndvi[[1]], 3)),
+                         paste("Coverage:", round(stats$coverage_percent, 1), "%"),
+                         paste("NDVI Range:", round(stats$min_ndvi[[1]], 3), "to", round(stats$max_ndvi[[1]], 3))
+      )
+    }
+  } else if (config$analysis_type == "terrain_analysis") {
+    if ("terrain_variables" %in% names(results)) {
+      summary_lines <- c(summary_lines,
+                         paste("Terrain variables calculated:", length(results$terrain_variables)),
+                         paste("Variables:", paste(names(results$terrain_variables), collapse = ", "))
+      )
+    }
+  }
+
+  summary_lines <- c(summary_lines,
+                     "",
+                     "Analysis completed successfully with GeoSpatialSuite package.",
+                     "For technical support: github.com/yourusername/GeoSpatialSuite"
+  )
+
+  return(summary_lines)
+}

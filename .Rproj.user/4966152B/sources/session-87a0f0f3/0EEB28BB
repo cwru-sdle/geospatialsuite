@@ -1,0 +1,26 @@
+{
+    "id": "0EEB28BB",
+    "path": "/mnt/vstor/CSE_MSE_RXF131/staging/casf/EE/geospatialsuite-r/packages/geospatialsuite/vignettes/spatial-analysis-workflows.Rmd",
+    "project_path": null,
+    "type": "r_markdown",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1753196104292.0,
+    "source_on_save": false,
+    "relative_order": 8,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "8,0",
+        "scrollLine": "1"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1753197155,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1753197156210,
+    "read_only": false,
+    "read_only_alternatives": []
+}

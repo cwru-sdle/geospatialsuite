@@ -1,0 +1,283 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+
+# GeoSpatialSuite 🌍
+
+<!-- badges: start -->
+
+
+<!-- badges: end -->
+
+> **Comprehensive Geospatial Analysis and Advanced Visualization Toolkit**
+
+GeoSpatialSuite is a powerful R package for geospatial analysis featuring **40+ vegetation indices**, **universal spatial analysis**, **efficient raster visualization**, and **comprehensive workflows** for agricultural research, environmental monitoring, and remote sensing applications.
+
+## ✨ Key Features
+
+### 🌱 **Advanced Vegetation Analysis**
+- **40+ vegetation indices** including NDVI, EVI, SAVI, PRI, SIPI, NDRE, MTCI
+- **Automatic band detection** from Landsat, Sentinel, and other satellite imagery
+- **Crop-specific analysis** for corn, soybeans, wheat, cotton, rice
+- **Stress detection and yield assessment** workflows
+
+### 🗺️ **Universal Spatial Analysis**  
+- **Works with ANY data combination** - points, polygons, rasters
+- **Automatic coordinate system handling** and spatial validation
+- **Multiple extraction methods** - simple, buffer, bilinear, nearest neighbor
+- **Multi-dataset integration** for comprehensive environmental analysis
+
+### 📊 **Efficient Visualization**
+- **No data frame conversion** for large rasters (uses tidyterra, RStoolbox)
+- **Interactive maps** with leaflet integration
+- **Publication-quality graphics** with automatic method selection
+- **RGB composites** with advanced stretching algorithms
+
+### 🔄 **Comprehensive Workflows**
+- **End-to-end analysis pipelines** for common geospatial tasks
+- **NDVI crop analysis** with quality filtering and temporal smoothing
+- **Water quality assessment** with spatial integration
+- **Terrain and temporal analysis** workflows
+
+### ⚡ **Performance Features**
+- **Smart fallback systems** when optional packages unavailable
+- **Parallel processing** support for multiple indices
+- **Efficient memory usage** optimized for large datasets
+- **Robust error handling** with informative messages
+
+## 🚀 Quick Start
+
+### Installation
+
+```r
+
+# Install recommended packages for best performance
+install.packages(c("tidyterra", "RStoolbox", "leaflet", "patchwork"))
+```
+
+### Basic Usage
+
+```r
+library(geospatialsuite)
+
+# 1. One-line mapping (auto-detects everything!)
+quick_map("mydata.shp")
+
+# 2. Universal spatial analysis
+result <- spatial_join_universal(
+  vector_data = "study_sites.csv",
+  raster_data = "elevation.tif"
+)
+
+# 3. Calculate multiple vegetation indices
+indices <- calculate_multiple_indices(
+  red = red_band, nir = nir_band, blue = blue_band,
+  indices = c("NDVI", "EVI", "SAVI", "PRI"),
+  auto_detect_bands = TRUE
+)
+
+# 4. Run comprehensive workflow
+config <- list(
+  analysis_type = "ndvi_crop_analysis",
+  input_data = list(red = "red_bands/", nir = "nir_bands/"),
+  region_boundary = "Iowa",
+  crop_codes = get_comprehensive_cdl_codes("corn")
+)
+results <- run_comprehensive_geospatial_workflow(config)
+```
+
+## 📖 Documentation
+
+### Vignettes
+
+- [**Getting Started**](https://yourusername.github.io/geospatialsuite/articles/getting-started.html) - Package overview and quick start examples
+- [**Universal Spatial Analysis**](https://yourusername.github.io/geospatialsuite/articles/spatial-analysis.html) - Core spatial join capabilities
+- [**Vegetation Analysis**](https://yourusername.github.io/geospatialsuite/articles/vegetation-analysis.html) - 40+ vegetation indices and crop analysis
+- [**Advanced Visualization**](https://yourusername.github.io/geospatialsuite/articles/visualization.html) - Efficient plotting and interactive maps
+- [**Comprehensive Workflows**](https://yourusername.github.io/geospatialsuite/articles/workflows.html) - End-to-end analysis pipelines
+
+### Function Reference
+
+```r
+# View all available functions
+help(package = "geospatialsuite")
+
+# Test your installation
+test_geospatialsuite_package()
+
+# Check package health
+enhanced_health_check()
+
+# Performance tips
+raster_plot_performance_tips()
+```
+
+## 🎯 Real-World Examples
+
+### Agricultural Monitoring
+
+```r
+# Comprehensive crop analysis with NDVI time series
+crop_analysis <- run_enhanced_ndvi_crop_workflow(
+  config = list(
+    red_data = "satellite/red_bands/",
+    nir_data = "satellite/nir_bands/", 
+    region_boundary = "Iowa",
+    crop_codes = get_comprehensive_cdl_codes("soybeans"),
+    quality_filter = TRUE,
+    temporal_smoothing = TRUE,
+    visualization_config = list(
+      interactive = TRUE,
+      animation = TRUE
+    )
+  )
+)
+```
+
+### Environmental Monitoring
+
+```r
+# Multi-dataset environmental integration
+environmental_data <- integrate_multiple_datasets(
+  vector_data = "monitoring_stations.csv",
+  raster_datasets = list(
+    vegetation = "satellite/ndvi.tif",
+    soil_nitrogen = "soil/nitrogen.tif", 
+    elevation = "terrain/dem.tif",
+    precipitation = "climate/precip.tif"
+  ),
+  extraction_method = "buffer",
+  buffer_size = 1000
+)
+```
+
+### Water Quality Assessment
+
+```r
+# Comprehensive water quality analysis
+water_results <- analyze_water_quality_comprehensive(
+  water_data = "water_stations.csv",
+  variable = "nitrate_nitrite",
+  region_boundary = "Ohio",
+  thresholds = list(Normal = c(0, 4), High = c(4, 10))
+)
+```
+
+## 🌟 What Makes GeoSpatialSuite Special
+
+### 1. **Universal Design**
+Works with any spatial data combination - no need to learn different functions for different data types.
+
+### 2. **Intelligent Automation**
+- Auto-detects coordinate columns, band names, and data types
+- Automatically handles coordinate system transformations
+- Smart method selection for optimal performance
+
+### 3. **Efficient Visualization**
+- No unnecessary data frame conversions for large rasters
+- Uses the best available visualization package (tidyterra → RStoolbox → terra)
+- Creates publication-quality graphics with minimal code
+
+### 4. **Comprehensive Coverage**
+- 40+ vegetation indices including latest research developments
+- Complete workflows for common analysis tasks
+- Robust error handling and validation throughout
+
+### 5. **Research-Ready**
+Designed for agricultural research, environmental monitoring, and remote sensing applications with proper documentation and validation.
+
+## 📊 Supported Vegetation Indices
+
+<details>
+<summary><strong>Click to see all 40+ vegetation indices</strong></summary>
+
+### Basic Vegetation Indices
+- **NDVI** - Normalized Difference Vegetation Index
+- **EVI** - Enhanced Vegetation Index  
+- **SAVI** - Soil Adjusted Vegetation Index
+- **MSAVI** - Modified Soil Adjusted Vegetation Index
+- **OSAVI** - Optimized Soil Adjusted Vegetation Index
+- **GNDVI** - Green Normalized Difference Vegetation Index
+
+### Enhanced Indices
+- **ARVI** - Atmospherically Resistant Vegetation Index
+- **RDVI** - Renormalized Difference Vegetation Index
+- **WDVI** - Weighted Difference Vegetation Index
+- **PVI** - Perpendicular Vegetation Index
+- **VARI** - Visible Atmospherically Resistant Index
+
+### Red-Edge Indices (Sentinel-2)
+- **NDRE** - Normalized Difference Red Edge
+- **MTCI** - MERIS Terrestrial Chlorophyll Index
+- **IRECI** - Inverted Red-Edge Chlorophyll Index
+- **S2REP** - Sentinel-2 Red-Edge Position
+
+### Stress Detection Indices
+- **PRI** - Photochemical Reflectance Index
+- **SIPI** - Structure Insensitive Pigment Index
+- **PSRI** - Plant Senescence Reflectance Index
+- **CCI** - Canopy Chlorophyll Index
+
+### Water and Moisture Indices
+- **NDWI** - Normalized Difference Water Index
+- **MNDWI** - Modified Normalized Difference Water Index
+- **NDMI** - Normalized Difference Moisture Index
+- **MSI** - Moisture Stress Index
+
+*And many more specialized indices for specific applications...*
+
+</details>
+
+## 🛠️ System Requirements
+
+### Required Dependencies
+```r
+# Core dependencies (automatically installed)
+terra, sf, dplyr, ggplot2, magrittr, viridis
+```
+
+### Recommended Packages
+```r
+# For best performance (install separately)
+install.packages(c(
+  "tidyterra",    # Efficient raster visualization
+  "RStoolbox",    # Remote sensing tools
+  "leaflet",      # Interactive mapping
+  "patchwork",    # Multi-panel figures
+  "gganimate",    # Animations
+  "rnaturalearth", # Country boundaries
+  "tigris"        # US boundaries
+))
+```
+
+
+## 📧 Contact
+
+- **Maintainer**: Olatunde D. Akanbi (olatunde.akanbi@case.edu), Roger H. French (roger.french@case.edu)
+- **Lead Developer**: Olatunde D. Akanbi (olatunde.akanbi@case.edu)
+
+## 📝 License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Developed at the Solar Durability and Lifetime Extension (SDLE) Center, Case Western Reserve University, Cleveland, Ohio, U.S.A.
+- Built on the excellent work of the terra, sf, and ggplot2 communities
+
+- This material is based upon financial support by the National Science Foundation, EEC Division of Engineering Education and Centers, NSF Engineering Research Center for Advancing Sustainable and Distributed Fertilizer production (CASFER), NSF 20-553 Gen-4 Engineering Research Centers award 2133576.
+
+---
+

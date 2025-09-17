@@ -1,0 +1,211 @@
+#' Create raster mosaic with intelligent file selection
+#'
+#' @description
+#' Create mosaics from multiple raster files with various methods and
+#' intelligent file selection based on region boundaries.
+#'
+#' @param input_data Character vector of file paths, directory path, or list of rasters
+#' @param method Mosaicing method: "merge", "mosaic", "mean", "max", "min"
+#' @param region_boundary Optional region boundary for clipping
+#' @param output_file Optional output file path
+#' @param parallel Use parallel processing
+#'
+#' @return SpatRaster object
+#'
+#' @examples
+#' \dontrun{
+#' # These examples require external data files not included with the package
+#' # Basic mosaic
+#' mosaic <- create_raster_mosaic("/path/to/rasters", method = "merge")
+#'
+#' # Mosaic for specific region
+#' ohio_mosaic <- create_raster_mosaic("/aster/files", "merge", "Ohio")
+#'
+#' # Mean composite
+#' mean_mosaic <- create_raster_mosaic(raster_list, method = "mean")
+#' }
+#'
+#' @export
+create_raster_mosaic <- function(input_data, method = "merge", region_boundary = NULL,
+                                 output_file = NULL, parallel = FALSE) {
+
+  message("Starting raster mosaicing process...")
+
+  # Load raster data
+  rasters <- load_raster_data(input_data)
+
+  if (length(rasters) < 2) {
+    stop("At least 2 rasters are required for mosaicing")
+  }
+
+  message(sprintf("Loaded %d rasters for mosaicing", length(rasters)))
+
+  # Check and align CRS
+  base_crs <- terra::crs(rasters[[1]])
+  for (i in 2:length(rasters)) {
+    if (terra::crs(rasters[[i]]) != base_crs) {
+      message(sprintf("Reprojecting raster %d to match base CRS", i))
+      rasters[[i]] <- terra::project(rasters[[i]], base_crs)
+    }
+  }
+
+  # Create mosaic based on method
+  mosaic_result <- switch(method,
+                          "merge" = {
+                            message("Using merge method...")
+                            do.call(terra::merge, rasters)
+                          },
+                          "mosaic" = {
+                            message("Using mosaic method...")
+                            do.call(terra::mosaic, rasters)
+                          },
+                          "mean" = {
+                            message("Using mean method...")
+                            raster_stack <- terra::rast(rasters)
+                            terra::app(raster_stack, mean, na.rm = TRUE)
+                          },
+                          "max" = {
+                            message("Using max method...")
+                            raster_stack <- terra::rast(rasters)
+                            terra::app(raster_stack, max, na.rm = TRUE)
+                          },
+                          "min" = {
+                            message("Using min method...")
+                            raster_stack <- terra::rast(rasters)
+                            terra::app(raster_stack, min, na.rm = TRUE)
+                          },
+                          stop(paste("Unsupported mosaicing method:", method))
+  )
+
+  # Apply region boundary if provided
+  if (!is.null(region_boundary)) {
+    message("Applying region boundary...")
+    boundary <- get_region_boundary(region_boundary)
+    boundary_vect <- terra::vect(boundary)
+    mosaic_result <- terra::crop(mosaic_result, boundary_vect)
+    mosaic_result <- terra::mask(mosaic_result, boundary_vect)
+  }
+
+  # Save if output file specified
+  if (!is.null(output_file)) {
+    message(sprintf("Saving mosaic to: %s", output_file))
+    terra::writeRaster(mosaic_result, output_file, overwrite = TRUE)
+  }
+
+  message("Mosaicing completed successfully!")
+  return(mosaic_result)
+}
+
+#' Select rasters for specific region with intelligent filtering
+#'
+#' @description
+#' Intelligently select raster files that overlap with a specified region.
+#'
+#' @param input_folder Directory containing raster files
+#' @param region_boundary Region boundary or bounding box
+#' @param buffer_size Buffer around region (in degrees)
+#'
+#' @return Character vector of relevant file paths
+#'
+#' @examples
+#' \donttest{
+#' # Select ASTER files for Michigan
+#' michigan_files <- select_rasters_for_region("/aster/files", "Michigan")
+#'
+#' # Select with custom buffer
+#' nevada_files <- select_rasters_for_region("/data", "Nevada", buffer_size = 0.2)
+#' }
+#'
+#' @export
+select_rasters_for_region <- function(input_folder, region_boundary, buffer_size = 0.1) {
+
+  message("Selecting rasters for specified region...")
+
+  # Get region extent
+  if (is.character(region_boundary) && length(region_boundary) == 1) {
+    boundary <- get_region_boundary(region_boundary)
+    bbox_coords <- as.vector(sf::st_bbox(boundary))
+  } else if (is.numeric(region_boundary) && length(region_boundary) == 4) {
+    bbox_coords <- region_boundary
+  } else {
+    boundary <- get_region_boundary(region_boundary)
+    bbox_coords <- as.vector(sf::st_bbox(boundary))
+  }
+
+  # Add buffer
+  bbox_coords[1] <- bbox_coords[1] - buffer_size  # xmin
+  bbox_coords[2] <- bbox_coords[2] - buffer_size  # ymin
+  bbox_coords[3] <- bbox_coords[3] + buffer_size  # xmax
+  bbox_coords[4] <- bbox_coords[4] + buffer_size  # ymax
+
+  # List all raster files
+  all_files <- list.files(input_folder, pattern = "\\.(tif|tiff)$",
+                          full.names = TRUE, ignore.case = TRUE)
+
+  # Filter files based on overlap with region
+  selected_files <- c()
+
+  for (file in all_files) {
+    tryCatch({
+      # Extract coordinates from ASTER filenames if applicable
+      if (grepl("ASTGTMV", basename(file))) {
+        coords <- extract_aster_coordinates(basename(file))
+        if (!is.null(coords)) {
+          if (coords$lat >= bbox_coords[2] && coords$lat <= bbox_coords[4] &&
+              coords$lon >= bbox_coords[1] && coords$lon <= bbox_coords[3]) {
+            selected_files <- c(selected_files, file)
+          }
+        }
+      } else {
+        # Check actual raster extent
+        r <- terra::rast(file)
+        r_extent <- as.vector(terra::ext(r))
+
+        # Check overlap
+        if (!(r_extent[2] < bbox_coords[1] || r_extent[1] > bbox_coords[3] ||
+              r_extent[4] < bbox_coords[2] || r_extent[3] > bbox_coords[4])) {
+          selected_files <- c(selected_files, file)
+        }
+      }
+    }, error = function(e) {
+      warning(sprintf("Could not process file %s: %s", file, e$message))
+    })
+  }
+
+  message(sprintf("Selected %d files out of %d for the specified region",
+                  length(selected_files), length(all_files)))
+
+  return(selected_files)
+}
+
+#' Extract coordinates from ASTER filename
+#'
+#' @description
+#' Internal function to extract lat/lon coordinates from ASTER filenames.
+#'
+#' @param filename ASTER filename
+#'
+#' @return List with lat and lon coordinates, or NULL if pattern not matched
+#'
+#' @keywords internal
+extract_aster_coordinates <- function(filename) {
+  # Pattern for ASTER files: ASTGTMV003_N40W084_dem.tif
+  pattern <- "ASTGTMV003_([NS])([0-9]{2})([EW])([0-9]{3})_"
+
+  if (grepl(pattern, filename)) {
+    matches <- regmatches(filename, regexec(pattern, filename))[[1]]
+
+    lat_dir <- matches[2]
+    lat_val <- as.numeric(matches[3])
+    lon_dir <- matches[4]
+    lon_val <- as.numeric(matches[5])
+
+    # Convert to decimal degrees
+    lat <- ifelse(lat_dir == "S", -lat_val, lat_val)
+    lon <- ifelse(lon_dir == "W", -lon_val, lon_val)
+
+    return(list(lat = lat, lon = lon))
+  }
+
+  return(NULL)
+}

@@ -1,0 +1,26 @@
+{
+    "id": "11C5D885",
+    "path": "~/CSE_MSE_RXF131/staging/casf/EE/geospatialsuite-r/packages/geospatialsuite/tests/testthat/test-error-handling.R",
+    "project_path": "tests/testthat/test-error-handling.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1754322915419.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "64,0",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1754323890,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1754323890202,
+    "read_only": false,
+    "read_only_alternatives": []
+}

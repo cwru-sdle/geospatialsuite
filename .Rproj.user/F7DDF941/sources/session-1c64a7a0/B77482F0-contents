@@ -1,0 +1,27 @@
+---
+title: "Analyzing Function Dependencies with pkgnet"
+author: "GeoSpatialSuite Development Team"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Analyzing Function Dependencies with pkgnet}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+```{r}
+if (requireNamespace("pkgnet", quietly = TRUE)) {
+  report <- pkgnet::CreatePackageReport(pkg_name = "geospatialsuite")
+  report$report_path
+}
+
+```
+
+
+## Acknowledgments
+
+This work was developed by the GeoSpatialSuite team with contributions from:
+Olatunde D. Akanbi, Vibha Mandayam, Yinghui Wu, Jeffrey Yarus, Erika I. Barcelos, and Roger H. French.

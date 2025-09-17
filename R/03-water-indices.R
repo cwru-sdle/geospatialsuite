@@ -1,0 +1,745 @@
+#' Calculate water indices including both NDWI variants
+#'
+#' @description
+#' Calculate various water indices including NDWI (McFeeters 1996),
+#' MNDWI (Xu 2006), and NDMI (Gao 1996) for water body detection and moisture content.
+#' Updated formulas based on latest research and satellite missions (2024).
+#'
+#' @param green Green band SpatRaster or file path
+#' @param nir NIR band SpatRaster or file path
+#' @param swir1 SWIR1 band SpatRaster or file path (for MNDWI, NDMI)
+#' @param index_type Index type: "NDWI", "MNDWI", "NDMI", "MSI", "NDII", "WI", "SRWI", "LSWI"
+#' @param clamp_range Optional range to clamp output values
+#' @param mask_invalid Mask invalid/extreme values
+#' @param verbose Print progress messages
+#'
+#' @return SpatRaster of water index
+#'
+#' @details
+#' Available water indices with their specific applications:
+#'
+#' ## Primary Water Detection Indices:
+#' \itemize{
+#'   \item **NDWI** (McFeeters 1996): (Green - NIR) / (Green + NIR)
+#'     - **Use**: Open water body detection, flood mapping
+#'     - **Range**: Values from -1 to 1, water bodies typically > 0.3
+#'     - **Pros**: Simple, effective for clear water
+#'     - **Cons**: Sensitive to built-up areas, can overestimate water
+#'
+#'   \item **MNDWI** (Xu 2006): (Green - SWIR1) / (Green + SWIR1)
+#'     - **Use**: Enhanced water detection, urban water bodies
+#'     - **Range**: Values from -1 to 1, water bodies typically > 0.5
+#'     - **Pros**: Better separation of water from built-up areas
+#'     - **Cons**: Requires SWIR band, less effective with turbid water
+#' }
+#'
+#' ## Vegetation Moisture Indices:
+#' \itemize{
+#'   \item **NDMI** (Gao 1996): (NIR - SWIR1) / (NIR + SWIR1)
+#'     - **Use**: Vegetation water content, drought monitoring
+#'     - **Range**: Values from -1 to 1, higher values = more water content
+#'     - **Application**: Agriculture, forest fire risk assessment
+#'
+#'   \item **MSI**: SWIR1 / NIR - Moisture Stress Index
+#'     - **Use**: Plant water stress detection
+#'     - **Range**: \code{[0, 5+]}, lower values = higher moisture
+#'
+#'   \item **NDII**: (NIR - SWIR1) / (NIR + SWIR1) - Same as NDMI
+#'     - **Use**: Alternative name for NDMI, vegetation moisture
+#' }
+#'
+#' ## Specialized Water Indices:
+#' \itemize{
+#'   \item **WI**: NIR / SWIR1 - Water Index (simple ratio)
+#'   \item **SRWI**: NIR / SWIR1 - Simple Ratio Water Index
+#'   \item **LSWI**: (NIR - SWIR1) / (NIR + SWIR1) - Land Surface Water Index
+#' }
+#'
+#' ## Band Requirements by Satellite:
+#' - **Landsat 8/9**: Green=Band 3, NIR=Band 5, SWIR1=Band 6
+#' - **Sentinel-2**: Green=Band 3, NIR=Band 8, SWIR1=Band 11
+#' - **MODIS**: Green=Band 4, NIR=Band 2, SWIR1=Band 6
+#'
+#' @examples
+#' \dontrun{
+#' # These examples require external data files not included with the package
+#' # Original NDWI for water body detection
+#' ndwi <- calculate_water_index(green_band, nir_band, index_type = "NDWI")
+#'
+#' # Modified NDWI for enhanced water detection (requires SWIR1)
+#' mndwi <- calculate_water_index(green_band, nir_band, swir1_band, index_type = "MNDWI")
+#'
+#' # NDMI for vegetation moisture monitoring
+#' ndmi <- calculate_water_index(green_band, nir_band, swir1_band, index_type = "NDMI")
+#'
+#' # With quality control
+#' water_index <- calculate_water_index(
+#'   green = "green.tif",
+#'   nir = "nir.tif",
+#'   swir1 = "swir1.tif",
+#'   index_type = "MNDWI",
+#'   clamp_range = c(-1, 1),
+#'   mask_invalid = TRUE,
+#'   verbose = TRUE
+#' )
+#' }
+#'
+#' @export
+calculate_water_index <- function(green, nir, swir1 = NULL, index_type = "NDWI",
+                                  clamp_range = NULL, mask_invalid = TRUE, verbose = FALSE) {
+
+  if (verbose) message(sprintf("Calculating %s water index...", index_type))
+
+  # Convert inputs to rasters if they are file paths
+  if (is.character(green)) {
+    if (verbose) message("Loading green band...")
+    green <- terra::rast(green)
+  }
+  if (is.character(nir)) {
+    if (verbose) message("Loading NIR band...")
+    nir <- terra::rast(nir)
+  }
+  if (!is.null(swir1) && is.character(swir1)) {
+    if (verbose) message("Loading SWIR1 band...")
+    swir1 <- terra::rast(swir1)
+  }
+
+  # Validate required bands
+  required_bands <- get_water_index_requirements()
+  if (index_type %in% names(required_bands)) {
+    requirements <- required_bands[[index_type]]
+    if ("swir1" %in% requirements && is.null(swir1)) {
+      stop(sprintf("%s requires SWIR1 band. Please provide swir1 parameter.", index_type), call. = FALSE)
+    }
+  }
+
+  # Check CRS compatibility
+  if (!is.null(swir1)) {
+    if (!identical(terra::crs(green), terra::crs(nir)) || !identical(terra::crs(green), terra::crs(swir1))) {
+      if (verbose) message("CRS mismatch detected. Reprojecting to match green band...")
+      reference_crs <- terra::crs(green)
+      if (!identical(terra::crs(nir), reference_crs)) {
+        nir <- terra::project(nir, reference_crs)
+      }
+      if (!identical(terra::crs(swir1), reference_crs)) {
+        swir1 <- terra::project(swir1, reference_crs)
+      }
+    }
+
+    # Check geometry compatibility
+    if (!terra::compareGeom(green, nir, stopOnError = FALSE)) {
+      if (verbose) message("Resampling NIR to match green band geometry...")
+      nir <- terra::resample(nir, green)
+    }
+    if (!terra::compareGeom(green, swir1, stopOnError = FALSE)) {
+      if (verbose) message("Resampling SWIR1 to match green band geometry...")
+      swir1 <- terra::resample(swir1, green)
+    }
+  } else {
+    # Only green and NIR
+    if (!identical(terra::crs(green), terra::crs(nir))) {
+      if (verbose) message("CRS mismatch detected. Reprojecting NIR to match green band...")
+      nir <- terra::project(nir, terra::crs(green))
+    }
+    if (!terra::compareGeom(green, nir, stopOnError = FALSE)) {
+      if (verbose) message("Resampling NIR to match green band geometry...")
+      nir <- terra::resample(nir, green)
+    }
+  }
+
+  # Calculate the specified water index
+  index <- switch(index_type,
+                  # Original NDWI (McFeeters 1996) - Green and NIR for water body detection
+                  "NDWI" = {
+                    if (verbose) message("Computing original NDWI (McFeeters 1996) for water body detection")
+                    (green - nir) / (green + nir)
+                  },
+
+                  # Modified NDWI (Xu 2006) - Green and SWIR1 for enhanced water detection
+                  "MNDWI" = {
+                    if (is.null(swir1)) stop("MNDWI requires SWIR1 band.", call. = FALSE)
+                    if (verbose) message("Computing MNDWI (Xu 2006) for enhanced water body detection")
+                    (green - swir1) / (green + swir1)
+                  },
+
+                  # Normalized Difference Moisture Index (Gao 1996) - NIR and SWIR1 for vegetation moisture
+                  "NDMI" = {
+                    if (is.null(swir1)) stop("NDMI requires SWIR1 band.", call. = FALSE)
+                    if (verbose) message("Computing NDMI (Gao 1996) for vegetation moisture content")
+                    (nir - swir1) / (nir + swir1)
+                  },
+
+                  # Moisture Stress Index - SWIR1/NIR ratio (lower values = higher moisture)
+                  "MSI" = {
+                    if (is.null(swir1)) stop("MSI requires SWIR1 band.", call. = FALSE)
+                    if (verbose) message("Computing MSI for moisture stress detection")
+                    swir1 / nir
+                  },
+
+                  # Normalized Difference Infrared Index (alternative name for NDMI)
+                  "NDII" = {
+                    if (is.null(swir1)) stop("NDII requires SWIR1 band.", call. = FALSE)
+                    if (verbose) message("Computing NDII (same as NDMI) for vegetation moisture")
+                    (nir - swir1) / (nir + swir1)
+                  },
+
+                  # Water Index - simple ratio
+                  "WI" = {
+                    if (is.null(swir1)) stop("WI requires SWIR1 band.", call. = FALSE)
+                    if (verbose) message("Computing WI (simple ratio) for water content")
+                    nir / swir1
+                  },
+
+                  # Simple Ratio Water Index (same as WI)
+                  "SRWI" = {
+                    if (is.null(swir1)) stop("SRWI requires SWIR1 band.", call. = FALSE)
+                    if (verbose) message("Computing SRWI for water content assessment")
+                    nir / swir1
+                  },
+
+                  # Land Surface Water Index (same formula as NDMI)
+                  "LSWI" = {
+                    if (is.null(swir1)) stop("LSWI requires SWIR1 band.", call. = FALSE)
+                    if (verbose) message("Computing LSWI for land surface water content")
+                    (nir - swir1) / (nir + swir1)
+                  },
+
+                  stop(paste("Unsupported water index type:", index_type), call. = FALSE)
+  )
+
+  # Handle edge cases and invalid operations
+  index <- handle_water_index_edge_cases(index, index_type, verbose)
+
+  # Apply clamp range if specified
+  if (!is.null(clamp_range)) {
+    if (verbose) message(sprintf("Clamping values to range [%.3f, %.3f]", clamp_range[1], clamp_range[2]))
+    index <- terra::clamp(index, clamp_range[1], clamp_range[2])
+  }
+
+  # Mask invalid values if requested
+  if (mask_invalid) {
+    index <- mask_invalid_water_values(index, index_type, verbose)
+  }
+
+  # Set appropriate name
+  names(index) <- index_type
+
+  # Final validation and reporting
+  validate_water_index_output(index, index_type, verbose)
+
+  return(index)
+}
+
+#' Handle edge cases for water index calculations
+#' @keywords internal
+handle_water_index_edge_cases <- function(index, index_type, verbose) {
+
+  # Handle division by zero cases (ratio indices)
+  if (index_type %in% c("MSI", "WI", "SRWI")) {
+    # For ratio indices, handle zero denominators
+    is_invalid <- is.infinite(terra::values(index, mat = FALSE)) |
+      is.nan(terra::values(index, mat = FALSE))
+
+    if (any(is_invalid, na.rm = TRUE)) {
+      index[is_invalid] <- NA
+      if (verbose) {
+        n_invalid <- sum(is_invalid, na.rm = TRUE)
+        message(sprintf("Set %d pixels to NA due to division by zero in %s", n_invalid, index_type))
+      }
+    }
+  }
+
+  # Handle normalized difference indices (NDWI, MNDWI, NDMI, NDII, LSWI)
+  if (index_type %in% c("NDWI", "MNDWI", "NDMI", "NDII", "LSWI")) {
+    # Handle cases where denominator is zero
+    values <- terra::values(index, mat = FALSE)
+    is_invalid <- is.nan(values) | is.infinite(values)
+
+    if (any(is_invalid, na.rm = TRUE)) {
+      index[is_invalid] <- NA
+      if (verbose) {
+        n_invalid <- sum(is_invalid, na.rm = TRUE)
+        message(sprintf("Set %d pixels to NA due to invalid calculations in %s", n_invalid, index_type))
+      }
+    }
+  }
+
+  return(index)
+}
+
+#' Mask invalid values for water indices
+#' @keywords internal
+mask_invalid_water_values <- function(index, index_type, verbose) {
+
+  # Define reasonable ranges for different water indices
+  ranges <- list(
+    "NDWI" = c(-1, 1),    # Normalized difference indices
+    "MNDWI" = c(-1, 1),
+    "NDMI" = c(-1, 1),
+    "NDII" = c(-1, 1),
+    "LSWI" = c(-1, 1),
+    "MSI" = c(0, 10),     # Ratio indices - reasonable upper bound
+    "WI" = c(0, 10),
+    "SRWI" = c(0, 10)
+  )
+
+  if (index_type %in% names(ranges)) {
+    valid_range <- ranges[[index_type]]
+    invalid_mask <- (index < valid_range[1]) | (index > valid_range[2])
+
+    n_invalid <- sum(terra::values(invalid_mask, mat = FALSE), na.rm = TRUE)
+    if (n_invalid > 0) {
+      index[invalid_mask] <- NA
+      if (verbose) {
+        message(sprintf("Masked %d invalid pixels outside range [%.3f, %.3f] for %s (%.1f%%)",
+                        n_invalid, valid_range[1], valid_range[2], index_type,
+                        (n_invalid/terra::ncell(index))*100))
+      }
+    }
+  }
+
+  return(index)
+}
+
+#' Validate water index output
+#' @keywords internal
+validate_water_index_output <- function(index, index_type, verbose) {
+
+  values <- terra::values(index, mat = FALSE)
+  n_total <- length(values)
+  n_valid <- sum(!is.na(values))
+
+  if (n_valid == 0) {
+    stop(sprintf("All %s values are invalid/NA. Check input data quality.", index_type), call. = FALSE)
+  }
+
+  coverage_pct <- (n_valid/n_total) * 100
+  if (coverage_pct < 10) {
+    warning(sprintf("Only %.1f%% of %s values are valid. Check input data quality.",
+                    coverage_pct, index_type))
+  }
+
+  if (verbose && n_valid > 0) {
+    value_range <- range(values, na.rm = TRUE)
+    message(sprintf("%s calculation completed:", index_type))
+    message(sprintf("  - Valid pixels: %d/%d (%.1f%%)", n_valid, n_total, coverage_pct))
+    message(sprintf("  - Value range: [%.6f, %.6f]", value_range[1], value_range[2]))
+
+    # Add interpretation guidance
+    if (index_type == "NDWI") {
+      message("  - Interpretation: Values > 0.3 typically indicate water bodies")
+    } else if (index_type == "MNDWI") {
+      message("  - Interpretation: Values > 0.5 typically indicate water bodies")
+    } else if (index_type %in% c("NDMI", "NDII", "LSWI")) {
+      message("  - Interpretation: Higher values indicate higher vegetation moisture content")
+    } else if (index_type == "MSI") {
+      message("  - Interpretation: Lower values indicate higher moisture content")
+    }
+  }
+
+  return(invisible(TRUE))
+}
+
+#' Get water index requirements
+#' @keywords internal
+get_water_index_requirements <- function() {
+  list(
+    "NDWI" = c("green", "nir"),
+    "MNDWI" = c("green", "swir1"),
+    "NDMI" = c("nir", "swir1"),
+    "MSI" = c("nir", "swir1"),
+    "NDII" = c("nir", "swir1"),
+    "WI" = c("nir", "swir1"),
+    "SRWI" = c("nir", "swir1"),
+    "LSWI" = c("nir", "swir1")
+  )
+}
+
+#' Get comprehensive list of available water indices
+#'
+#' @description
+#' Returns detailed information about all available water indices including
+#' formulas, required bands, applications, and interpretation guidelines.
+#'
+#' @param detailed Return detailed information including formulas and applications
+#' @param application_filter Filter by application: "all", "water_detection", "moisture_monitoring", "drought_assessment"
+#'
+#' @return Data frame with water index information
+#'
+#' @examples
+#' \donttest{
+#' # All available water indices
+#' water_indices <- list_water_indices()
+#'
+#' # Detailed information with formulas
+#' detailed_info <- list_water_indices(detailed = TRUE)
+#'
+#' # Only water detection indices
+#' water_detection <- list_water_indices(application_filter = "water_detection")
+#' }
+#'
+#' @export
+list_water_indices <- function(detailed = FALSE, application_filter = "all") {
+
+  # Comprehensive water index database
+  indices_db <- data.frame(
+    Index = c("NDWI", "MNDWI", "NDMI", "MSI", "NDII", "WI", "SRWI", "LSWI"),
+
+    Type = c("Water Detection", "Water Detection", "Vegetation Moisture",
+             "Moisture Stress", "Vegetation Moisture", "Water Content",
+             "Water Content", "Surface Water"),
+
+    Required_Bands = c("Green, NIR", "Green, SWIR1", "NIR, SWIR1",
+                       "NIR, SWIR1", "NIR, SWIR1", "NIR, SWIR1",
+                       "NIR, SWIR1", "NIR, SWIR1"),
+
+    Primary_Application = c("water_detection", "water_detection", "moisture_monitoring",
+                            "drought_assessment", "moisture_monitoring", "moisture_monitoring",
+                            "moisture_monitoring", "water_detection"),
+
+    Description = c(
+      "Normalized Difference Water Index (McFeeters 1996) - Original water detection index",
+      "Modified NDWI (Xu 2006) - Enhanced water detection, reduces built-up area confusion",
+      "Normalized Difference Moisture Index (Gao 1996) - Vegetation water content",
+      "Moisture Stress Index - Plant water stress detection (lower = more moisture)",
+      "Normalized Difference Infrared Index - Alternative name for vegetation moisture",
+      "Water Index - Simple ratio for water content assessment",
+      "Simple Ratio Water Index - Water content using NIR/SWIR ratio",
+      "Land Surface Water Index - Surface water content assessment"
+    ),
+
+    Value_Range = c("[-1, 1]", "[-1, 1]", "[-1, 1]", "[0, 10+]",
+                    "[-1, 1]", "[0, 10+]", "[0, 10+]", "[-1, 1]"),
+
+    Water_Threshold = c("> 0.3", "> 0.5", "N/A (vegetation)", "< 1.0",
+                        "N/A (vegetation)", "> 1.0", "> 1.0", "> 0.0"),
+
+    Reference = c("McFeeters (1996)", "Xu (2006)", "Gao (1996)", "Various",
+                  "Hunt & Rock (1989)", "Various", "Various", "Xiao et al. (2002)"),
+
+    stringsAsFactors = FALSE
+  )
+
+  # Apply application filter
+  if (application_filter != "all") {
+    indices_db <- indices_db[indices_db$Primary_Application == application_filter, ]
+  }
+
+  # Add detailed information if requested
+  if (detailed) {
+    indices_db$Formula <- get_water_index_formulas(indices_db$Index)
+    indices_db$Satellite_Bands <- get_satellite_band_info(indices_db$Index)
+    indices_db$Interpretation <- get_interpretation_guidelines(indices_db$Index)
+  }
+
+  return(indices_db)
+}
+
+#' Get water index formulas
+#' @keywords internal
+get_water_index_formulas <- function(indices) {
+  formulas <- setNames(rep("", length(indices)), indices)
+
+  formula_db <- list(
+    "NDWI" = "(Green - NIR) / (Green + NIR)",
+    "MNDWI" = "(Green - SWIR1) / (Green + SWIR1)",
+    "NDMI" = "(NIR - SWIR1) / (NIR + SWIR1)",
+    "MSI" = "SWIR1 / NIR",
+    "NDII" = "(NIR - SWIR1) / (NIR + SWIR1)",
+    "WI" = "NIR / SWIR1",
+    "SRWI" = "NIR / SWIR1",
+    "LSWI" = "(NIR - SWIR1) / (NIR + SWIR1)"
+  )
+
+  for (idx in indices) {
+    if (idx %in% names(formula_db)) {
+      formulas[idx] <- formula_db[[idx]]
+    }
+  }
+
+  return(formulas)
+}
+
+#' Get satellite band information
+#' @keywords internal
+get_satellite_band_info <- function(indices) {
+  band_info <- setNames(rep("", length(indices)), indices)
+
+  info_db <- list(
+    "NDWI" = "Landsat: B3,B5 | Sentinel-2: B3,B8 | MODIS: B4,B2",
+    "MNDWI" = "Landsat: B3,B6 | Sentinel-2: B3,B11 | MODIS: B4,B6",
+    "NDMI" = "Landsat: B5,B6 | Sentinel-2: B8,B11 | MODIS: B2,B6",
+    "MSI" = "Landsat: B5,B6 | Sentinel-2: B8,B11 | MODIS: B2,B6",
+    "NDII" = "Landsat: B5,B6 | Sentinel-2: B8,B11 | MODIS: B2,B6",
+    "WI" = "Landsat: B5,B6 | Sentinel-2: B8,B11 | MODIS: B2,B6",
+    "SRWI" = "Landsat: B5,B6 | Sentinel-2: B8,B11 | MODIS: B2,B6",
+    "LSWI" = "Landsat: B5,B6 | Sentinel-2: B8,B11 | MODIS: B2,B6"
+  )
+
+  for (idx in indices) {
+    if (idx %in% names(info_db)) {
+      band_info[idx] <- info_db[[idx]]
+    }
+  }
+
+  return(band_info)
+}
+
+#' Get interpretation guidelines
+#' @keywords internal
+get_interpretation_guidelines <- function(indices) {
+  guidelines <- setNames(rep("", length(indices)), indices)
+
+  guide_db <- list(
+    "NDWI" = "Water bodies: >0.3, Vegetation: <0, Built-up: 0-0.2. Sensitive to built-up areas.",
+    "MNDWI" = "Water bodies: >0.5, Vegetation: <0, Built-up: <0.3. Better urban water detection.",
+    "NDMI" = "High moisture: >0.4, Moderate: 0.1-0.4, Low: <0.1. For vegetation water content.",
+    "MSI" = "High moisture: <1.0, Moderate: 1.0-1.6, Stress: >1.6. Lower values = more moisture.",
+    "NDII" = "Same as NDMI. High values indicate higher vegetation moisture content.",
+    "WI" = "Higher values generally indicate higher water content. Threshold varies by application.",
+    "SRWI" = "Similar to WI. Used for simple water content assessment.",
+    "LSWI" = "Higher values indicate more surface water. Used for wetland and irrigation monitoring."
+  )
+
+  for (idx in indices) {
+    if (idx %in% names(guide_db)) {
+      guidelines[idx] <- guide_db[[idx]]
+    }
+  }
+
+  return(guidelines)
+}
+
+#' Calculate multiple water indices at once
+#'
+#' @description
+#' Calculate multiple water indices from the same spectral data in a single operation.
+#' Efficient for comprehensive water and moisture analysis.
+#'
+#' @param green Green band SpatRaster or file path
+#' @param nir NIR band SpatRaster or file path
+#' @param swir1 SWIR1 band SpatRaster or file path
+#' @param indices Vector of index names to calculate
+#' @param output_stack Return as single multi-layer raster (TRUE) or list (FALSE)
+#' @param clamp_values Apply reasonable value clamping
+#' @param mask_invalid Mask invalid values
+#' @param verbose Print progress messages
+#'
+#' @return SpatRaster stack or list of water indices
+#'
+#' @examples
+#' \dontrun{
+#' # These examples require external data files not included with the package
+#' # Calculate multiple water indices
+#' water_indices <- calculate_multiple_water_indices(
+#'   green = green_band,
+#'   nir = nir_band,
+#'   swir1 = swir1_band,
+#'   indices = c("NDWI", "MNDWI", "NDMI", "MSI"),
+#'   output_stack = TRUE,
+#'   verbose = TRUE
+#' )
+#'
+#' # Access individual indices
+#' ndwi <- water_indices[["NDWI"]]
+#' mndwi <- water_indices[["MNDWI"]]
+#' }
+#'
+#' @export
+calculate_multiple_water_indices <- function(green, nir, swir1 = NULL,
+                                             indices = c("NDWI", "MNDWI", "NDMI"),
+                                             output_stack = TRUE, clamp_values = TRUE,
+                                             mask_invalid = TRUE, verbose = FALSE) {
+
+  if (verbose) message(sprintf("Calculating %d water indices...", length(indices)))
+
+  # Validate that all requested indices are supported
+  available_indices <- c("NDWI", "MNDWI", "NDMI", "MSI", "NDII", "WI", "SRWI", "LSWI")
+  invalid_indices <- setdiff(indices, available_indices)
+  if (length(invalid_indices) > 0) {
+    stop(sprintf("Invalid water indices: %s. Available: %s",
+                 paste(invalid_indices, collapse = ", "),
+                 paste(available_indices, collapse = ", ")), call. = FALSE)
+  }
+
+  # Check if SWIR1 is needed
+  swir_indices <- c("MNDWI", "NDMI", "MSI", "NDII", "WI", "SRWI", "LSWI")
+  needs_swir <- any(indices %in% swir_indices)
+
+  if (needs_swir && is.null(swir1)) {
+    stop(sprintf("SWIR1 band required for indices: %s",
+                 paste(intersect(indices, swir_indices), collapse = ", ")), call. = FALSE)
+  }
+
+  # Calculate each index
+  index_results <- list()
+
+  for (i in seq_along(indices)) {
+    idx <- indices[i]
+    if (verbose) message(sprintf("Calculating %s (%d/%d)...", idx, i, length(indices)))
+
+    # Set appropriate clamping ranges
+    clamp_range <- if (clamp_values) {
+      if (idx %in% c("NDWI", "MNDWI", "NDMI", "NDII", "LSWI")) c(-1, 1) else
+        if (idx %in% c("MSI", "WI", "SRWI")) c(0, 10) else NULL
+    } else NULL
+
+    index_results[[idx]] <- calculate_water_index(
+      green = green,
+      nir = nir,
+      swir1 = swir1,
+      index_type = idx,
+      clamp_range = clamp_range,
+      mask_invalid = mask_invalid,
+      verbose = FALSE
+    )
+  }
+
+  # Return as stack or list
+  if (output_stack) {
+    if (verbose) message("Creating multi-layer stack...")
+    result <- terra::rast(index_results)
+    names(result) <- indices
+    return(result)
+  } else {
+    return(index_results)
+  }
+}
+
+#' Analyze water body characteristics using multiple indices
+#'
+#' @description
+#' Comprehensive water body analysis using multiple water indices to classify
+#' and characterize water features.
+#'
+#' @param green Green band SpatRaster or file path
+#' @param nir NIR band SpatRaster or file path
+#' @param swir1 SWIR1 band SpatRaster or file path
+#' @param region_boundary Optional region boundary for analysis
+#' @param water_threshold_ndwi NDWI threshold for water detection (default: 0.3)
+#' @param water_threshold_mndwi MNDWI threshold for water detection (default: 0.5)
+#' @param output_folder Optional output directory
+#' @param verbose Print progress messages
+#'
+#' @return List with water analysis results
+#'
+#' @examples
+#' \dontrun{
+#' # These examples require external data files not included with the package
+#' # Comprehensive water analysis
+#' water_analysis <- analyze_water_bodies(
+#'   green = "green.tif",
+#'   nir = "nir.tif",
+#'   swir1 = "swir1.tif",
+#'   region_boundary = "study_area.shp",
+#'   verbose = TRUE
+#' )
+#'
+#' # Access results
+#' water_analysis$water_indices     # All calculated indices
+#' water_analysis$water_mask        # Binary water mask
+#' water_analysis$statistics        # Water body statistics
+#' }
+#'
+#' @export
+analyze_water_bodies <- function(green, nir, swir1 = NULL, region_boundary = NULL,
+                                 water_threshold_ndwi = 0.3, water_threshold_mndwi = 0.5,
+                                 output_folder = NULL, verbose = FALSE) {
+
+  if (verbose) message("Starting comprehensive water body analysis...")
+
+  # Calculate multiple water indices
+  water_indices <- calculate_multiple_water_indices(
+    green = green, nir = nir, swir1 = swir1,
+    indices = if (is.null(swir1)) "NDWI" else c("NDWI", "MNDWI", "NDMI"),
+    output_stack = TRUE,
+    verbose = verbose
+  )
+
+  # Apply region boundary if provided
+  if (!is.null(region_boundary)) {
+    if (verbose) message("Applying region boundary...")
+    if (is.character(region_boundary)) {
+      boundary <- sf::st_read(region_boundary, quiet = !verbose)
+    } else {
+      boundary <- region_boundary
+    }
+    boundary_vect <- terra::vect(boundary)
+    water_indices <- terra::crop(water_indices, boundary_vect)
+    water_indices <- terra::mask(water_indices, boundary_vect)
+  }
+
+  # Create water masks
+  water_masks <- list()
+
+  if ("NDWI" %in% names(water_indices)) {
+    water_masks$ndwi_water <- water_indices$NDWI > water_threshold_ndwi
+    names(water_masks$ndwi_water) <- "NDWI_water_mask"
+  }
+
+  if ("MNDWI" %in% names(water_indices)) {
+    water_masks$mndwi_water <- water_indices$MNDWI > water_threshold_mndwi
+    names(water_masks$mndwi_water) <- "MNDWI_water_mask"
+  }
+
+  # Create consensus water mask
+  if (length(water_masks) > 1) {
+    consensus_mask <- water_masks[[1]]
+    for (i in 2:length(water_masks)) {
+      consensus_mask <- consensus_mask & water_masks[[i]]
+    }
+    names(consensus_mask) <- "consensus_water_mask"
+    water_masks$consensus <- consensus_mask
+  }
+
+  # Calculate statistics
+  statistics <- list()
+  for (mask_name in names(water_masks)) {
+    mask <- water_masks[[mask_name]]
+    water_pixels <- sum(terra::values(mask, mat = FALSE), na.rm = TRUE)
+    total_pixels <- sum(!is.na(terra::values(mask, mat = FALSE)))
+
+    statistics[[mask_name]] <- list(
+      water_pixels = water_pixels,
+      total_pixels = total_pixels,
+      water_percentage = (water_pixels / total_pixels) * 100,
+      pixel_area_m2 = prod(terra::res(mask)),
+      estimated_water_area_m2 = water_pixels * prod(terra::res(mask))
+    )
+  }
+
+  # Save results if output folder specified
+  if (!is.null(output_folder)) {
+    if (!dir.exists(output_folder)) {
+      dir.create(output_folder, recursive = TRUE)
+    }
+
+    # Save water indices
+    terra::writeRaster(water_indices,
+                       file.path(output_folder, "water_indices.tif"),
+                       overwrite = TRUE)
+
+    # Save water masks
+    if (length(water_masks) > 0) {
+      masks_stack <- terra::rast(water_masks)
+      terra::writeRaster(masks_stack,
+                         file.path(output_folder, "water_masks.tif"),
+                         overwrite = TRUE)
+    }
+
+    if (verbose) message(sprintf("Results saved to: %s", output_folder))
+  }
+
+  if (verbose) message("Water body analysis completed!")
+
+  return(list(
+    water_indices = water_indices,
+    water_masks = water_masks,
+    statistics = statistics,
+    thresholds = list(
+      ndwi = water_threshold_ndwi,
+      mndwi = water_threshold_mndwi
+    ),
+    analysis_date = Sys.time()
+  ))
+}

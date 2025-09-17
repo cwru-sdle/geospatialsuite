@@ -1,0 +1,26 @@
+{
+    "id": "F25FD79D",
+    "path": "~/CSE_MSE_RXF131/staging/casf/EE/geospatialsuite-r/packages/geospatialsuite/R/08-temporal-analysis.R",
+    "project_path": "R/08-temporal-analysis.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1753396658177.0,
+    "source_on_save": false,
+    "relative_order": 9,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "20,30",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1753139368,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1753139368,
+    "read_only": false,
+    "read_only_alternatives": []
+}

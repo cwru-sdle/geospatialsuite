@@ -1,0 +1,26 @@
+{
+    "id": "F0645E0B",
+    "path": "~/CSE_MSE_RXF131/staging/casf/EE/geospatialsuite-r/packages/geospatialsuite/R/06-spatial-join.R",
+    "project_path": "R/06-spatial-join.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1755548962741.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "825,0",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1755549004,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1755549004284,
+    "read_only": false,
+    "read_only_alternatives": []
+}

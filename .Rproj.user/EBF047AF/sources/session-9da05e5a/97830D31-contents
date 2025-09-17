@@ -1,0 +1,413 @@
+---
+title: "Untitled"
+output: html_document
+date: "2023-06-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+library(sf)
+library(tidyverse)
+library(nhdplusTools)
+
+
+# Download and extract the NHD data for Ohio
+download_nhd(state = "OH", output_dir = getwd(), keep_zip = FALSE)
+
+# Load the NHD data into R
+ohio_nhd <- load_nhd(state = "OH", dir = getwd())
+
+# Filter the NHD data to include only rivers and streams
+ohio_rivers <- filter(ohio_nhd, NHDFlowlineVAA$FTYPE == "460")
+
+# Plotting
+ggplot() +
+  geom_sf(data = ohio_rivers) +
+  theme_minimal()
+```
+
+
+
+```{r}
+
+# Install and load cranlogs package
+#install.packages("cranlogs")
+library(cranlogs)
+
+# Get download statistics for an R package (replace 'your_package_name' with the actual package name)
+package_name <- "FAIRmaterials"
+downloads <- cran_downloads(packages = package_name, from = "2021-09-14")
+
+# Sum the total downloads
+total_downloads <- sum(downloads$count)
+
+# Print total downloads
+cat("Total downloads for", package_name, " from 2021-09-14:", total_downloads, "\n")
+
+
+
+```
+```{r}
+
+
+library(cranlogs)
+library(ggplot2)
+
+# Get download statistics for an R package (replace 'your_package_name' with the actual package name)
+package_name <- "FAIRmaterials"
+downloads <- cran_downloads(packages = package_name, from = "2021-09-14")
+
+# Create a data frame for ggplot
+df <- data.frame(date = downloads$date, count = downloads$count)
+
+# Create a bar plot
+ggplot(df, aes(x = date, y = count)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(title = paste("Download Statistics for", package_name, "R Package"),
+       x = "Date",
+       y = "Number of Downloads") +
+  SDLE_theme()
+
+```
+
+
+
+```{r}
+
+
+library(cranlogs)
+library(ggplot2)
+library(dplyr)
+
+# Get download statistics for an R package (replace 'your_package_name' with the actual package name)
+package_name <- "FAIRmaterials"
+downloads <- cran_downloads(packages = package_name, from = "2021-09-14")
+
+# Summarize downloads by year
+downloads$year <- format(as.Date(downloads$date), "%Y")
+annual_downloads <- downloads %>%
+  group_by(year) %>%
+  summarise(total_downloads = sum(count))
+
+# Create a bar plot for annual downloads
+ggplot(annual_downloads, aes(x = year, y = total_downloads)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(title = paste("Annual Download Statistics for", package_name),
+       x = "Year",
+       y = "Total Number of Downloads") +
+  SDLE_theme()
+
+
+
+```
+
+
+
+
+```{r}
+
+library(cranlogs)
+
+source("~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/cradledataexplorer/inst/cradledataexplorer/R/SDLE_theme.R")
+
+# Get download statistics for an R package (replace 'your_package_name' with the actual package name)
+package_name <- "FAIRmaterials"
+downloads <- cran_downloads(packages = package_name, from = "2021-09-14")
+
+# Sum the total downloads
+total_downloads <- sum(downloads$count)
+
+# Print total downloads
+cat("Total downloads for", package_name, " from 2021-09-14:", total_downloads, "\n")
+
+# Add the total downloads to the data frame
+downloads$total_downloads <- total_downloads
+
+# Export the data to a CSV file
+write.csv(downloads, file = "downloads_data.csv", row.names = FALSE)
+
+# Print a message indicating that the export is complete
+cat("Download data exported to 'downloads_data.csv'\n")
+
+
+
+
+```
+
+
+
+
+
+```{r}
+
+
+nn <- read.csv("/home/oda10/CSE_MSE_RXF131/staging/casf/oda10/FEAT-NN.csv")
+
+
+# Load required libraries
+library(ggplot2)
+library(gganimate)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(viridis)
+library(maps)
+library(sf)
+library(scales)
+library(magick)
+
+
+# Create proper date column from month and day for 2022
+nn$date_2022 <- as.Date(paste("2022", nn$month, nn$day, sep = "-"))
+
+# Handle outliers using log transformation for visualization
+# Add small constant to handle negative values
+nn$load_viz <- log10(nn$load + abs(min(nn$load, na.rm = TRUE)) + 1)
+nn$pred_viz <- log10(nn$prediction_results + abs(min(nn$prediction_results, na.rm = TRUE)) + 1)
+
+# Calculate percentiles for better outlier handling
+load_percentiles <- quantile(nn$load, probs = c(0.01, 0.99), na.rm = TRUE)
+pred_percentiles <- quantile(nn$prediction_results, probs = c(0.01, 0.99), na.rm = TRUE)
+
+# Create a trimmed dataset for cleaner visualization (removing extreme outliers)
+nn_trimmed <- nn %>%
+  mutate(
+    load_trimmed = pmin(pmax(load, load_percentiles[1]), load_percentiles[2]),
+    pred_trimmed = pmin(pmax(prediction_results, pred_percentiles[1]), pred_percentiles[2])
+  )
+
+# Reshape data to long format for plotting both actual and predicted values
+nn_long <- nn_trimmed %>%
+  select(site_no, date_2022, longitude, latitude, load_trimmed, pred_trimmed) %>%
+  pivot_longer(cols = c(load_trimmed, pred_trimmed),
+               names_to = "type",
+               values_to = "value") %>%
+  mutate(type = ifelse(type == "load_trimmed", "Actual", "Predicted"))
+
+# Get Ohio state boundaries for background
+ohio_map <- map_data("state", region = "ohio")
+
+# Create the animated map plot
+p <- ggplot() +
+  # Add Ohio state boundary
+  geom_polygon(data = ohio_map, 
+               aes(x = long, y = lat, group = group),
+               fill = "gray95", color = "gray50", linewidth = 0.3) +
+  
+  # Add gauge points with size based on load value
+  geom_point(data = nn_long,
+             aes(x = longitude, y = latitude, 
+                 size = value, 
+                 color = value,
+                 shape = type),
+             alpha = 0.7) +
+  
+  # Color scale for load values
+  scale_color_viridis(name = "Load Value\n(trimmed to 1-99%)",
+                      option = "plasma",
+                      labels = comma) +
+  
+  # Size scale
+  scale_size_continuous(name = "Load Value\n(trimmed to 1-99%)",
+                       range = c(2, 10),
+                       labels = comma) +
+  
+  # Shape scale for actual vs predicted
+  scale_shape_manual(values = c("Actual" = 19, "Predicted" = 17),
+                     name = "Type") +
+  
+  # Labels and theme
+  labs(title = "Ohio Stream Gauge Loads - 2022",
+       subtitle = "Date: {format(frame_time, '%B %d, 2022')}",
+       x = "Longitude",
+       y = "Latitude",
+       caption = "Circle = Actual Load, Triangle = Predicted Load\nOutliers trimmed to 1st-99th percentile") +
+  
+  theme_minimal() +
+  theme(plot.title = element_text(size = 16, face = "bold"),
+        plot.subtitle = element_text(size = 14),
+        legend.position = "right",
+        panel.grid.minor = element_blank(),
+        plot.background = element_rect(fill = "white", color = NA)) +
+  
+  coord_fixed(ratio = 1.3) +
+  
+  # Animation specification
+  transition_time(date_2022) +
+  ease_aes('linear')
+
+# Create the animation using magick renderer
+anim <- animate(p, 
+                nframes = 100,  # Number of frames
+                fps = 10,       # Frames per second
+                width = 800,    # Width in pixels
+                height = 600,   # Height in pixels
+                renderer = magick_renderer())  # Using magick instead of gifski
+
+# Save the animation
+anim_save("~/CSE_MSE_RXF131/cradle-members/sdle/oda10/ohio_gauge_animation.gif", anim)
+
+# Alternative: Create faceted version for side-by-side comparison
+p_facet <- ggplot() +
+  # Add Ohio state boundary
+  geom_polygon(data = ohio_map, 
+               aes(x = long, y = lat, group = group),
+               fill = "gray95", color = "gray50", linewidth = 0.3) +
+  
+  # Add gauge points
+  geom_point(data = nn_long,
+             aes(x = longitude, y = latitude, 
+                 size = value, 
+                 color = value),
+             alpha = 0.8) +
+  
+  # Facet by type
+  facet_wrap(~type, ncol = 2) +
+  
+  # Color scale
+  scale_color_viridis(name = "Load Value",
+                      option = "plasma",
+                      labels = comma) +
+  
+  # Size scale
+  scale_size_continuous(name = "Load Value",
+                       range = c(1, 8),
+                       labels = comma) +
+  
+  # Labels and theme
+  labs(title = "Ohio Stream Gauge Loads - 2022",
+       subtitle = "Date: {format(frame_time, '%B %d, 2022')}",
+       x = "Longitude",
+       y = "Latitude") +
+  
+  theme_minimal() +
+  theme(plot.title = element_text(size = 16, face = "bold"),
+        plot.subtitle = element_text(size = 14),
+        legend.position = "bottom",
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 12, face = "bold"),
+        plot.background = element_rect(fill = "white", color = NA)) +
+  
+  coord_fixed(ratio = 1.3) +
+  
+  # Animation specification
+  transition_time(date_2022) +
+  ease_aes('linear')
+
+# Create the faceted animation using magick renderer
+anim_facet <- animate(p_facet, 
+                      nframes = 100,
+                      fps = 10,
+                      width = 1000,
+                      height = 500,
+                      renderer = magick_renderer())  # Using magick instead of gifski
+
+# Save the faceted animation
+anim_save("ohio_gauge_animation_faceted.gif", anim_facet)
+
+# Create a scatter plot animation comparing actual vs predicted
+nn_scatter <- nn_trimmed %>%
+  group_by(date_2022) %>%
+  mutate(correlation = cor(load_trimmed, pred_trimmed, use = "complete.obs"))
+
+p_scatter <- ggplot(nn_scatter, aes(x = load_trimmed, y = pred_trimmed)) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "gray50", size = 1) +
+  geom_point(aes(color = site_no), alpha = 0.6, size = 3) +
+  geom_smooth(method = "lm", se = TRUE, color = "red", size = 1.2) +
+  scale_x_continuous(labels = comma, limits = range(c(nn_scatter$load_trimmed, nn_scatter$pred_trimmed), na.rm = TRUE)) +
+  scale_y_continuous(labels = comma, limits = range(c(nn_scatter$load_trimmed, nn_scatter$pred_trimmed), na.rm = TRUE)) +
+  scale_color_viridis_d(name = "Site Number") +
+  labs(title = "Actual vs Predicted Stream Gauge Loads - 2022",
+       subtitle = "Date: {format(frame_time, '%B %d, 2022')} | Correlation: {round(frame_data$correlation[1], 3)}",
+       x = "Actual Load",
+       y = "Predicted Load",
+       caption = "Diagonal line represents perfect prediction") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 16, face = "bold"),
+        plot.subtitle = element_text(size = 14),
+        legend.position = "none",
+        plot.background = element_rect(fill = "white", color = NA)) +
+  coord_fixed() +
+  transition_time(date_2022) +
+  ease_aes('linear')
+
+# Create scatter plot animation using magick renderer
+anim_scatter <- animate(p_scatter,
+                        nframes = 100,
+                        fps = 10,
+                        width = 700,
+                        height = 700,
+                        renderer = magick_renderer())  # Using magick instead of gifski
+
+# Save scatter animation
+anim_save("ohio_gauge_scatter.gif", anim_scatter)
+
+# Time series plot for all sites with aggregated daily values
+nn_daily <- nn_trimmed %>%
+  group_by(date_2022) %>%
+  summarise(
+    mean_actual = mean(load_trimmed, na.rm = TRUE),
+    mean_predicted = mean(pred_trimmed, na.rm = TRUE),
+    median_actual = median(load_trimmed, na.rm = TRUE),
+    median_predicted = median(pred_trimmed, na.rm = TRUE),
+    q25_actual = quantile(load_trimmed, 0.25, na.rm = TRUE),
+    q75_actual = quantile(load_trimmed, 0.75, na.rm = TRUE),
+    q25_predicted = quantile(pred_trimmed, 0.25, na.rm = TRUE),
+    q75_predicted = quantile(pred_trimmed, 0.75, na.rm = TRUE)
+  ) %>%
+  pivot_longer(cols = -date_2022,
+               names_to = c("metric", "type"),
+               names_sep = "_",
+               values_to = "value")
+
+p_ts_agg <- ggplot(filter(nn_daily, metric == "mean"), 
+                   aes(x = date_2022, y = value, color = type)) +
+  geom_line(size = 1.5) +
+  geom_point(size = 2) +
+  scale_color_manual(values = c("actual" = "#2E86AB", "predicted" = "#A23B72"),
+                     labels = c("actual" = "Actual", "predicted" = "Predicted"),
+                     name = "Type") +
+  scale_y_continuous(labels = comma) +
+  scale_x_date(date_labels = "%b", date_breaks = "1 month") +
+  labs(title = "Average Daily Stream Gauge Load Across All Ohio Sites - 2022",
+       subtitle = "Showing progression through: {format(frame_along, '%B %d')}",
+       x = "Date",
+       y = "Average Load Value (trimmed)") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 16, face = "bold"),
+        legend.position = "top",
+        plot.background = element_rect(fill = "white", color = NA)) +
+  transition_reveal(date_2022)
+
+# Create aggregated time series animation using magick renderer
+anim_ts_agg <- animate(p_ts_agg,
+                       nframes = 100,
+                       fps = 10,
+                       width = 900,
+                       height = 500,
+                       renderer = magick_renderer())  # Using magick instead of gifski
+
+# Save aggregated time series animation
+anim_save("ohio_gauge_timeseries_aggregated.gif", anim_ts_agg)
+
+# Print summary statistics for verification
+cat("Summary of Load values (trimmed to 1-99 percentile):\n")
+print(summary(nn_trimmed$load_trimmed))
+cat("\nSummary of Prediction values (trimmed to 1-99 percentile):\n")
+print(summary(nn_trimmed$pred_trimmed))
+cat("\nNumber of unique sites:", length(unique(nn$site_no)), "\n")
+cat("\nDate range:", min(nn$date_2022, na.rm = TRUE), "to", max(nn$date_2022, na.rm = TRUE), "\n")
+
+print("\nAnimations created successfully!")
+print("Files saved:")
+print("1. ohio_gauge_animation.gif - Map view with both actual and predicted")
+print("2. ohio_gauge_animation_faceted.gif - Side-by-side comparison")
+print("3. ohio_gauge_scatter.gif - Actual vs Predicted scatter plot")
+print("4. ohio_gauge_timeseries_aggregated.gif - Daily average time series")
+
+```
+

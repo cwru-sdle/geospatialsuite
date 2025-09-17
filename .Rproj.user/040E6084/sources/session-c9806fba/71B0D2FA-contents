@@ -1,0 +1,249 @@
+---
+title: "Getting Started with GeoSpatialSuite"
+author: "GeoSpatialSuite Development Team"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with GeoSpatialSuite}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5,
+  warning = FALSE,
+  message = FALSE
+)
+
+# Check if we can run examples
+can_run_examples <- requireNamespace("terra", quietly = TRUE) && 
+                   requireNamespace("sf", quietly = TRUE)
+```
+
+# Introduction
+
+GeoSpatialSuite is a comprehensive toolkit for geospatial analysis featuring:
+
+- **40+ vegetation indices** with automatic band detection
+- **Universal spatial analysis** that works with any data combination
+- **Advanced visualization** with efficient raster plotting
+- **Interactive mapping** capabilities
+- **Comprehensive workflows** for common geospatial tasks
+
+## Installation
+
+```{r eval=FALSE}
+# Install from GitHub (development version)
+devtools::install_github("yourusername/geospatialsuite")
+
+# Install recommended packages for best performance
+install.packages(c("tidyterra", "RStoolbox", "leaflet", "patchwork"))
+```
+
+## Load the Package
+
+```{r}
+library(geospatialsuite)
+```
+
+```{r eval=can_run_examples}
+# Check package health
+health_status <- enhanced_health_check(verbose = FALSE)
+print(paste("Package Status:", ifelse(health_status$overall_healthy, "✓ Healthy", "⚠ Issues")))
+```
+
+## Quick Start Examples
+
+### 1. One-Line Mapping
+
+The `quick_map()` function auto-detects your data type and creates appropriate visualizations:
+
+```{r eval=FALSE}
+# Auto-mapping for any spatial data
+quick_map("my_shapefile.shp")
+quick_map(my_raster_data)
+quick_map(points_dataframe, interactive = TRUE)
+```
+
+### 2. Universal Spatial Join
+
+Extract raster values to vector data - works with ANY combination:
+
+```{r eval=FALSE}
+# Basic extraction
+result <- spatial_join_universal(
+  vector_data = "study_sites.csv",
+  raster_data = "elevation.tif"
+)
+
+# Advanced multi-raster extraction
+comprehensive_data <- spatial_join_universal(
+  vector_data = field_boundaries,
+  raster_data = c("ndvi.tif", "soil_ph.tif", "precipitation.tif"),
+  method = "buffer",
+  buffer_size = 500
+)
+```
+
+### 3. Multiple Vegetation Indices
+
+Calculate 40+ vegetation indices efficiently:
+
+```{r eval=FALSE}
+# See available indices
+available_indices <- list_vegetation_indices()
+print(head(available_indices))
+
+# Calculate multiple indices at once
+indices <- calculate_multiple_indices(
+  red = red_band,
+  nir = nir_band,
+  blue = blue_band,
+  indices = c("NDVI", "EVI", "SAVI", "PRI", "SIPI"),
+  output_stack = TRUE
+)
+```
+
+### 4. Comprehensive Workflows
+
+Run complete analysis workflows:
+
+```{r eval=FALSE}
+# NDVI crop analysis workflow
+config <- list(
+  analysis_type = "ndvi_crop_analysis",
+  input_data = list(red = "red_bands/", nir = "nir_bands/"),
+  region_boundary = "Iowa",
+  crop_codes = get_comprehensive_cdl_codes("corn"),
+  visualization_config = list(
+    create_maps = TRUE,
+    interactive = TRUE,
+    animation = TRUE
+  )
+)
+
+results <- run_comprehensive_geospatial_workflow(config)
+```
+
+## Key Features Overview
+
+### Universal Spatial Analysis
+- Works with points, lines, polygons, and rasters
+- Automatic coordinate system handling
+- Multiple extraction methods (simple, buffer, bilinear)
+- Robust error handling and validation
+
+### Advanced Vegetation Analysis
+- 40+ vegetation indices including NDVI, EVI, SAVI, PRI, SIPI, NDRE
+- Automatic band detection from satellite imagery
+- Crop-specific analysis for corn, soybeans, wheat, etc.
+- Stress detection and yield assessment
+
+### Efficient Visualization
+- No unnecessary data.frame conversions for large rasters
+- Automatic method selection (tidyterra → RStoolbox → terra)
+- Interactive maps with leaflet integration
+- Publication-quality graphics
+
+### Performance Features
+- Smart fallback systems when packages unavailable
+- Parallel processing support
+- Efficient memory usage
+- Optimized for large datasets
+
+## Testing Your Installation
+
+Run the comprehensive test suite:
+
+```{r eval=FALSE}
+# Quick test
+test_results <- test_geospatialsuite_package()
+
+# Comprehensive test with visualization
+test_results <- test_geospatialsuite_package(
+  comprehensive = TRUE,
+  test_visualization = TRUE,
+  test_performance = TRUE
+)
+```
+
+## Getting Help
+
+```{r eval=FALSE}
+# Package help
+help(package = "geospatialsuite")
+
+# Function-specific help
+?spatial_join_universal
+?calculate_multiple_indices
+?run_comprehensive_geospatial_workflow
+
+# Test specific functions
+test_specific_function("calculate_multiple_indices")
+
+# Performance tips
+raster_plot_performance_tips()
+```
+
+## Example Workflow
+
+Here's a complete example combining multiple package features:
+
+```{r eval=FALSE}
+# 1. Load and process spatial data
+study_sites <- process_vector_data("field_sites.csv")
+
+# 2. Extract multiple environmental variables
+environmental_data <- integrate_multiple_datasets(
+  vector_data = study_sites,
+  raster_datasets = list(
+    ndvi = "satellite/ndvi.tif",
+    elevation = "terrain/dem.tif",
+    soil_ph = "soil/ph.tif",
+    precipitation = "climate/precip.tif"
+  ),
+  extraction_method = "buffer",
+  buffer_size = 1000
+)
+
+# 3. Create interactive visualization
+interactive_map <- create_interactive_map(
+  spatial_data = environmental_data,
+  fill_variable = "ndvi",
+  basemap = "satellite",
+  cluster_points = TRUE
+)
+
+# 4. Generate comprehensive analysis
+analysis_config <- list(
+  analysis_type = "vegetation_comprehensive",
+  input_data = environmental_data,
+  region_boundary = "Ohio",
+  indices = c("NDVI", "EVI", "PRI", "SIPI"),
+  output_folder = "analysis_results/"
+)
+
+final_results <- run_comprehensive_geospatial_workflow(analysis_config)
+```
+
+## Next Steps
+
+- **Spatial Analysis**: Learn about universal spatial joins → `vignette("spatial-analysis")`
+- **Vegetation Analysis**: Explore 40+ vegetation indices → `vignette("vegetation-analysis")`
+- **Visualization**: Create publication-quality maps → `vignette("visualization")`
+- **Workflows**: Use comprehensive analysis workflows → `vignette("workflows")`
+
+## Package Philosophy
+
+GeoSpatialSuite is designed with these principles:
+
+1. **Universal**: Works with any spatial data combination
+2. **Efficient**: No unnecessary data conversions, optimized performance
+3. **Robust**: Comprehensive error handling and validation
+4. **Accessible**: Easy-to-use functions with smart defaults
+5. **Extensible**: Modular design for custom workflows
+
+The package automatically selects the best available methods and provides helpful guidance when dependencies are missing, making advanced geospatial analysis accessible to researchers at all levels.

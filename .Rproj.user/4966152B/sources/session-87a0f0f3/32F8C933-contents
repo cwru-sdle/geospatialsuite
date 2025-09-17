@@ -1,0 +1,47 @@
+#' @keywords package geospatial remote-sensing
+#' @importFrom terra rast values nlyr crop mask mosaic merge resample project terrain
+#' @importFrom sf st_read st_write st_transform st_crs st_as_sf st_geometry st_bbox st_coordinates st_drop_geometry st_filter st_buffer st_distance
+#' @importFrom dplyr filter select mutate
+#' @importFrom stats cor lm sd median quantile na.omit coef complete.cases runif as.formula
+#' @importFrom utils read.csv write.csv head
+#' @importFrom grDevices terrain.colors
+#' @importFrom magrittr %>%
+#' @importFrom ggplot2 ggplot aes geom_sf geom_tile geom_text geom_raster coord_sf coord_fixed theme_minimal theme element_text labs scale_fill_gradient2 scale_fill_gradientn scale_color_manual ggsave scale_colour_viridis_c scale_fill_viridis_c
+#' @importFrom viridis scale_fill_viridis scale_color_viridis
+#' @name geospatialsuite
+#' @aliases geospatialsuite
+#' @author Olatunde D. Akanbi \email{oda10@case.edu}
+#' @description
+#' GeoSpatialSuite provides universal functions for geospatial analysis that work
+#' with any region for multimodal data. Features include
+#' vegetation and water indices, universal spatial joins, dynamic crop analysis,
+#' robust mosaicking, and visualizations.
+#'
+#' @details
+#' Key features:
+#' \itemize{
+#'   \item Universal region support (states, countries, CONUS, custom boundaries)
+#'   \item Vegetation indices including NDVI, EVI, SAVI
+#'   \item Both NDWI variants (McFeeters and Xu)
+#'   \item Universal spatial join (works with ANY raster-vector combination)
+#'   \item Dynamic CDL crop analysis (all crop codes and categories)
+#'   \item Robust raster mosaicing with intelligent file selection
+#'   \item Spatial interpolation and temporal analysis
+#'   \item Visualizations and workflows
+#' }
+"_PACKAGE"
+
+# Package startup message
+.onAttach <- function(libname, pkgname) {
+  packageStartupMessage("==================================================")
+  packageStartupMessage("GeoSpatialSuite v0.1.0 - Dynamic Geospatial Analysis")
+  packageStartupMessage("==================================================")
+  packageStartupMessage("Universal - Dynamic - Collaborative")
+  packageStartupMessage("")
+  packageStartupMessage("Quick Start: help(package='GeoSpatialSuite')")
+  packageStartupMessage("Examples: test_geospatialsuite_package()")
+  packageStartupMessage("==================================================")
+}
+
+# Global variables
+utils::globalVariables(c(".", "STATEFP", "STUSPS", "NAME", "GEOID", "Var1", "Var2", "Correlation", "threshold_group", ".data", "x", "y", "value"))

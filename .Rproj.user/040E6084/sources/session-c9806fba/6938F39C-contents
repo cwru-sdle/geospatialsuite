@@ -1,0 +1,1777 @@
+#' Create side-by-side comparison
+#' @keywords internal
+create_side_by_side_comparison <- function(data1, data2, titles, color_scheme) {
+
+  if (requireNamespace("patchwork", quietly = TRUE) && requireNamespace("tidyterra", quietly = TRUE)) {
+    # Efficient method using tidyterra and patchwork
+
+    p1 <- ggplot2::ggplot() +
+      tidyterra::geom_spatraster(data = data1) +
+      ggplot2::coord_sf() +
+      ggplot2::theme_minimal() +
+      ggplot2::labs(title = titles[1], x = "Longitude", y = "Latitude")
+
+    p2 <- ggplot2::ggplot() +
+      tidyterra::geom_spatraster(data = data2) +
+      ggplot2::coord_sf() +
+      ggplot2::theme_minimal() +
+      ggplot2::labs(title = titles[2], x = "Longitude", y = "Latitude")
+
+    # Apply color schemes
+    p1 <- apply_color_scheme_tidyterra(p1, color_scheme, names(data1)[1])
+    p2 <- apply_color_scheme_tidyterra(p2, color_scheme, names(data2)[1])
+
+    # Combine with patchwork
+    combined_plot <- p1 + p2 + patchwork::plot_layout(ncol = 2)
+
+    return(combined_plot)
+
+  } else {
+    # Fallback to data frame method
+    warning("tidyterra and patchwork packages recommended for efficient comparison plots")
+
+    # Sample large rasters for performance
+    if (terra::ncell(data1) > 500000) {
+      data1 <- terra::spatSample(data1, size = 500000, method = "regular", as.raster = TRUE)
+      data2 <- terra::spatSample(data2, size = 500000, method = "regular", as.raster = TRUE)
+    }
+
+    # Convert to data frames
+    df1 <- as.data.frame(data1, xy = TRUE)
+    colnames(df1)[3] <- "value"
+    df1$dataset <- titles[1]
+
+    df2 <- as.data.frame(data2, xy = TRUE)
+    colnames(df2)[3] <- "value"
+    df2$dataset <- titles[2]
+
+    # Combine data
+    combined_df <- rbind(df1, df2)
+    combined_df <- combined_df[!is.na(combined_df$value), ]
+
+    # Create faceted plot
+    p <- ggplot2::ggplot(combined_df, ggplot2::aes(x = x, y = y, fill = value)) +
+      ggplot2::geom_raster() +
+      ggplot2::facet_wrap(~dataset, ncol = 2) +
+      ggplot2::coord_fixed() +
+      ggplot2::theme_minimal() +
+      ggplot2::labs(x = "Longitude", y = "Latitude") +
+      ggplot2::theme(
+        strip.text = ggplot2::element_text(size = 12, face = "bold")
+      )
+
+    # Apply color scheme
+    p <- apply_color_scheme(p, color_scheme, "fill")
+
+    return(p)
+  }
+}
+
+#' Create difference map plot
+#' @keywords internal
+create_difference_map_plot <- function(diff_raster, difference_palette, titles) {
+
+  if (requireNamespace("tidyterra", quietly = TRUE)) {
+    # Efficient method using tidyterra
+    p <- ggplot2::ggplot() +
+      tidyterra::geom_spatraster(data = diff_raster) +
+      ggplot2::coord_sf() +
+      ggplot2::theme_minimal() +
+      ggplot2::labs(title = paste("Difference:", titles[2], "-", titles[1]),
+                    x = "Longitude", y = "Latitude") +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, size = 14, face = "bold")
+      )
+
+    # Apply diverging color scheme for differences
+    if (difference_palette == "RdBu") {
+      p <- p + ggplot2::scale_fill_gradient2(
+        low = "red", mid = "white", high = "blue",
+        midpoint = 0, name = "Difference", na.value = "transparent"
+      )
+    } else {
+      p <- p + ggplot2::scale_fill_viridis_c(option = difference_palette,
+                                             name = "Difference", na.value = "transparent")
+    }
+
+  } else {
+    # Fallback method
+    if (terra::ncell(diff_raster) > 500000) {
+      diff_raster <- terra::spatSample(diff_raster, size = 500000, method = "regular", as.raster = TRUE)
+    }
+
+    diff_df <- as.data.frame(diff_raster, xy = TRUE)
+    colnames(diff_df)[3] <- "difference"
+    diff_df <- diff_df[!is.na(diff_df$difference), ]
+
+    # Create plot
+    p <- ggplot2::ggplot(diff_df, ggplot2::aes(x = x, y = y, fill = difference)) +
+      ggplot2::geom_raster() +
+      ggplot2::coord_fixed() +
+      ggplot2::theme_minimal() +
+      ggplot2::labs(title = paste("Difference:", titles[2], "-", titles[1]),
+                    x = "Longitude", y = "Latitude") +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, size = 14, face = "bold")
+      )
+
+    # Apply diverging color scheme for differences
+    if (difference_palette == "RdBu") {
+      p <- p + ggplot2::scale_fill_gradient2(
+        low = "red", mid = "white", high = "blue",
+        midpoint = 0, name = "Difference"
+      )
+    } else {
+      p <- p + ggplot2::scale_fill_viridis_c(option = difference_palette, name = "Difference")
+    }
+  }
+
+  return(p)
+}
+
+#' Efficient raster histogram overlay
+#'
+#' @description
+#' Create histogram overlay for raster data without converting entire raster to data frame.
+#'
+#' @param raster_data SpatRaster object
+#' @param sample_size Number of pixels to sample for histogram
+#' @param bins Number of histogram bins
+#' @param title Histogram title
+#'
+#' @return ggplot2 histogram
+#'
+#' @examples
+#' \dontrun{
+#' hist_plot <- create_raster_histogram(ndvi_raster, sample_size = 10000)
+#' }
+#'
+#' @export
+create_raster_histogram <- function(raster_data, sample_size = 50000, bins = 30,
+                                    title = "Value Distribution") {
+
+  # Sample raster values efficiently
+  if (terra::ncell(raster_data) > sample_size) {
+    sampled_values <- terra::spatSample(raster_data, size = sample_size, method = "random",
+                                        na.rm = TRUE, as.df = TRUE)
+    values <- sampled_values[[1]]
+  } else {
+    values <- terra::values(raster_data, mat = FALSE)
+    values <- values[!is.na(values)]
+  }
+
+  if (length(values) == 0) {
+    warning("No valid values found for histogram")
+    return(ggplot2::ggplot())
+  }
+
+  # Create histogram
+  p <- ggplot2::ggplot(data.frame(values = values), ggplot2::aes(x = values)) +
+    ggplot2::geom_histogram(bins = bins, fill = "steelblue", alpha = 0.7, color = "white") +
+    ggplot2::labs(title = title, x = "Value", y = "Frequency") +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(size = 10, hjust = 0.5),
+      axis.text = ggplot2::element_text(size = 8),
+      axis.title = ggplot2::element_text(size = 9)
+    )
+
+  return(p)
+}
+
+#' Create efficient multi-band raster RGB plot
+#'
+#' @description
+#' Create RGB plots from multi-band rasters using the best available method.
+#' Supports tidyterra, RStoolbox, rasterVis, or terra native plotting.
+#'
+#' @param raster_data Multi-band SpatRaster
+#' @param r Red band index (default: 1)
+#' @param g Green band index (default: 2)
+#' @param b Blue band index (default: 3)
+#' @param stretch Stretch method: "lin", "hist", "minmax", "perc"
+#' @param title Plot title
+#' @param quantiles Quantiles for percentile stretch (if stretch = "perc")
+#'
+#' @return ggplot2 object or plot to device
+#'
+#' @examples
+#' \dontrun{
+#' # True color composite
+#' plot_rgb_raster(satellite_data, r = 3, g = 2, b = 1, title = "True Color")
+#'
+#' # False color composite with histogram stretch
+#' plot_rgb_raster(landsat_data, r = 4, g = 3, b = 2, stretch = "hist",
+#'                title = "False Color Composite")
+#'
+#' # With percentile stretch
+#' plot_rgb_raster(sentinel_data, r = 4, g = 3, b = 2, stretch = "perc",
+#'                quantiles = c(0.02, 0.98))
+#' }
+#'
+#' @export
+plot_rgb_raster <- function(raster_data, r = 1, g = 2, b = 3, stretch = "lin",
+                            title = "RGB Composite", quantiles = c(0.02, 0.98)) {
+
+  if (requireNamespace("tidyterra", quietly = TRUE)) {
+    # tidyterra - most elegant approach
+    p <- ggplot2::ggplot() +
+      tidyterra::geom_spatraster_rgb(data = raster_data, r = r, g = g, b = b) +
+      ggplot2::coord_sf() +
+      ggplot2::theme_minimal() +
+      ggplot2::labs(title = title, x = "Longitude", y = "Latitude") +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, size = 14, face = "bold"),
+        axis.text = ggplot2::element_text(size = 10)
+      )
+
+    return(p)
+
+  } else if (requireNamespace("RStoolbox", quietly = TRUE)) {
+    # RStoolbox - excellent for remote sensing
+    p <- RStoolbox::ggRGB(raster_data, r = r, g = g, b = b, stretch = stretch,
+                          quantiles = quantiles, ggLayer = TRUE) +
+      ggplot2::theme_minimal() +
+      ggplot2::labs(title = title, x = "Longitude", y = "Latitude") +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, size = 14, face = "bold")
+      )
+
+    return(p)
+
+  } else if (requireNamespace("rasterVis", quietly = TRUE) &&
+             requireNamespace("raster", quietly = TRUE)) {
+    # rasterVis approach
+    raster_stack <- raster::stack(raster_data)
+    p <- rasterVis::gplot(raster_stack[[c(r, g, b)]]) +
+      ggplot2::geom_raster(ggplot2::aes(fill = value)) +
+      ggplot2::facet_wrap(~variable) +
+      ggplot2::coord_equal() +
+      ggplot2::theme_minimal() +
+      ggplot2::labs(title = title)
+
+    return(p)
+
+  } else {
+    # Fallback to terra's native RGB plotting
+    message("For best RGB plotting, install: install.packages(c('tidyterra', 'RStoolbox'))")
+
+    terra::plotRGB(raster_data, r = r, g = g, b = b, stretch = stretch, main = title)
+    return(invisible(NULL))
+  }
+}
+
+#' Create raster plot with smart method selection
+#' @keywords internal
+create_raster_plot_simple <- function(raster_data, title, color_scheme) {
+
+  # This is only used as final fallback when no specialized packages available
+  # Keep it minimal and efficient
+
+  # Use terra's basic conversion for small rasters only
+  if (terra::ncell(raster_data) > 100000) {
+    message("Large raster detected. Consider installing 'tidyterra' for better performance.")
+    # Use terra's native plotting for large rasters
+    terra::plot(raster_data, main = title, col = get_terra_colors(color_scheme))
+    return(invisible(NULL))
+  }
+
+  # Convert small rasters to data frame
+  raster_df <- as.data.frame(raster_data, xy = TRUE)
+  colnames(raster_df)[3] <- "value"
+  raster_df <- raster_df[!is.na(raster_df$value), ]
+
+  # Create basic plot
+  p <- ggplot2::ggplot(raster_df, ggplot2::aes(x = x, y = y, fill = value)) +
+    ggplot2::geom_raster() +
+    ggplot2::coord_fixed() +
+    ggplot2::theme_minimal() +
+    ggplot2::labs(title = title, x = "Longitude", y = "Latitude")
+
+  # Apply color scheme
+  p <- apply_color_scheme(p, color_scheme, "fill")
+
+  return(p)
+}
+
+#' Performance tips for raster visualization
+#'
+#' @description
+#' Display information about available raster visualization packages and their strengths.
+#'
+#' @export
+raster_plot_performance_tips <- function() {
+  cat("RASTER VISUALIZATION PACKAGES & METHODS:\n")
+  cat("=========================================\n\n")
+
+  cat("RECOMMENDED PACKAGES (in order of preference):\n\n")
+
+  cat("1. tidyterra (BEST for ggplot2 integration)\n")
+  cat("   install.packages('tidyterra')\n")
+  cat("   geom_spatraster() - Direct raster plotting\n")
+  cat("   geom_spatraster_rgb() - RGB composites\n")
+  cat("   Works seamlessly with ggplot2\n")
+  cat("   Handles large rasters efficiently\n\n")
+
+  cat("2. RStoolbox (BEST for remote sensing)\n")
+  cat("   install.packages('RStoolbox')\n")
+  cat("   ggR() - General raster plotting\n")
+  cat("   ggRGB() - RGB with stretch options\n")
+  cat("   Built for satellite imagery\n")
+  cat("   Excellent stretching algorithms\n\n")
+
+  cat("3. rasterVis (Classic, very powerful)\n")
+  cat("   install.packages('rasterVis')\n")
+  cat("   gplot() - ggplot2 integration\n")
+  cat("   levelplot() - Advanced visualization\n")
+  cat("   Works with raster package objects\n\n")
+
+  cat("4. terra (Built-in, fastest for exploration)\n")
+  cat("   plot() - Native terra plotting\n")
+  cat("   plotRGB() - RGB composites\n")
+  cat("   Fastest for quick visualization\n\n")
+
+  cat(" PERFORMANCE HIERARCHY:\n")
+  cat("   Fastest:     terra::plot()\n")
+  cat("   Best ggplot: tidyterra::geom_spatraster()\n")
+  cat("   RGB:         RStoolbox::ggRGB() or tidyterra::geom_spatraster_rgb()\n")
+  cat("   Advanced:    rasterVis functions\n\n")
+
+  cat(" USAGE EXAMPLES:\n")
+  cat("   # Quick exploration\n")
+  cat("   terra::plot(my_raster)\n\n")
+  cat("   # ggplot2 integration\n")
+  cat("   plot_raster_fast(my_raster)  # Auto-selects best method\n\n")
+  cat("   # RGB composite\n")
+  cat("   plot_rgb_raster(satellite_data, r=4, g=3, b=2)\n\n")
+  cat("   # Interactive\n")
+  cat("   mapview::mapview(my_raster)  # For interactive exploration\n")
+}#' Create universal spatial map
+#'
+#' @description
+#' Universal mapping function that works with any spatial data type including
+#' points, polygons, and rasters. Supports both static and interactive maps
+#' with multiple basemap options and color schemes.
+#'
+#' @param spatial_data sf object, data.frame with coordinates, file path, or SpatRaster
+#' @param fill_variable Variable to use for fill/color (for vector data)
+#' @param coord_cols Coordinate column names if data.frame provided
+#' @param region_boundary Optional region boundary
+#' @param map_type Type of map: "points", "polygons", "raster", "auto"
+#' @param color_scheme Color scheme: "viridis", "plasma", "ndvi", "terrain", "categorical"
+#' @param basemap Add basemap: "none", "terrain", "satellite", "osm"
+#' @param interactive Create interactive map using leaflet
+#' @param title Map title
+#' @param point_size Size of points (for point data)
+#' @param alpha Transparency level (0-1)
+#' @param output_file Optional output file path
+#'
+#' @return ggplot2 object, leaflet map, or file path
+#'
+#' @examples
+#' \dontrun{
+#' # Simple point map
+#' create_spatial_map(study_sites, fill_variable = "ndvi_mean")
+#'
+#' # Interactive polygon map with satellite basemap
+#' create_spatial_map(counties, fill_variable = "population",
+#'                   interactive = TRUE, basemap = "satellite")
+#'
+#' # Raster map with region boundary
+#' create_spatial_map(ndvi_raster, region_boundary = "Ohio",
+#'                   color_scheme = "ndvi")
+#' }
+#'
+#' @export
+create_spatial_map <- function(spatial_data, fill_variable = NULL, coord_cols = c("lon", "lat"),
+                               region_boundary = NULL, map_type = "auto",
+                               color_scheme = "viridis", basemap = "none",
+                               interactive = FALSE, title = NULL, point_size = 3,
+                               alpha = 0.8, output_file = NULL) {
+
+  message("Creating spatial map with comprehensive options...")
+
+  # Load required packages
+  if (interactive && !requireNamespace("leaflet", quietly = TRUE)) {
+    warning("leaflet package required for interactive maps. Creating static map instead.")
+    interactive <- FALSE
+  }
+
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop("ggplot2 package required for mapping")
+  }
+
+  # Handle different input types
+  if (inherits(spatial_data, "SpatRaster")) {
+    return(create_raster_map_enhanced(spatial_data, region_boundary, color_scheme,
+                                      interactive, title, output_file))
+  }
+
+  # Process vector data
+  if (is.character(spatial_data)) {
+    if (tools::file_ext(spatial_data) %in% c("tif", "tiff")) {
+      # It's a raster file
+      raster_data <- terra::rast(spatial_data)
+      return(create_raster_map_enhanced(raster_data, region_boundary, color_scheme,
+                                        interactive, title, output_file))
+    } else {
+      # It's a vector file
+      spatial_sf <- sf::st_read(spatial_data, quiet = TRUE)
+    }
+  } else if (is.data.frame(spatial_data) && !inherits(spatial_data, "sf")) {
+    # Convert data.frame to sf
+    spatial_sf <- process_vector_data(spatial_data, coord_cols = coord_cols)
+  } else if (inherits(spatial_data, "sf")) {
+    spatial_sf <- spatial_data
+  } else {
+    stop("Unsupported spatial data format")
+  }
+
+  # Auto-detect map type
+  if (map_type == "auto") {
+    geom_types <- sf::st_geometry_type(spatial_sf)
+    if (all(grepl("POINT", geom_types))) {
+      map_type <- "points"
+    } else if (all(grepl("POLYGON", geom_types))) {
+      map_type <- "polygons"
+    } else if (all(grepl("LINESTRING", geom_types))) {
+      map_type <- "lines"
+    } else {
+      map_type <- "mixed"
+    }
+  }
+
+  # Create interactive map
+  if (interactive) {
+    result <- create_interactive_map_enhanced(spatial_sf, fill_variable, map_type,
+                                              basemap, title, point_size)
+    if (!is.null(output_file)) {
+      htmlwidgets::saveWidget(result, output_file)
+      message(sprintf("Interactive map saved to: %s", output_file))
+      return(output_file)
+    }
+    return(result)
+  }
+
+  # Create static map
+  p <- create_static_map_base(spatial_sf, fill_variable, map_type, region_boundary,
+                              color_scheme, title, point_size, alpha)
+
+  # Save if output file specified
+  if (!is.null(output_file)) {
+    ggplot2::ggsave(output_file, plot = p, width = 12, height = 8, dpi = 300)
+    message(sprintf("Map saved to: %s", output_file))
+    return(output_file)
+  }
+
+  return(p)
+}
+
+#' Quick map function - one-line mapping
+#'
+#' @description
+#' Ultra-simple function for quick spatial mapping. Auto-detects data type and creates appropriate map.
+#'
+#' @param spatial_data Any spatial data
+#' @param variable Variable to visualize (optional, auto-detected)
+#' @param ... Additional arguments passed to create_spatial_map
+#'
+#' @return Map object
+#'
+#' @examples
+#' \dontrun{
+#' quick_map("data.shp")
+#' quick_map(my_raster)
+#' quick_map(points_data, interactive = TRUE)
+#' }
+#'
+#' @export
+quick_map <- function(spatial_data, variable = NULL, ...) {
+  # Auto-detect variable if not provided
+  if (is.null(variable)) {
+    if (inherits(spatial_data, "sf")) {
+      numeric_vars <- names(spatial_data)[sapply(spatial_data, is.numeric)]
+      variable <- numeric_vars[1]
+    } else if (is.data.frame(spatial_data)) {
+      numeric_vars <- names(spatial_data)[sapply(spatial_data, is.numeric)]
+      # Skip coordinate columns
+      numeric_vars <- setdiff(numeric_vars, c("lon", "lat", "x", "y", "longitude", "latitude"))
+      variable <- numeric_vars[1]
+    }
+  }
+
+  create_spatial_map(spatial_data, fill_variable = variable, map_type = "auto",
+                     color_scheme = "viridis", ...)
+}
+
+#' Create NDVI time series map
+#'
+#' @description
+#' Specialized function for creating NDVI maps with time series support,
+#' proper NDVI color schemes, and vegetation analysis features.
+#'
+#' @param ndvi_data NDVI raster data (single or multi-layer) or file path
+#' @param region_boundary Region boundary
+#' @param time_layer Which time layer to display (for multi-layer rasters)
+#' @param animation Create animated time series (requires gganimate)
+#' @param vector_overlay Optional vector data to overlay (study sites, boundaries, etc.)
+#' @param ndvi_classes Create NDVI classification: "none", "standard", "custom"
+#' @param class_breaks Custom classification breaks (if ndvi_classes = "custom")
+#' @param title Map title
+#' @param show_histogram Add NDVI value histogram
+#' @param output_file Optional output file path
+#'
+#' @return ggplot2 object, animation, or file path
+#'
+#' @examples
+#' \dontrun{
+#' # Simple NDVI map
+#' create_ndvi_map("ndvi_2023.tif", region_boundary = "Iowa")
+#'
+#' # Time series with vector overlay
+#' create_ndvi_map(ndvi_stack, time_layer = 5,
+#'                vector_overlay = "field_boundaries.shp")
+#'
+#' # Animated time series
+#' create_ndvi_map(ndvi_time_series, animation = TRUE,
+#'                output_file = "ndvi_animation.gif")
+#'
+#' # With classification
+#' create_ndvi_map(ndvi_data, ndvi_classes = "standard",
+#'                show_histogram = TRUE)
+#' }
+#'
+#' @export
+create_ndvi_map <- function(ndvi_data, region_boundary = NULL, time_layer = 1,
+                            animation = FALSE, vector_overlay = NULL,
+                            ndvi_classes = "none", class_breaks = c(-0.2, 0.2, 0.4, 0.6, 0.8, 1.0),
+                            title = NULL, show_histogram = FALSE, output_file = NULL) {
+
+  message("Creating specialized NDVI map...")
+
+  # Load NDVI data
+  if (is.character(ndvi_data)) {
+    ndvi_raster <- terra::rast(ndvi_data)
+  } else {
+    ndvi_raster <- ndvi_data
+  }
+
+  # Apply region boundary
+  if (!is.null(region_boundary)) {
+    boundary <- get_region_boundary(region_boundary)
+    boundary_vect <- terra::vect(boundary)
+    ndvi_raster <- terra::crop(ndvi_raster, boundary_vect)
+    ndvi_raster <- terra::mask(ndvi_raster, boundary_vect)
+  } else {
+    boundary <- NULL
+  }
+
+  # Handle multi-layer rasters
+  if (terra::nlyr(ndvi_raster) > 1) {
+    if (animation && requireNamespace("gganimate", quietly = TRUE)) {
+      return(create_ndvi_animation(ndvi_raster, boundary, vector_overlay,
+                                   title, output_file))
+    } else if (!animation) {
+      ndvi_raster <- ndvi_raster[[time_layer]]
+      if (is.null(title)) {
+        title <- paste("NDVI - Layer", time_layer)
+      }
+    } else {
+      warning("gganimate package required for animations. Using first layer.")
+      ndvi_raster <- ndvi_raster[[1]]
+    }
+  }
+
+  # Set default title
+  if (is.null(title)) {
+    title <- "NDVI Analysis"
+  }
+
+  # Use efficient raster plotting
+  if (requireNamespace("tidyterra", quietly = TRUE)) {
+    # Use tidyterra for efficient raster plotting
+    p <- ggplot2::ggplot() +
+      tidyterra::geom_spatraster(data = ndvi_raster) +
+      ggplot2::coord_sf() +
+      ggplot2::theme_minimal() +
+      ggplot2::labs(title = title, x = "Longitude", y = "Latitude") +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, size = 14, face = "bold"),
+        axis.text = ggplot2::element_text(size = 10),
+        legend.title = ggplot2::element_text(size = 12),
+        legend.text = ggplot2::element_text(size = 10)
+      )
+
+    # Apply NDVI-specific color scheme
+    if (ndvi_classes != "none") {
+      # For classified NDVI, we need to reclassify the raster first
+      ndvi_classified <- classify_ndvi_raster(ndvi_raster, ndvi_classes, class_breaks)
+
+      p <- ggplot2::ggplot() +
+        tidyterra::geom_spatraster(data = ndvi_classified) +
+        ggplot2::coord_sf() +
+        ggplot2::theme_minimal() +
+        ggplot2::labs(title = title, x = "Longitude", y = "Latitude")
+
+      # Apply categorical colors
+      colors <- c("Non-Vegetation" = "brown", "Sparse" = "#FFFF99",
+                  "Moderate" = "#90EE90", "Dense" = "#228B22",
+                  "Very Dense" = "#006400")
+      p <- p + ggplot2::scale_fill_manual(values = colors, name = "NDVI Class", na.value = "transparent")
+
+    } else {
+      # Continuous NDVI colors
+      p <- p + ggplot2::scale_fill_gradient2(low = "brown", mid = "#FFFF99", high = "#006400",
+                                             midpoint = 0.4, name = "NDVI",
+                                             limits = c(-0.2, 1.0), na.value = "transparent")
+    }
+
+  } else {
+    # Fallback to data frame method with warning
+    warning("tidyterra package recommended for efficient raster plotting. Using fallback method.")
+
+    # Convert to data frame (fallback method)
+    ndvi_df <- as.data.frame(ndvi_raster, xy = TRUE)
+    colnames(ndvi_df)[3] <- "NDVI"
+    ndvi_df <- ndvi_df[!is.na(ndvi_df$NDVI), ]
+
+    # Apply NDVI classification if requested
+    if (ndvi_classes == "standard") {
+      ndvi_df$NDVI_Class <- cut(ndvi_df$NDVI,
+                                breaks = c(-1, 0, 0.2, 0.4, 0.6, 1),
+                                labels = c("Non-Vegetation", "Sparse", "Moderate",
+                                           "Dense", "Very Dense"),
+                                include.lowest = TRUE)
+    } else if (ndvi_classes == "custom") {
+      ndvi_df$NDVI_Class <- cut(ndvi_df$NDVI, breaks = class_breaks,
+                                include.lowest = TRUE)
+    }
+
+    # Create plot with traditional geom_raster
+    if (ndvi_classes != "none") {
+      colors <- c("Non-Vegetation" = "brown", "Sparse" = "#FFFF99",
+                  "Moderate" = "#90EE90", "Dense" = "#228B22",
+                  "Very Dense" = "#006400")
+
+      p <- ggplot2::ggplot(ndvi_df, ggplot2::aes(x = x, y = y, fill = NDVI_Class)) +
+        ggplot2::geom_raster() +
+        ggplot2::scale_fill_manual(values = colors, name = "NDVI Class",
+                                   na.value = "transparent") +
+        ggplot2::coord_fixed()
+    } else {
+      p <- ggplot2::ggplot(ndvi_df, ggplot2::aes(x = x, y = y, fill = NDVI)) +
+        ggplot2::geom_raster() +
+        ggplot2::scale_fill_gradient2(low = "brown", mid = "#FFFF99", high = "#006400",
+                                      midpoint = 0.4, name = "NDVI",
+                                      limits = c(-0.2, 1.0), na.value = "transparent") +
+        ggplot2::coord_fixed()
+    }
+
+    # Add theme
+    p <- p + ggplot2::theme_minimal() +
+      ggplot2::labs(title = title, x = "Longitude", y = "Latitude") +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, size = 14, face = "bold"),
+        axis.text = ggplot2::element_text(size = 10),
+        legend.title = ggplot2::element_text(size = 12),
+        legend.text = ggplot2::element_text(size = 10)
+      )
+  }
+
+  # Add region boundary
+  if (!is.null(boundary)) {
+    p <- p + ggplot2::geom_sf(data = boundary, fill = NA, color = "black",
+                              size = 1, inherit.aes = FALSE)
+  }
+
+  # Add vector overlay
+  if (!is.null(vector_overlay)) {
+    vector_sf <- process_vector_data(vector_overlay)
+    p <- p + ggplot2::geom_sf(data = vector_sf, color = "white", size = 0.8,
+                              fill = NA, inherit.aes = FALSE)
+  }
+
+  # Add histogram if requested
+  if (show_histogram) {
+    p_hist <- create_ndvi_histogram(ndvi_df$NDVI)
+
+    if (requireNamespace("patchwork", quietly = TRUE)) {
+      p <- p + patchwork::inset_element(p_hist, left = 0.7, bottom = 0.7,
+                                        right = 1, top = 1)
+    } else {
+      message("patchwork package required for histogram overlay. Saving histogram separately.")
+      if (!is.null(output_file)) {
+        hist_file <- gsub("\\.(png|jpg|pdf)$", "_histogram.\\1", output_file)
+        ggplot2::ggsave(hist_file, plot = p_hist, width = 6, height = 4)
+      }
+    }
+  }
+
+  # Save if output file specified
+  if (!is.null(output_file)) {
+    ggplot2::ggsave(output_file, plot = p, width = 12, height = 8, dpi = 300)
+    message(sprintf("NDVI map saved to: %s", output_file))
+    return(output_file)
+  }
+
+  return(p)
+}
+
+#' Create crop distribution map from CDL data
+#'
+#' @description
+#' Create comprehensive crop distribution maps from USDA CDL data with
+#' support for multiple crops, classification styles, and statistical overlays.
+#'
+#' @param cdl_data CDL raster data or file path
+#' @param crop_selection Crops to highlight (names, codes, or "all")
+#' @param region_boundary Region boundary
+#' @param style Mapping style: "categorical", "dominant", "diversity", "area"
+#' @param aggregation_level Spatial aggregation: "pixel", "county", "watershed"
+#' @param show_statistics Add crop statistics overlay
+#' @param color_palette Color palette for crops
+#' @param title Map title
+#' @param legend_position Legend position: "right", "bottom", "none"
+#' @param output_file Optional output file path
+#'
+#' @return ggplot2 object or file path
+#'
+#' @examples
+#' \dontrun{
+#' # Simple crop map
+#' create_crop_map("cdl_2023.tif", crop_selection = "corn",
+#'                region_boundary = "Iowa")
+#'
+#' # Multi-crop categorical map
+#' create_crop_map(cdl_data, crop_selection = c("corn", "soybeans", "wheat"),
+#'                style = "categorical", show_statistics = TRUE)
+#'
+#' # Crop diversity map
+#' create_crop_map(cdl_data, style = "diversity",
+#'                aggregation_level = "county")
+#'
+#' # Dominant crop by area
+#' create_crop_map(cdl_data, crop_selection = "grains",
+#'                style = "dominant", region_boundary = "Midwest")
+#' }
+#'
+#' @export
+create_crop_map <- function(cdl_data, crop_selection = "major_crops",
+                            region_boundary = NULL, style = "categorical",
+                            aggregation_level = "pixel", show_statistics = FALSE,
+                            color_palette = "Set3", title = NULL,
+                            legend_position = "right", output_file = NULL) {
+
+  message("Creating crop distribution map...")
+
+  # Load CDL data
+  if (is.character(cdl_data)) {
+    cdl_raster <- terra::rast(cdl_data)
+  } else {
+    cdl_raster <- cdl_data
+  }
+
+  # Get crop codes
+  if (crop_selection == "major_crops") {
+    crop_codes <- get_comprehensive_cdl_codes("food_crops")
+    crop_names <- c("Corn", "Soybeans", "Wheat", "Cotton", "Rice")
+  } else if (crop_selection == "all") {
+    crop_codes <- get_comprehensive_cdl_codes("all_crops")
+    crop_names <- names(get_comprehensive_cdl_codes("all_crops"))
+  } else if (is.character(crop_selection)) {
+    if (length(crop_selection) == 1) {
+      crop_codes <- get_comprehensive_cdl_codes(crop_selection)
+      crop_names <- crop_selection
+    } else {
+      crop_codes <- unlist(lapply(crop_selection, get_comprehensive_cdl_codes))
+      crop_names <- crop_selection
+    }
+  } else {
+    crop_codes <- crop_selection
+    crop_names <- paste("Crop", crop_codes)
+  }
+
+  # Apply region boundary
+  boundary <- NULL
+  if (!is.null(region_boundary)) {
+    boundary <- get_region_boundary(region_boundary)
+    boundary_vect <- terra::vect(boundary)
+    cdl_raster <- terra::crop(cdl_raster, boundary_vect)
+    cdl_raster <- terra::mask(cdl_raster, boundary_vect)
+  }
+
+  # Set default title
+  if (is.null(title)) {
+    title <- paste("Crop Distribution -", paste(crop_names[1:min(3, length(crop_names))],
+                                                collapse = ", "))
+    if (length(crop_names) > 3) title <- paste(title, "...")
+  }
+
+  # Create map based on style
+  if (style == "categorical") {
+    p <- create_categorical_crop_map(cdl_raster, crop_codes, crop_names,
+                                     color_palette, boundary)
+  } else if (style == "dominant") {
+    p <- create_dominant_crop_map(cdl_raster, crop_codes, crop_names, boundary)
+  } else if (style == "diversity") {
+    p <- create_crop_diversity_map(cdl_raster, crop_codes, boundary)
+  } else if (style == "area") {
+    p <- create_crop_area_map(cdl_raster, crop_codes, crop_names, boundary)
+  } else {
+    stop("Unsupported style. Use: categorical, dominant, diversity, or area")
+  }
+
+  # Add title and styling
+  p <- p + ggplot2::labs(title = title, x = "Longitude", y = "Latitude") +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(hjust = 0.5, size = 14, face = "bold"),
+      legend.position = legend_position
+    )
+
+  # Add statistics if requested
+  if (show_statistics) {
+    p <- add_crop_statistics_overlay(p, cdl_raster, crop_codes, crop_names)
+  }
+
+  # Save if output file specified
+  if (!is.null(output_file)) {
+    ggplot2::ggsave(output_file, plot = p, width = 12, height = 8, dpi = 300)
+    message(sprintf("Crop map saved to: %s", output_file))
+    return(output_file)
+  }
+
+  return(p)
+}
+
+#' Create fast raster plot using best available method
+#'
+#' @description
+#' Create efficient raster plots using the best available raster visualization package.
+#' Automatically selects from tidyterra, RStoolbox, rasterVis, or terra native plotting.
+#'
+#' @param raster_data SpatRaster to plot
+#' @param title Plot title
+#' @param color_scheme Color scheme to apply
+#' @param use_ggplot Return ggplot object or use base plot
+#' @param region_boundary Optional boundary to overlay
+#' @param breaks Custom breaks for classification
+#' @param labels Custom labels for breaks
+#'
+#' @return ggplot object or plot to device
+#'
+#' @examples
+#' \dontrun{
+#' # Automatic method selection
+#' plot_raster_fast(ndvi_raster, "NDVI Analysis", "ndvi")
+#'
+#' # Force ggplot output
+#' p <- plot_raster_fast(raster_data, "My Raster", "viridis", use_ggplot = TRUE)
+#'
+#' # With custom breaks
+#' plot_raster_fast(elevation, "Elevation", "terrain",
+#'                 breaks = c(0, 500, 1000, 1500, 2000))
+#' }
+#'
+#' @export
+plot_raster_fast <- function(raster_data, title = "Raster Plot", color_scheme = "viridis",
+                             use_ggplot = TRUE, region_boundary = NULL,
+                             breaks = NULL, labels = NULL) {
+
+  if (use_ggplot) {
+    # Try different packages in order of preference
+
+    if (requireNamespace("tidyterra", quietly = TRUE)) {
+      # tidyterra - best ggplot2 integration
+      p <- ggplot2::ggplot() +
+        tidyterra::geom_spatraster(data = raster_data) +
+        ggplot2::coord_sf() +
+        ggplot2::theme_minimal() +
+        ggplot2::labs(title = title, x = "Longitude", y = "Latitude")
+
+      # Apply color scheme
+      p <- apply_color_scheme_tidyterra(p, color_scheme, names(raster_data)[1])
+
+    } else if (requireNamespace("RStoolbox", quietly = TRUE)) {
+      # RStoolbox - excellent for remote sensing data
+      p <- RStoolbox::ggR(raster_data, ggLayer = TRUE, coord_equal = TRUE) +
+        ggplot2::theme_minimal() +
+        ggplot2::labs(title = title, x = "Longitude", y = "Latitude")
+
+      # Apply color scheme
+      p <- apply_color_scheme(p, color_scheme, "fill")
+
+    } else if (requireNamespace("rasterVis", quietly = TRUE) &&
+               requireNamespace("raster", quietly = TRUE)) {
+      # rasterVis - powerful visualization tools
+      raster_obj <- raster::raster(raster_data)
+      p <- rasterVis::gplot(raster_obj) +
+        ggplot2::geom_raster(ggplot2::aes(fill = value)) +
+        ggplot2::coord_equal() +
+        ggplot2::theme_minimal() +
+        ggplot2::labs(title = title, x = "Longitude", y = "Latitude")
+
+      # Apply color scheme
+      p <- apply_color_scheme(p, color_scheme, "fill")
+
+    } else {
+      # Fallback to simple method
+      message("Installing tidyterra recommended for best raster plotting: install.packages('tidyterra')")
+      p <- create_raster_plot_simple(raster_data, title, color_scheme)
+    }
+
+    # Add boundary if specified
+    if (!is.null(region_boundary)) {
+      boundary <- get_region_boundary(region_boundary)
+      p <- p + ggplot2::geom_sf(data = boundary, fill = NA, color = "black",
+                                size = 1, inherit.aes = FALSE)
+    }
+
+    return(p)
+
+  } else {
+    # Use native terra plotting (fastest)
+    colors <- get_terra_colors(color_scheme)
+
+    if (!is.null(breaks)) {
+      terra::plot(raster_data, main = title, col = colors, breaks = breaks)
+    } else {
+      terra::plot(raster_data, main = title, col = colors)
+    }
+
+    # Add boundary if specified
+    if (!is.null(region_boundary)) {
+      boundary <- get_region_boundary(region_boundary)
+      terra::plot(terra::vect(boundary), add = TRUE, border = "black", lwd = 2)
+    }
+
+    return(invisible(NULL))
+  }
+}
+
+# Additional helper functions for efficient raster plotting
+
+#' Apply color scheme for tidyterra
+#' @keywords internal
+apply_color_scheme_tidyterra <- function(plot, color_scheme, var_name = "Value") {
+  switch(color_scheme,
+         "ndvi" = plot + ggplot2::scale_fill_gradient2(
+           low = "brown", mid = "#FFFF99", high = "#006400",
+           midpoint = 0.4, name = var_name, na.value = "transparent"
+         ),
+         "water" = plot + ggplot2::scale_fill_gradient2(
+           low = "brown", mid = "lightblue", high = "darkblue",
+           midpoint = 0, name = var_name, na.value = "transparent"
+         ),
+         "terrain" = plot + ggplot2::scale_fill_gradientn(
+           colors = terrain.colors(100), name = var_name, na.value = "transparent"
+         ),
+         "plasma" = plot + ggplot2::scale_fill_viridis_c(
+           option = "plasma", name = var_name, na.value = "transparent"
+         ),
+         "categorical" = plot + ggplot2::scale_fill_brewer(type = "qual", palette = "Set3", name = var_name),
+         plot + ggplot2::scale_fill_viridis_c(name = var_name, na.value = "transparent")
+  )
+}
+
+#' Get terra colors for native plotting
+#' @keywords internal
+get_terra_colors <- function(color_scheme, n = 100) {
+  switch(color_scheme,
+         "ndvi" = {
+           # NDVI-specific colors
+           colorRampPalette(c("brown", "#FFFF99", "#90EE90", "#006400"))(n)
+         },
+         "water" = {
+           colorRampPalette(c("brown", "lightblue", "darkblue"))(n)
+         },
+         "terrain" = terrain.colors(n),
+         "plasma" = viridis::plasma(n),
+         "viridis" = viridis::viridis(n),
+         "categorical" = RColorBrewer::brewer.pal(min(n, 11), "Set3"),
+         viridis::viridis(n)
+  )
+}
+
+#' Classify NDVI raster for categorical plotting
+#' @keywords internal
+classify_ndvi_raster <- function(ndvi_raster, ndvi_classes, class_breaks) {
+
+  if (ndvi_classes == "standard") {
+    breaks <- c(-1, 0, 0.2, 0.4, 0.6, 1)
+    labels <- c("Non-Vegetation", "Sparse", "Moderate", "Dense", "Very Dense")
+  } else if (ndvi_classes == "custom") {
+    breaks <- class_breaks
+    labels <- paste0("Class_", 1:(length(breaks)-1))
+  } else {
+    return(ndvi_raster)
+  }
+
+  # Create classification matrix
+  rcl_matrix <- cbind(
+    c(-Inf, breaks[-length(breaks)]),
+    c(breaks[-1], Inf),
+    1:length(labels)
+  )
+
+  # Classify the raster
+  classified <- terra::classify(ndvi_raster, rcl_matrix)
+
+  # Set up factor levels
+  levels(classified) <- data.frame(
+    ID = 1:length(labels),
+    Class = labels
+  )
+
+  return(classified)
+}
+
+#' Create raster plot fallback method
+#' @keywords internal
+create_raster_plot_fallback <- function(raster_data, title, color_scheme) {
+
+  # Sample raster if too large
+  if (terra::ncell(raster_data) > 1000000) {
+    message("Large raster detected. Sampling for faster plotting...")
+    raster_data <- terra::spatSample(raster_data, size = 500000, method = "regular", as.raster = TRUE)
+  }
+
+  # Convert to data frame (only when necessary)
+  raster_df <- as.data.frame(raster_data, xy = TRUE)
+  colnames(raster_df)[3] <- "value"
+  raster_df <- raster_df[!is.na(raster_df$value), ]
+
+  # Create plot
+  p <- ggplot2::ggplot(raster_df, ggplot2::aes(x = x, y = y, fill = value)) +
+    ggplot2::geom_raster() +
+    ggplot2::coord_fixed() +
+    ggplot2::theme_minimal() +
+    ggplot2::labs(title = title, x = "Longitude", y = "Latitude")
+
+  # Apply color scheme
+  p <- apply_color_scheme(p, color_scheme, "fill")
+
+  return(p)
+}
+
+#' Create interactive map using leaflet
+#'
+#' @description
+#' Create interactive maps with leaflet integration, supporting multiple
+#' basemaps, popups, and layer controls.
+#'
+#' @param spatial_data Spatial data to map (sf object)
+#' @param fill_variable Variable for coloring/filling
+#' @param popup_vars Variables to show in popups
+#' @param basemap Basemap type: "terrain", "satellite", "osm", "dark", "light"
+#' @param color_scheme Color scheme for continuous variables
+#' @param cluster_points Cluster point markers (for point data)
+#' @param layer_control Add layer control widget
+#' @param title Map title
+#'
+#' @return leaflet map object
+#'
+#' @examples
+#' \dontrun{
+#' # Simple interactive point map
+#' create_interactive_map(study_sites, fill_variable = "ndvi_mean")
+#'
+#' # Polygon map with custom popups
+#' create_interactive_map(counties, fill_variable = "population",
+#'                       popup_vars = c("name", "population", "area"),
+#'                       basemap = "satellite")
+#'
+#' # Clustered points with layer control
+#' create_interactive_map(monitoring_stations,
+#'                       cluster_points = TRUE, layer_control = TRUE)
+#' }
+#'
+#' @export
+create_interactive_map <- function(spatial_data, fill_variable = NULL,
+                                   popup_vars = NULL, basemap = "terrain",
+                                   color_scheme = "viridis", cluster_points = FALSE,
+                                   layer_control = FALSE, title = "Interactive Map") {
+
+  if (!requireNamespace("leaflet", quietly = TRUE)) {
+    stop("leaflet package required for interactive maps")
+  }
+
+  message("Creating interactive map...")
+
+  # Ensure data is in WGS84 for leaflet
+  if (sf::st_crs(spatial_data) != 4326) {
+    spatial_data <- sf::st_transform(spatial_data, crs = 4326)
+  }
+
+  # Get map bounds
+  bbox <- sf::st_bbox(spatial_data)
+
+  # Create base leaflet map
+  m <- leaflet::leaflet(spatial_data) %>%
+    leaflet::setView(lng = mean(c(bbox$xmin, bbox$xmax)),
+                     lat = mean(c(bbox$ymin, bbox$ymax)), zoom = 7)
+
+  # Add basemap
+  m <- add_basemap_to_leaflet(m, basemap)
+
+  # Detect geometry type
+  geom_types <- sf::st_geometry_type(spatial_data)
+
+  # Add spatial data layers
+  if (all(grepl("POINT", geom_types))) {
+    m <- add_points_to_leaflet(m, spatial_data, fill_variable, popup_vars,
+                               color_scheme, cluster_points)
+  } else if (all(grepl("POLYGON", geom_types))) {
+    m <- add_polygons_to_leaflet(m, spatial_data, fill_variable, popup_vars,
+                                 color_scheme)
+  } else if (all(grepl("LINESTRING", geom_types))) {
+    m <- add_lines_to_leaflet(m, spatial_data, fill_variable, popup_vars,
+                              color_scheme)
+  }
+
+  # Add layer control if requested
+  if (layer_control) {
+    m <- m %>% leaflet::addLayersControl(
+      baseGroups = c("Terrain", "Satellite", "OpenStreetMap"),
+      options = leaflet::layersControlOptions(collapsed = FALSE)
+    )
+  }
+
+  # Add title
+  if (!is.null(title)) {
+    m <- m %>% leaflet::addControl(title, position = "topright")
+  }
+
+  return(m)
+}
+
+#' Create multi-layer composite map
+#'
+#' @description
+#' Create composite maps with multiple data layers including raster base layers,
+#' vector overlays, and annotation layers.
+#'
+#' @param base_layer Base raster or vector layer
+#' @param overlay_layers List of overlay layers with styling options
+#' @param region_boundary Region boundary
+#' @param layer_styles List of styling options for each overlay
+#' @param transparency Transparency levels for overlays
+#' @param title Map title
+#' @param legend_position Legend position
+#' @param output_file Optional output file path
+#'
+#' @return ggplot2 object or file path
+#'
+#' @examples
+#' \dontrun{
+#' # NDVI base with study sites overlay
+#' create_composite_map(
+#'   base_layer = ndvi_raster,
+#'   overlay_layers = list(
+#'     sites = study_sites,
+#'     boundaries = field_boundaries
+#'   ),
+#'   layer_styles = list(
+#'     sites = list(color = "red", size = 3),
+#'     boundaries = list(color = "white", fill = NA)
+#'   )
+#' )
+#' }
+#'
+#' @export
+create_composite_map <- function(base_layer, overlay_layers = NULL,
+                                 region_boundary = NULL, layer_styles = NULL,
+                                 transparency = c(0.7, 0.8), title = "Composite Map",
+                                 legend_position = "right", output_file = NULL) {
+
+  message("Creating composite map...")
+
+  # Create base layer
+  if (inherits(base_layer, "SpatRaster")) {
+    p <- create_raster_map_enhanced(base_layer, region_boundary, "viridis", FALSE, title)
+  } else {
+    base_sf <- process_vector_data(base_layer)
+    p <- ggplot2::ggplot() +
+      ggplot2::geom_sf(data = base_sf, alpha = 0.8) +
+      ggplot2::theme_minimal()
+  }
+
+  # Add overlay layers
+  if (!is.null(overlay_layers)) {
+    for (i in seq_along(overlay_layers)) {
+      layer_name <- names(overlay_layers)[i] %||% paste("Layer", i)
+      layer <- overlay_layers[[i]]
+      alpha_val <- if (i <= length(transparency)) transparency[i] else 0.7
+
+      if (inherits(layer, "SpatRaster")) {
+        # Add raster overlay with transparency
+        layer_df <- as.data.frame(layer, xy = TRUE)
+        colnames(layer_df)[3] <- "value"
+        p <- p + ggplot2::geom_raster(data = layer_df,
+                                      ggplot2::aes(x = x, y = y, fill = value),
+                                      alpha = alpha_val, inherit.aes = FALSE)
+      } else {
+        # Add vector overlay
+        layer_sf <- process_vector_data(layer)
+
+        # Apply custom styling if provided
+        if (!is.null(layer_styles) && layer_name %in% names(layer_styles)) {
+          style <- layer_styles[[layer_name]]
+          p <- p + ggplot2::geom_sf(data = layer_sf,
+                                    color = style$color %||% "black",
+                                    fill = style$fill %||% NA,
+                                    size = style$size %||% 1,
+                                    alpha = alpha_val)
+        } else {
+          p <- p + ggplot2::geom_sf(data = layer_sf, alpha = alpha_val)
+        }
+      }
+    }
+  }
+
+  # Add region boundary
+  if (!is.null(region_boundary)) {
+    boundary <- get_region_boundary(region_boundary)
+    p <- p + ggplot2::geom_sf(data = boundary, fill = NA, color = "black",
+                              size = 1.2, inherit.aes = FALSE)
+  }
+
+  # Final styling
+  p <- p + ggplot2::labs(title = title) +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(hjust = 0.5, size = 14, face = "bold"),
+      legend.position = legend_position
+    )
+
+  # Save if output file specified
+  if (!is.null(output_file)) {
+    ggplot2::ggsave(output_file, plot = p, width = 12, height = 8, dpi = 300)
+    message(sprintf("Composite map saved to: %s", output_file))
+    return(output_file)
+  }
+
+  return(p)
+}
+
+#' Create comparison map (before/after, side-by-side)
+#'
+#' @description
+#' Create comparison maps showing before/after analysis, side-by-side comparisons,
+#' or difference maps.
+#'
+#' @param data1 First dataset (before, reference)
+#' @param data2 Second dataset (after, comparison)
+#' @param comparison_type Type: "side_by_side", "difference", "overlay"
+#' @param titles Titles for each dataset
+#' @param region_boundary Optional region boundary
+#' @param color_scheme Color scheme for datasets
+#' @param difference_palette Palette for difference maps
+#' @param output_file Optional output file path
+#'
+#' @return ggplot2 object or file path
+#'
+#' @examples
+#' \dontrun{
+#' # Before/after NDVI comparison
+#' create_comparison_map("ndvi_2020.tif", "ndvi_2023.tif",
+#'                      comparison_type = "side_by_side",
+#'                      titles = c("2020", "2023"))
+#'
+#' # Difference analysis
+#' create_comparison_map(pre_raster, post_raster,
+#'                      comparison_type = "difference")
+#' }
+#'
+#' @export
+create_comparison_map <- function(data1, data2, comparison_type = "side_by_side",
+                                  titles = c("Dataset 1", "Dataset 2"),
+                                  region_boundary = NULL, color_scheme = "viridis",
+                                  difference_palette = "RdBu", output_file = NULL) {
+
+  message("Creating comparison map...")
+
+  # Load data
+  if (is.character(data1)) data1 <- terra::rast(data1)
+  if (is.character(data2)) data2 <- terra::rast(data2)
+
+  # Apply region boundary if provided
+  if (!is.null(region_boundary)) {
+    boundary <- get_region_boundary(region_boundary)
+    boundary_vect <- terra::vect(boundary)
+    data1 <- terra::crop(data1, boundary_vect)
+    data1 <- terra::mask(data1, boundary_vect)
+    data2 <- terra::crop(data2, boundary_vect)
+    data2 <- terra::mask(data2, boundary_vect)
+  }
+
+  # Create comparison based on type
+  if (comparison_type == "side_by_side") {
+    p <- create_side_by_side_comparison(data1, data2, titles, color_scheme)
+  } else if (comparison_type == "difference") {
+    diff_raster <- data2 - data1
+    p <- create_difference_map_plot(diff_raster, difference_palette, titles)
+  } else if (comparison_type == "overlay") {
+    p <- create_overlay_comparison(data1, data2, titles, color_scheme)
+  } else {
+    stop("Unsupported comparison type. Use: side_by_side, difference, or overlay")
+  }
+
+  # Save if output file specified
+  if (!is.null(output_file)) {
+    ggplot2::ggsave(output_file, plot = p, width = 16, height = 8, dpi = 300)
+    message(sprintf("Comparison map saved to: %s", output_file))
+    return(output_file)
+  }
+
+  return(p)
+}
+
+# ==================== HELPER FUNCTIONS (INTERNAL) ==================== #
+
+#' Create enhanced raster map
+#' @keywords internal
+create_raster_map_enhanced <- function(raster_data, region_boundary, color_scheme,
+                                       interactive, title, output_file) {
+
+  if (is.null(title)) title <- "Raster Map"
+
+  # Apply region boundary
+  if (!is.null(region_boundary)) {
+    boundary <- get_region_boundary(region_boundary)
+    boundary_vect <- terra::vect(boundary)
+    raster_data <- terra::crop(raster_data, boundary_vect)
+    raster_data <- terra::mask(raster_data, boundary_vect)
+  }
+
+  # Use the best available raster visualization method
+  if (requireNamespace("tidyterra", quietly = TRUE)) {
+    # tidyterra - most elegant ggplot2 integration
+    p <- ggplot2::ggplot() +
+      tidyterra::geom_spatraster(data = raster_data) +
+      ggplot2::coord_sf() +
+      ggplot2::theme_minimal() +
+      ggplot2::labs(title = title, x = "Longitude", y = "Latitude") +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, size = 14, face = "bold"),
+        axis.text = ggplot2::element_text(size = 10),
+        legend.title = ggplot2::element_text(size = 12)
+      )
+
+    # Apply color scheme with tidyterra
+    p <- apply_color_scheme_tidyterra(p, color_scheme, names(raster_data)[1])
+
+  } else if (requireNamespace("RStoolbox", quietly = TRUE)) {
+    # RStoolbox has excellent raster plotting capabilities
+    p <- RStoolbox::ggR(raster_data, ggLayer = TRUE, coord_equal = TRUE) +
+      ggplot2::theme_minimal() +
+      ggplot2::labs(title = title, x = "Longitude", y = "Latitude") +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, size = 14, face = "bold")
+      )
+
+    # Apply color scheme
+    p <- apply_color_scheme(p, color_scheme, "fill")
+
+  } else if (requireNamespace("rasterVis", quietly = TRUE)) {
+    # rasterVis - powerful raster visualization
+    # Convert terra to raster for rasterVis compatibility
+    if (requireNamespace("raster", quietly = TRUE)) {
+      raster_obj <- raster::raster(raster_data)
+      p <- rasterVis::gplot(raster_obj) +
+        ggplot2::geom_raster(ggplot2::aes(fill = value)) +
+        ggplot2::coord_equal() +
+        ggplot2::theme_minimal() +
+        ggplot2::labs(title = title, x = "Longitude", y = "Latitude")
+
+      # Apply color scheme
+      p <- apply_color_scheme(p, color_scheme, "fill")
+    } else {
+      # Fallback if raster package not available
+      p <- create_raster_plot_simple(raster_data, title, color_scheme)
+    }
+
+  } else {
+    # Simple fallback using terra's native capabilities
+    if (interactive || !is.null(output_file)) {
+      p <- create_raster_plot_simple(raster_data, title, color_scheme)
+    } else {
+      # Use terra's native plot for fastest display
+      terra::plot(raster_data, main = title, col = get_terra_colors(color_scheme))
+      return(invisible(NULL))
+    }
+  }
+
+  return(p)
+}
+
+#' Create static map base
+#' @keywords internal
+create_static_map_base <- function(spatial_sf, fill_variable, map_type, region_boundary,
+                                   color_scheme, title, point_size, alpha) {
+
+  if (is.null(title)) title <- "Spatial Map"
+
+  # Create base plot
+  p <- ggplot2::ggplot()
+
+  # Add region boundary first (as background)
+  if (!is.null(region_boundary)) {
+    boundary <- get_region_boundary(region_boundary)
+    p <- p + ggplot2::geom_sf(data = boundary, fill = "gray95", color = "black",
+                              size = 0.5, alpha = 0.8)
+  }
+
+  # Add spatial data layer
+  if (map_type == "points") {
+    if (!is.null(fill_variable) && fill_variable %in% names(spatial_sf)) {
+      p <- p + ggplot2::geom_sf(data = spatial_sf,
+                                ggplot2::aes(color = .data[[fill_variable]]),
+                                size = point_size, alpha = alpha)
+      p <- apply_color_scheme(p, color_scheme, "color")
+    } else {
+      p <- p + ggplot2::geom_sf(data = spatial_sf, size = point_size, alpha = alpha)
+    }
+  } else if (map_type == "polygons") {
+    if (!is.null(fill_variable) && fill_variable %in% names(spatial_sf)) {
+      p <- p + ggplot2::geom_sf(data = spatial_sf,
+                                ggplot2::aes(fill = .data[[fill_variable]]),
+                                color = "white", size = 0.2, alpha = alpha)
+      p <- apply_color_scheme(p, color_scheme, "fill")
+    } else {
+      p <- p + ggplot2::geom_sf(data = spatial_sf, alpha = alpha)
+    }
+  } else if (map_type == "lines") {
+    if (!is.null(fill_variable) && fill_variable %in% names(spatial_sf)) {
+      p <- p + ggplot2::geom_sf(data = spatial_sf,
+                                ggplot2::aes(color = .data[[fill_variable]]),
+                                size = 1, alpha = alpha)
+      p <- apply_color_scheme(p, color_scheme, "color")
+    } else {
+      p <- p + ggplot2::geom_sf(data = spatial_sf, size = 1, alpha = alpha)
+    }
+  }
+
+  # Add styling
+  p <- p + ggplot2::coord_sf() +
+    ggplot2::theme_minimal() +
+    ggplot2::labs(title = title, x = "Longitude", y = "Latitude") +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(hjust = 0.5, size = 14, face = "bold"),
+      axis.text = ggplot2::element_text(size = 10)
+    )
+
+  return(p)
+}
+
+#' Apply color scheme to plot
+#' @keywords internal
+apply_color_scheme <- function(plot, color_scheme, aesthetic = "fill") {
+
+  if (aesthetic == "fill") {
+    switch(color_scheme,
+           "ndvi" = plot + ggplot2::scale_fill_gradient2(
+             low = "brown", mid = "#FFFF99", high = "#006400",
+             midpoint = 0.4, name = "NDVI", na.value = "transparent"
+           ),
+           "water" = plot + ggplot2::scale_fill_gradient2(
+             low = "brown", mid = "lightblue", high = "darkblue",
+             midpoint = 0, name = "Water Index", na.value = "transparent"
+           ),
+           "terrain" = plot + ggplot2::scale_fill_gradientn(
+             colors = terrain.colors(100), name = "Elevation", na.value = "transparent"
+           ),
+           "plasma" = plot + ggplot2::scale_fill_viridis_c(
+             option = "plasma", name = "Value", na.value = "transparent"
+           ),
+           "categorical" = plot + ggplot2::scale_fill_brewer(type = "qual", palette = "Set3"),
+           plot + ggplot2::scale_fill_viridis_c(name = "Value", na.value = "transparent")
+    )
+  } else if (aesthetic == "color") {
+    switch(color_scheme,
+           "ndvi" = plot + ggplot2::scale_color_gradient2(
+             low = "brown", mid = "#FFFF99", high = "#006400",
+             midpoint = 0.4, name = "NDVI", na.value = "transparent"
+           ),
+           "water" = plot + ggplot2::scale_color_gradient2(
+             low = "brown", mid = "lightblue", high = "darkblue",
+             midpoint = 0, name = "Water Index", na.value = "transparent"
+           ),
+           "terrain" = plot + ggplot2::scale_color_gradientn(
+             colors = terrain.colors(100), name = "Elevation", na.value = "transparent"
+           ),
+           "plasma" = plot + ggplot2::scale_color_viridis_c(
+             option = "plasma", name = "Value", na.value = "transparent"
+           ),
+           "categorical" = plot + ggplot2::scale_color_brewer(type = "qual", palette = "Set3"),
+           plot + ggplot2::scale_color_viridis_c(name = "Value", na.value = "transparent")
+    )
+  }
+}
+
+#' Create interactive map enhanced
+#' @keywords internal
+create_interactive_map_enhanced <- function(spatial_sf, fill_variable, map_type,
+                                            basemap, title, point_size) {
+
+  if (!requireNamespace("leaflet", quietly = TRUE)) {
+    stop("leaflet package required for interactive maps")
+  }
+
+  # Ensure WGS84 for leaflet
+  if (sf::st_crs(spatial_sf) != 4326) {
+    spatial_sf <- sf::st_transform(spatial_sf, crs = 4326)
+  }
+
+  # Get bounds
+  bbox <- sf::st_bbox(spatial_sf)
+
+  # Create base map
+  m <- leaflet::leaflet(spatial_sf) %>%
+    leaflet::setView(lng = mean(c(bbox$xmin, bbox$xmax)),
+                     lat = mean(c(bbox$ymin, bbox$ymax)), zoom = 8)
+
+  # Add basemap
+  m <- add_basemap_to_leaflet(m, basemap)
+
+  # Add data layer based on geometry type
+  if (map_type == "points") {
+    if (!is.null(fill_variable) && fill_variable %in% names(spatial_sf)) {
+      if (is.numeric(spatial_sf[[fill_variable]])) {
+        pal <- leaflet::colorNumeric("viridis", spatial_sf[[fill_variable]])
+      } else {
+        pal <- leaflet::colorFactor("Set3", spatial_sf[[fill_variable]])
+      }
+      m <- m %>% leaflet::addCircleMarkers(
+        radius = point_size,
+        color = ~pal(get(fill_variable)),
+        stroke = TRUE,
+        fillOpacity = 0.8
+      ) %>% leaflet::addLegend(
+        pal = pal, values = ~get(fill_variable),
+        title = fill_variable, position = "bottomright"
+      )
+    } else {
+      m <- m %>% leaflet::addCircleMarkers(radius = point_size)
+    }
+  } else if (map_type == "polygons") {
+    if (!is.null(fill_variable) && fill_variable %in% names(spatial_sf)) {
+      if (is.numeric(spatial_sf[[fill_variable]])) {
+        pal <- leaflet::colorNumeric("viridis", spatial_sf[[fill_variable]])
+      } else {
+        pal <- leaflet::colorFactor("Set3", spatial_sf[[fill_variable]])
+      }
+      m <- m %>% leaflet::addPolygons(
+        fillColor = ~pal(get(fill_variable)),
+        weight = 2, opacity = 1, color = "white",
+        dashArray = "3", fillOpacity = 0.7
+      ) %>% leaflet::addLegend(
+        pal = pal, values = ~get(fill_variable),
+        title = fill_variable, position = "bottomright"
+      )
+    } else {
+      m <- m %>% leaflet::addPolygons()
+    }
+  }
+
+  return(m)
+}
+
+#' Add basemap to leaflet
+#' @keywords internal
+add_basemap_to_leaflet <- function(map, basemap) {
+  switch(basemap,
+         "terrain" = map %>% leaflet::addProviderTiles("OpenTopoMap"),
+         "satellite" = map %>% leaflet::addProviderTiles("Esri.WorldImagery"),
+         "osm" = map %>% leaflet::addTiles(),
+         "dark" = map %>% leaflet::addProviderTiles("CartoDB.DarkMatter"),
+         "light" = map %>% leaflet::addProviderTiles("CartoDB.Positron"),
+         map %>% leaflet::addTiles()
+  )
+}
+
+#' Create NDVI histogram
+#' @keywords internal
+create_ndvi_histogram <- function(ndvi_values) {
+  ggplot2::ggplot(data.frame(NDVI = ndvi_values), ggplot2::aes(x = NDVI)) +
+    ggplot2::geom_histogram(bins = 30, fill = "darkgreen", alpha = 0.7) +
+    ggplot2::labs(title = "NDVI Distribution", x = "NDVI", y = "Frequency") +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(size = 10),
+      axis.text = ggplot2::element_text(size = 8)
+    )
+}
+
+#' Create NDVI animation
+#' @keywords internal
+create_ndvi_animation <- function(ndvi_raster, boundary, vector_overlay, title, output_file) {
+  if (!requireNamespace("gganimate", quietly = TRUE)) {
+    warning("gganimate package required for animations. Using first layer only.")
+    return(create_ndvi_map(ndvi_raster[[1]], title = title))
+  }
+
+  message("Creating NDVI animation...")
+
+  # Convert all layers to data frame
+  ndvi_list <- list()
+  for (i in 1:terra::nlyr(ndvi_raster)) {
+    layer_df <- as.data.frame(ndvi_raster[[i]], xy = TRUE)
+    colnames(layer_df)[3] <- "NDVI"
+    layer_df$time_step <- i
+    layer_df$layer_name <- names(ndvi_raster)[i]
+    ndvi_list[[i]] <- layer_df
+  }
+
+  ndvi_df <- do.call(rbind, ndvi_list)
+
+  # Create animated plot
+  p <- ggplot2::ggplot(ndvi_df, ggplot2::aes(x = x, y = y, fill = NDVI)) +
+    ggplot2::geom_raster() +
+    ggplot2::scale_fill_gradient2(low = "brown", mid = "#FFFF99", high = "#006400",
+                                  midpoint = 0.4, name = "NDVI") +
+    ggplot2::coord_fixed() +
+    ggplot2::theme_minimal() +
+    ggplot2::labs(title = paste(title %||% "NDVI Time Series", "- {closest_state}"),
+                  x = "Longitude", y = "Latitude") +
+    gganimate::transition_states(time_step, transition_length = 1, state_length = 2)
+
+  # Render animation
+  if (!is.null(output_file)) {
+    anim <- gganimate::animate(p, width = 800, height = 600, fps = 2)
+    gganimate::anim_save(output_file, anim)
+    return(output_file)
+  }
+
+  return(p)
+}
+
+#' Create categorical crop map
+#' @keywords internal
+create_categorical_crop_map <- function(cdl_raster, crop_codes, crop_names,
+                                        color_palette, boundary) {
+
+  # Create crop mask efficiently using terra operations
+  crop_mask <- cdl_raster
+  crop_mask[!(cdl_raster %in% crop_codes)] <- NA
+
+  # Use tidyterra if available for efficient plotting
+  if (requireNamespace("tidyterra", quietly = TRUE)) {
+
+    # Create categorical raster
+    rcl_matrix <- cbind(crop_codes, crop_codes, 1:length(crop_codes))
+    classified <- terra::classify(crop_mask, rcl_matrix, others = NA)
+
+    # Set up factor levels
+    crop_names_short <- crop_names[1:min(length(crop_names), length(crop_codes))]
+    levels(classified) <- data.frame(
+      ID = 1:length(crop_names_short),
+      Crop = crop_names_short
+    )
+
+    # Create plot
+    p <- ggplot2::ggplot() +
+      tidyterra::geom_spatraster(data = classified) +
+      ggplot2::coord_sf() +
+      ggplot2::theme_minimal() +
+      ggplot2::scale_fill_brewer(type = "qual", palette = color_palette,
+                                 name = "Crop Type", na.value = "transparent")
+
+  } else {
+    # Fallback to data frame method
+    warning("tidyterra recommended for efficient crop mapping. Using fallback method.")
+
+    crop_df <- as.data.frame(crop_mask, xy = TRUE)
+    colnames(crop_df)[3] <- "crop_code"
+    crop_df <- crop_df[!is.na(crop_df$crop_code), ]
+
+    # Map codes to names
+    crop_lookup <- setNames(crop_names[1:min(length(crop_names), length(crop_codes))],
+                            crop_codes[1:min(length(crop_names), length(crop_codes))])
+    crop_df$crop_name <- crop_lookup[as.character(crop_df$crop_code)]
+
+    # Create plot
+    p <- ggplot2::ggplot(crop_df, ggplot2::aes(x = x, y = y, fill = crop_name)) +
+      ggplot2::geom_raster() +
+      ggplot2::scale_fill_brewer(type = "qual", palette = color_palette, name = "Crop Type") +
+      ggplot2::coord_fixed() +
+      ggplot2::theme_minimal()
+  }
+
+  # Add boundary if provided
+  if (!is.null(boundary)) {
+    p <- p + ggplot2::geom_sf(data = boundary, fill = NA, color = "black",
+                              size = 1, inherit.aes = FALSE)
+  }
+
+  return(p)
+}
+
+#' Create side-by-side comparison
+#' @keywords internal
+create_side_by_side_comparison <- function(data1, data2, titles, color_scheme) {
+
+  if (!requireNamespace("patchwork", quietly = TRUE)) {
+    warning("patchwork package recommended for side-by-side plots")
+  }
+
+  # Convert to data frames
+  df1 <- as.data.frame(data1, xy = TRUE)
+  colnames(df1)[3] <- "value"
+  df1$dataset <- titles[1]
+
+  df2 <- as.data.frame(data2, xy = TRUE)
+  colnames(df2)[3] <- "value"
+  df2$dataset <- titles[2]
+
+  # Combine data
+  combined_df <- rbind(df1, df2)
+  combined_df <- combined_df[!is.na(combined_df$value), ]
+
+  # Create faceted plot
+  p <- ggplot2::ggplot(combined_df, ggplot2::aes(x = x, y = y, fill = value)) +
+    ggplot2::geom_raster() +
+    ggplot2::facet_wrap(~dataset, ncol = 2) +
+    ggplot2::coord_fixed() +
+    ggplot2::theme_minimal() +
+    ggplot2::labs(x = "Longitude", y = "Latitude") +
+    ggplot2::theme(
+      strip.text = ggplot2::element_text(size = 12, face = "bold")
+    )
+
+  # Apply color scheme
+  p <- apply_color_scheme(p, color_scheme, "fill")
+
+  return(p)
+}
+
+#' Create difference map plot
+#' @keywords internal
+create_difference_map_plot <- function(diff_raster, difference_palette, titles) {
+
+  diff_df <- as.data.frame(diff_raster, xy = TRUE)
+  colnames(diff_df)[3] <- "difference"
+  diff_df <- diff_df[!is.na(diff_df$difference), ]
+
+  # Create plot
+  p <- ggplot2::ggplot(diff_df, ggplot2::aes(x = x, y = y, fill = difference)) +
+    ggplot2::geom_raster() +
+    ggplot2::coord_fixed() +
+    ggplot2::theme_minimal() +
+    ggplot2::labs(title = paste("Difference:", titles[2], "-", titles[1]),
+                  x = "Longitude", y = "Latitude") +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(hjust = 0.5, size = 14, face = "bold")
+    )
+
+  # Apply diverging color scheme for differences
+  if (difference_palette == "RdBu") {
+    p <- p + ggplot2::scale_fill_gradient2(
+      low = "red", mid = "white", high = "blue",
+      midpoint = 0, name = "Difference"
+    )
+  } else {
+    p <- p + ggplot2::scale_fill_viridis_c(option = difference_palette, name = "Difference")
+  }
+
+  return(p)
+}

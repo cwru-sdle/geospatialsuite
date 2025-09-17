@@ -1,0 +1,84 @@
+---
+title: "Untitled"
+output: html_document
+date: "2025-09-06"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+
+```{r}
+
+# Get all R files
+files <- list.files("R", pattern = "\\.R$", full.names = TRUE, recursive = TRUE)
+
+# Patterns that suggest external file dependencies
+file_patterns <- c("\\.tif", "\\.csv", "\\.shp", "/path/to/", "ndvi_2020", "water_stations")
+
+for (f in files) {
+  lines <- readLines(f)
+  
+  # Find examples sections
+  in_examples <- FALSE
+  in_donttest <- FALSE
+  donttest_start <- 0
+  
+  for (i in 1:length(lines)) {
+    line <- lines[i]
+    
+    # Track if we're in examples section
+    if (grepl("#'\\s*@examples", line)) {
+      in_examples <- TRUE
+    } else if (grepl("#'\\s*@", line) && !grepl("#'\\s*@examples", line)) {
+      in_examples <- FALSE
+    }
+    
+    # If in examples, look for donttest blocks with file patterns
+    if (in_examples) {
+      if (grepl("\\\\donttest\\{", line)) {
+        in_donttest <- TRUE
+        donttest_start <- i
+      } else if (grepl("^#'\\s*\\}\\s*$", line) && in_donttest) {
+        # End of donttest block - check if it contains file patterns
+        donttest_content <- paste(lines[donttest_start:i], collapse = " ")
+        
+        if (any(sapply(file_patterns, function(p) grepl(p, donttest_content)))) {
+          # Replace the opening donttest with dontrun
+          lines[donttest_start] <- gsub("\\\\donttest\\{", "\\\\dontrun{", lines[donttest_start])
+          cat("Changed donttest to dontrun in", basename(f), "at line", donttest_start, "\n")
+        }
+        
+        in_donttest <- FALSE
+      }
+    }
+  }
+  
+  writeLines(lines, f)
+}
+
+```
+

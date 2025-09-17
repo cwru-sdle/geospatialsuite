@@ -1,0 +1,875 @@
+---
+title: "Professional Mapping and Visualization"
+author: "GeoSpatialSuite Development Team"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Professional Mapping and Visualization}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 12,
+  fig.height = 8,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+# Professional Mapping and Visualization
+
+GeoSpatialSuite provides **reliable, publication-quality visualization** using standard terra plotting. The package is designed to create professional maps without complex dependencies, ensuring your visualizations always work.
+
+```{r}
+library(geospatialsuite)
+```
+
+## Design Philosophy: Reliability First
+
+GeoSpatialSuite's visualization approach prioritizes:
+
+1. **Reliability**: Uses standard terra plotting - always works
+2. **Simplicity**: No complex dependencies or installation issues  
+3. **Professional Quality**: Publication-ready output
+4. **Universal Compatibility**: Works with any spatial data type
+5. **Consistent Interface**: Same functions work for all data
+
+## Creating Sample Visualization Data
+
+Let's create diverse sample data to demonstrate visualization capabilities:
+
+```{r}
+# Create sample raster data with different characteristics
+set.seed(2024)
+
+# 1. NDVI data with realistic spatial pattern
+ndvi_raster <- terra::rast(nrows = 150, ncols = 150, 
+                          xmin = -84, xmax = -82, ymin = 39, ymax = 41)
+
+# Create spatially structured NDVI data
+x_coords <- terra::xFromCell(ndvi_raster, 1:terra::ncell(ndvi_raster))
+y_coords <- terra::yFromCell(ndvi_raster, 1:terra::ncell(ndvi_raster))
+
+# Add spatial structure (river valleys have higher NDVI)
+distance_effect <- abs(y_coords - mean(y_coords)) * 0.3
+base_ndvi <- 0.6 - distance_effect + rnorm(length(x_coords), 0, 0.1)
+terra::values(ndvi_raster) <- pmax(0.1, pmin(0.9, base_ndvi))
+names(ndvi_raster) <- "NDVI"
+
+# 2. Elevation data
+elevation_raster <- terra::rast(ndvi_raster)
+elevation_values <- 200 + (y_coords - min(y_coords)) * 100 + rnorm(length(y_coords), 0, 20)
+terra::values(elevation_raster) <- elevation_values
+names(elevation_raster) <- "Elevation_m"
+
+# 3. Multi-band satellite data
+satellite_data <- terra::rast(nrows = 100, ncols = 100, nlyr = 4,
+                             xmin = -84, xmax = -82, ymin = 39, ymax = 41)
+terra::values(satellite_data) <- matrix(c(
+  runif(10000, 0.03, 0.15),  # Red
+  runif(10000, 0.05, 0.25),  # Green
+  runif(10000, 0.02, 0.12),  # Blue
+  runif(10000, 0.30, 0.70)   # NIR
+), ncol = 4)
+names(satellite_data) <- c("Red", "Green", "Blue", "NIR")
+
+# 4. Vector data - study sites
+study_sites <- data.frame(
+  site_id = paste0("Site_", 1:20),
+  lon = runif(20, -83.8, -82.2),
+  lat = runif(20, 39.2, 40.8),
+  ecosystem = sample(c("Forest", "Agriculture", "Wetland", "Urban"), 20, replace = TRUE),
+  biodiversity_index = runif(20, 0.2, 0.9),
+  elevation = runif(20, 180, 420)
+)
+
+# 5. Polygon data - management units
+management_polygons <- data.frame(
+  unit_id = paste0("Unit_", 1:8),
+  management_type = sample(c("Conservation", "Recreation", "Research"), 8, replace = TRUE),
+  area_ha = runif(8, 50, 500),
+  priority_score = runif(8, 1, 10)
+)
+
+# Create polygon geometries
+polygon_geoms <- list()
+for (i in 1:8) {
+  center_x <- runif(1, -83.8, -82.2)
+  center_y <- runif(1, 39.2, 40.8)
+  size <- sqrt(management_polygons$area_ha[i]) / 1000  # Size based on area
+  
+  coords <- matrix(c(
+    center_x - size, center_y - size,
+    center_x + size, center_y - size,
+    center_x + size, center_y + size,
+    center_x - size, center_y + size,
+    center_x - size, center_y - size
+  ), ncol = 2, byrow = TRUE)
+  
+  polygon_geoms[[i]] <- sf::st_polygon(list(coords))
+}
+
+management_polygons$geometry <- sf::st_sfc(polygon_geoms, crs = 4326)
+management_polygons <- sf::st_sf(management_polygons)
+
+print("Sample visualization data created successfully!")
+```
+
+## Basic Raster Visualization
+
+### 1. Quick and Reliable Plotting
+
+```{r eval=FALSE}
+# Ultra-simple one-line mapping
+quick_map(ndvi_raster)
+quick_map(study_sites, variable = "biodiversity_index")
+
+# Fast, reliable raster plotting
+plot_raster_fast(ndvi_raster, "NDVI Distribution", color_scheme = "ndvi")
+plot_raster_fast(elevation_raster, "Elevation Map", color_scheme = "terrain")
+
+# The key advantage: these ALWAYS work - no dependency issues!
+```
+
+### 2. Specialized Color Schemes
+
+```{r eval=FALSE}
+# NDVI-optimized colors
+plot_raster_fast(ndvi_raster, "NDVI with Specialized Colors", color_scheme = "ndvi")
+
+# Terrain colors for elevation
+plot_raster_fast(elevation_raster, "Elevation with Terrain Colors", color_scheme = "terrain")
+
+# Viridis for general scientific data
+plot_raster_fast(elevation_raster, "Elevation with Viridis", color_scheme = "viridis")
+
+# Water indices colors
+water_index <- (satellite_data[["Green"]] - satellite_data[["NIR"]]) / 
+               (satellite_data[["Green"]] + satellite_data[["NIR"]])
+names(water_index) <- "NDWI"
+plot_raster_fast(water_index, "Water Index", color_scheme = "water")
+```
+
+### 3. RGB Composite Visualization
+
+```{r eval=FALSE}
+# True color composite (if we had true color bands)
+plot_rgb_raster(satellite_data, r = 4, g = 1, b = 2, 
+               title = "False Color Composite (NIR-Red-Green)",
+               stretch = "lin")
+
+# Enhanced stretch for better visualization
+plot_rgb_raster(satellite_data, r = 4, g = 1, b = 2,
+               title = "False Color with Histogram Stretch",
+               stretch = "hist")
+
+# Custom band combinations
+plot_rgb_raster(satellite_data, r = 1, g = 2, b = 3,
+               title = "Standard False Color (Red-Green-Blue)")
+```
+
+## Advanced Spatial Mapping
+
+### 1. Universal Spatial Maps
+
+```{r eval=FALSE}
+# Points with continuous variable
+point_map <- create_spatial_map(
+  spatial_data = study_sites,
+  fill_variable = "biodiversity_index",
+  color_scheme = "viridis",
+  title = "Biodiversity Index at Study Sites",
+  point_size = 4,
+  alpha = 0.8
+)
+
+# Polygons with categorical variable
+polygon_map <- create_spatial_map(
+  spatial_data = management_polygons,
+  fill_variable = "management_type",
+  color_scheme = "categorical",
+  title = "Management Unit Types",
+  alpha = 0.7
+)
+
+# Raster with region boundary
+raster_map <- create_spatial_map(
+  spatial_data = ndvi_raster,
+  region_boundary = c(-84, 39, -82, 41),
+  color_scheme = "ndvi",
+  title = "NDVI with Study Area Boundary"
+)
+```
+
+### 2. NDVI Specialized Mapping
+
+```{r eval=FALSE}
+# Professional NDVI map with classification
+ndvi_professional <- create_ndvi_map(
+  ndvi_data = ndvi_raster,
+  region_boundary = c(-83.8, 39.2, -82.2, 40.8),
+  ndvi_classes = "standard",
+  title = "NDVI Classification Map - Study Area 2024"
+)
+
+# NDVI with custom classification breaks
+ndvi_custom <- create_ndvi_map(
+  ndvi_data = ndvi_raster,
+  ndvi_classes = "custom",
+  class_breaks = c(-0.1, 0.2, 0.4, 0.6, 0.8, 1.0),
+  title = "Custom NDVI Classification"
+)
+
+# Add vector overlay to NDVI map
+ndvi_with_sites <- create_ndvi_map(
+  ndvi_data = ndvi_raster,
+  vector_overlay = study_sites,
+  title = "NDVI with Study Site Locations"
+)
+```
+
+### 3. Comparison and Multi-Panel Maps
+
+```{r eval=FALSE}
+# Side-by-side comparison
+create_comparison_map(
+  data1 = ndvi_raster,
+  data2 = elevation_raster,
+  comparison_type = "side_by_side",
+  titles = c("NDVI", "Elevation"),
+  color_scheme = "viridis"
+)
+
+# Difference map
+# Create temporal difference example
+ndvi_future <- ndvi_raster * 1.1  # Simulate 10% increase
+names(ndvi_future) <- "NDVI_Future"
+
+create_comparison_map(
+  data1 = ndvi_raster,
+  data2 = ndvi_future,
+  comparison_type = "difference",
+  titles = c("Current NDVI", "Future NDVI"),
+  difference_palette = "RdBu"
+)
+
+# Overlay comparison
+create_comparison_map(
+  data1 = ndvi_raster,
+  data2 = elevation_raster,
+  comparison_type = "overlay",
+  titles = c("NDVI", "Elevation")
+)
+```
+
+## Interactive Mapping
+
+### 1. Basic Interactive Maps
+
+```{r eval=FALSE}
+  # Basic interactive point map
+  interactive_points <- create_interactive_map(
+    spatial_data = study_sites,
+    fill_variable = "biodiversity_index",
+    basemap = "terrain",
+    title = "Interactive Biodiversity Map"
+  )
+  
+  # Interactive polygon map with custom popups
+  interactive_polygons <- create_interactive_map(
+    spatial_data = management_polygons,
+    fill_variable = "priority_score",
+    popup_vars = c("unit_id", "management_type", "area_ha"),
+    basemap = "satellite",
+    title = "Management Units - Interactive"
+  )
+  
+  # Clustered point map for large datasets
+  interactive_clustered <- create_interactive_map(
+    spatial_data = study_sites,
+    fill_variable = "ecosystem",
+    cluster_points = TRUE,
+    basemap = "osm",
+    title = "Clustered Study Sites"
+  )
+  
+} else {
+  cat("Install 'leaflet' package for interactive mapping:\n")
+  cat("install.packages('leaflet')\n")
+}
+```
+
+### 2. Advanced Interactive Features
+
+```{r eval=FALSE}
+# Interactive workflow for multiple datasets
+if (requireNamespace("leaflet", quietly = TRUE)) {
+  
+  # Multi-layer interactive map
+  interactive_workflow <- run_interactive_mapping_workflow(
+    config = list(
+      input_data = list(
+        study_sites = study_sites,
+        management_units = management_polygons
+      ),
+      basemap = "terrain",
+      region_boundary = c(-84, 39, -82, 41)
+    ),
+    output_folder = tempdir()
+  )
+  
+  print("Interactive mapping workflow completed")
+  print(names(interactive_workflow$interactive_maps))
+}
+```
+
+## Specialized Agricultural Visualization
+
+### 1. Crop Distribution Maps
+
+```{r eval=FALSE}
+# Create sample crop data
+crop_raster <- terra::rast(nrows = 100, ncols = 100,
+                          xmin = -84, xmax = -82, ymin = 39, ymax = 41)
+
+# Simulate CDL-like crop distribution
+crop_codes <- c(1, 5, 24, 36, 176)  # Corn, soybeans, wheat, alfalfa, grassland
+crop_probabilities <- c(0.4, 0.35, 0.1, 0.05, 0.1)
+terra::values(crop_raster) <- sample(crop_codes, 10000, 
+                                    replace = TRUE, prob = crop_probabilities)
+names(crop_raster) <- "CDL_Crops"
+
+# Professional crop distribution map
+crop_map <- create_crop_map(
+  cdl_data = crop_raster,
+  crop_selection = c("corn", "soybeans", "wheat"),
+  style = "categorical",
+  show_statistics = TRUE,
+  title = "Major Crop Distribution - 2024"
+)
+
+# Crop diversity analysis
+crop_diversity <- create_crop_map(
+  cdl_data = crop_raster,
+  crop_selection = "grains",
+  style = "diversity",
+  title = "Crop Diversity Index"
+)
+```
+
+### 2. Precision Agriculture Visualization
+
+```{r eval=FALSE}
+# Create management zones visualization
+management_zones <- ndvi_raster
+terra::values(management_zones) <- cut(terra::values(ndvi_raster), 
+                                      breaks = 3, labels = FALSE)
+names(management_zones) <- "Management_Zone"
+
+# Visualize management zones
+plot_raster_fast(management_zones, "Precision Agriculture Management Zones",
+                color_scheme = "categorical")
+
+# Variable rate application map
+application_rates <- ndvi_raster * 100  # Convert to application rates
+names(application_rates) <- "N_Rate_kg_ha"
+
+plot_raster_fast(application_rates, "Nitrogen Application Rates (kg/ha)",
+                color_scheme = "viridis")
+```
+
+## Environmental and Water Quality Visualization
+
+### 1. Water Quality Maps
+
+```{r eval=FALSE}
+# Create sample water quality data
+water_quality_sites <- data.frame(
+  station_id = paste0("WQ_", 1:15),
+  lon = runif(15, -83.8, -82.2),
+  lat = runif(15, 39.2, 40.8),
+  nitrate_mg_l = runif(15, 0.5, 8.5),
+  phosphorus_mg_l = runif(15, 0.1, 1.2),
+  water_quality_index = runif(15, 30, 95)
+)
+
+# Professional water quality visualization
+water_quality_map <- create_water_quality_plot(
+  water_data = water_quality_sites,
+  variable = "nitrate_mg_l",
+  region_boundary = c(-84, 39, -82, 41),
+  thresholds = list(
+    "Excellent" = c(0, 2),
+    "Good" = c(2, 4),
+    "Fair" = c(4, 6),
+    "Poor" = c(6, Inf)
+  ),
+  title = "Nitrate Levels in Water Bodies"
+)
+```
+
+### 2. Environmental Monitoring Visualization
+
+```{r eval=FALSE}
+# Multi-variable environmental dashboard
+environmental_variables <- list(
+  vegetation = ndvi_raster,
+  elevation = elevation_raster,
+  water_quality = terra::rasterize(
+    terra::vect(study_sites, coords = c("lon", "lat"), crs = "EPSG:4326"),
+    ndvi_raster,
+    field = "biodiversity_index"
+  )
+)
+
+# Create environmental correlation visualization
+env_correlation <- analyze_variable_correlations(
+  variable_list = environmental_variables,
+  method = "pearson",
+  create_plots = TRUE
+)
+
+print("Environmental Variable Correlations:")
+print(env_correlation$correlation_matrix)
+```
+
+## Publication-Quality Output
+
+### 1. High-Resolution Export
+
+```{r eval=FALSE}
+# Function to create publication-ready maps
+create_publication_map <- function(data, title, filename, width = 12, height = 8) {
+  
+  # High-resolution PNG output
+  png(filename, width = width, height = height, units = "in", 
+      res = 300, type = "cairo")
+  
+  if (inherits(data, "SpatRaster")) {
+    # Determine appropriate color scheme
+    data_name <- names(data)[1]
+    color_scheme <- if (grepl("NDVI", data_name, ignore.case = TRUE)) {
+      "ndvi"
+    } else if (grepl("elevation|DEM", data_name, ignore.case = TRUE)) {
+      "terrain"
+    } else if (grepl("water", data_name, ignore.case = TRUE)) {
+      "water"
+    } else {
+      "viridis"
+    }
+    
+    colors <- get_terra_colors(color_scheme)
+    terra::plot(data, main = title, col = colors, axes = TRUE)
+    
+  } else if (inherits(data, "sf")) {
+    plot(data, main = title, axes = TRUE)
+  }
+  
+  dev.off()
+  
+  cat("Publication map saved:", filename, "\n")
+}
+
+# Create publication-ready maps
+create_publication_map(ndvi_raster, "NDVI Distribution - Study Area 2024", 
+                      "publication_ndvi.png")
+
+create_publication_map(elevation_raster, "Elevation Profile - Study Region", 
+                      "publication_elevation.png")
+```
+
+### 2. Multi-Panel Publication Figures
+
+```{r eval=FALSE}
+# Create multi-panel figure for publications
+create_multipanel_figure <- function(data_list, titles, filename, 
+                                   rows = 2, cols = 2) {
+  
+  png(filename, width = 16, height = 12, units = "in", res = 300)
+  
+  par(mfrow = c(rows, cols), mar = c(4, 4, 3, 2))
+  
+  for (i in seq_along(data_list)) {
+    data <- data_list[[i]]
+    title <- titles[i]
+    
+    if (inherits(data, "SpatRaster")) {
+      # Choose appropriate colors
+      if (grepl("NDVI", title, ignore.case = TRUE)) {
+        colors <- get_terra_colors("ndvi")
+      } else if (grepl("elevation", title, ignore.case = TRUE)) {
+        colors <- get_terra_colors("terrain")
+      } else {
+        colors <- get_terra_colors("viridis")
+      }
+      
+      terra::plot(data, main = title, col = colors, axes = TRUE)
+    }
+  }
+  
+  par(mfrow = c(1, 1))
+  dev.off()
+  
+  cat("Multi-panel figure saved:", filename, "\n")
+}
+
+# Create 4-panel environmental figure
+environmental_panels <- list(
+  ndvi_raster,
+  elevation_raster,
+  satellite_data[["NIR"]],
+  management_zones
+)
+
+panel_titles <- c(
+  "A) NDVI Distribution",
+  "B) Elevation (m)",
+  "C) NIR Reflectance", 
+  "D) Management Zones"
+)
+
+create_multipanel_figure(environmental_panels, panel_titles,
+                        "environmental_4panel.png", rows = 2, cols = 2)
+```
+
+## Custom Visualization Functions
+
+### 1. Specialized Color Schemes
+
+```{r eval=FALSE}
+# Create custom color schemes for specific applications
+create_custom_colors <- function(scheme_name, n_colors = 100) {
+  
+  custom_schemes <- list(
+    
+    "agricultural" = colorRampPalette(c("#8B4513", "#DAA520", "#90EE90", "#006400")),
+    
+    "drought" = colorRampPalette(c("#8B0000", "#FF4500", "#FFD700", "#ADFF2F")),
+    
+    "wetland" = colorRampPalette(c("#654321", "#90EE90", "#87CEEB", "#000080")),
+    
+    "urban_heat" = colorRampPalette(c("#000080", "#0000FF", "#00FFFF", "#FFFF00", "#FF0000")),
+    
+    "forest_health" = colorRampPalette(c("#8B4513", "#D2691E", "#32CD32", "#006400"))
+  )
+  
+  if (scheme_name %in% names(custom_schemes)) {
+    return(custom_schemes[[scheme_name]](n_colors))
+  } else {
+    return(viridis::viridis(n_colors))
+  }
+}
+
+# Use custom color schemes
+agricultural_colors <- create_custom_colors("agricultural")
+plot_raster_fast(ndvi_raster, "NDVI with Agricultural Colors", 
+                color_scheme = "custom")
+
+# Note: In actual implementation, you would modify plot_raster_fast
+# to accept custom color schemes
+```
+
+### 2. Annotation and Enhancement Functions
+
+```{r eval=FALSE}
+# Enhanced plotting with annotations
+enhanced_plot <- function(raster_data, title, add_scale_bar = TRUE, 
+                         add_north_arrow = TRUE, add_legend = TRUE) {
+  
+  # Basic plot
+  terra::plot(raster_data, main = title, axes = TRUE)
+  
+  # Add enhancements (simplified versions)
+  if (add_scale_bar) {
+    # Add scale information in title or subtitle
+    ext <- terra::ext(raster_data)
+    width_deg <- ext[2] - ext[1]
+    width_km <- round(width_deg * 111, 1)  # Approximate conversion
+    mtext(paste("Approximate width:", width_km, "km"), side = 1, line = 3, cex = 0.8)
+  }
+  
+  if (add_north_arrow) {
+    # Add north arrow as text
+    mtext("N ↑", side = 3, line = -2, adj = 0.95, cex = 1.2, font = 2)
+  }
+  
+  cat("Enhanced plot created with additional annotations\n")
+}
+
+# Create enhanced plots
+enhanced_plot(ndvi_raster, "Enhanced NDVI Map with Annotations",
+             add_scale_bar = TRUE, add_north_arrow = TRUE)
+```
+
+## Performance and Optimization
+
+### 1. Large Dataset Visualization
+
+```{r eval=FALSE}
+# Tips for visualizing large datasets efficiently
+large_data_tips <- function() {
+  cat("Tips for Large Dataset Visualization:\n\n")
+  
+  cat("1. Data Reduction:\n")
+  cat("   - Aggregate to appropriate resolution\n")
+  cat("   - Crop to area of interest first\n")
+  cat("   - Use sampling for point datasets\n\n")
+  
+  cat("2. Memory Management:\n")
+  cat("   - Process tiles separately for very large rasters\n")
+  cat("   - Use terra's efficient processing\n")
+  cat("   - Clear unused objects\n\n")
+  
+  cat("3. Output Optimization:\n")
+  cat("   - Choose appropriate output resolution\n")
+  cat("   - Use efficient file formats\n")
+  cat("   - Consider vector formats for simple data\n")
+}
+
+large_data_tips()
+```
+
+### 2. Batch Visualization Workflows
+
+```{r eval=FALSE}
+# Automated batch visualization function
+batch_visualize <- function(data_list, output_dir, prefix = "map") {
+  
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = TRUE)
+  }
+  
+  for (i in seq_along(data_list)) {
+    data <- data_list[[i]]
+    data_name <- names(data_list)[i]
+    
+    output_file <- file.path(output_dir, paste0(prefix, "_", data_name, ".png"))
+    
+    tryCatch({
+      png(output_file, width = 10, height = 8, units = "in", res = 300)
+      
+      if (inherits(data, "SpatRaster")) {
+        colors <- get_terra_colors("viridis")
+        terra::plot(data, main = paste("Map:", data_name), col = colors)
+      } else if (inherits(data, "sf")) {
+        plot(data, main = paste("Map:", data_name))
+      }
+      
+      dev.off()
+      cat("Saved:", output_file, "\n")
+      
+    }, error = function(e) {
+      cat("Failed to create map for:", data_name, "\n")
+      cat("Error:", e$message, "\n")
+    })
+  }
+}
+
+# Example batch processing
+sample_data_list <- list(
+  NDVI = ndvi_raster,
+  Elevation = elevation_raster,
+  NIR = satellite_data[["NIR"]]
+)
+
+batch_visualize(sample_data_list, tempdir(), "sample")
+```
+
+## Quality Control and Validation
+
+### 1. Visualization Quality Checklist
+
+```{r eval=FALSE}
+# Quality control checklist for maps
+visualization_qc <- function() {
+  cat("Visualization Quality Control Checklist:\n\n")
+  
+  cat("1. Data Integrity:\n")
+  cat("   ✓ Check for missing values (NAs)\n")
+  cat("   ✓ Verify coordinate system accuracy\n")
+  cat("   ✓ Confirm data ranges are reasonable\n\n")
+  
+  cat("2. Visual Clarity:\n")
+  cat("   ✓ Appropriate color scheme for data type\n")
+  cat("   ✓ Sufficient contrast and readability\n")
+  cat("   ✓ Clear and informative title\n\n")
+  
+  cat("3. Technical Standards:\n")
+  cat("   ✓ Adequate resolution for intended use\n")
+  cat("   ✓ Proper aspect ratio maintained\n")
+  cat("   ✓ Legends and scales included\n\n")
+  
+  cat("4. Publication Requirements:\n")
+  cat("   ✓ High DPI for print (300+ DPI)\n")
+  cat("   ✓ Appropriate file format\n")
+  cat("   ✓ Consistent styling across figures\n")
+}
+
+visualization_qc()
+```
+
+### 2. Automated Quality Assessment
+
+```{r eval=FALSE}
+# Function to assess visualization data quality
+assess_viz_quality <- function(data, data_name) {
+  
+  quality_report <- list()
+  
+  if (inherits(data, "SpatRaster")) {
+    values <- terra::values(data, mat = FALSE)
+    
+    quality_report$data_type <- "raster"
+    quality_report$total_cells <- length(values)
+    quality_report$valid_cells <- sum(!is.na(values))
+    quality_report$completeness_pct <- round((quality_report$valid_cells / quality_report$total_cells) * 100, 1)
+    quality_report$value_range <- range(values, na.rm = TRUE)
+    quality_report$has_extreme_outliers <- any(abs(scale(values[!is.na(values)])) > 4, na.rm = TRUE)
+    
+  } else if (inherits(data, "sf")) {
+    quality_report$data_type <- "vector"
+    quality_report$n_features <- nrow(data)
+    quality_report$geometry_valid <- all(sf::st_is_valid(data))
+    quality_report$has_empty_geometries <- any(sf::st_is_empty(data))
+  }
+  
+  # Recommendations
+  quality_report$recommendations <- c()
+  
+  if (quality_report$data_type == "raster") {
+    if (quality_report$completeness_pct < 80) {
+      quality_report$recommendations <- c(quality_report$recommendations,
+        "Consider addressing missing data before visualization")
+    }
+    
+    if (quality_report$has_extreme_outliers) {
+      quality_report$recommendations <- c(quality_report$recommendations,
+        "Check for outliers that may affect color scaling")
+    }
+  }
+  
+  cat("Quality Assessment for", data_name, ":\n")
+  cat("  Data type:", quality_report$data_type, "\n")
+  
+  if (quality_report$data_type == "raster") {
+    cat("  Completeness:", quality_report$completeness_pct, "%\n")
+    cat("  Value range:", round(quality_report$value_range, 3), "\n")
+  } else {
+    cat("  Features:", quality_report$n_features, "\n")
+    cat("  Valid geometries:", quality_report$geometry_valid, "\n")
+  }
+  
+  if (length(quality_report$recommendations) > 0) {
+    cat("  Recommendations:\n")
+    for (rec in quality_report$recommendations) {
+      cat("    -", rec, "\n")
+    }
+  }
+  
+  return(quality_report)
+}
+
+# Assess quality of our sample data
+ndvi_quality <- assess_viz_quality(ndvi_raster, "NDVI")
+sites_quality <- assess_viz_quality(study_sites, "Study Sites")
+```
+
+## Best Practices Summary
+
+### 1. Choosing the Right Visualization Method
+
+```{r eval=FALSE}
+# Decision matrix for visualization methods
+viz_decision_matrix <- function() {
+  cat("Visualization Method Decision Matrix:\n\n")
+  
+  cat("RASTER DATA:\n")
+  cat("  Single band, continuous → plot_raster_fast()\n")
+  cat("  NDVI data → create_ndvi_map()\n")
+  cat("  Multi-band → plot_rgb_raster()\n")
+  cat("  Comparison → create_comparison_map()\n\n")
+  
+  cat("VECTOR DATA:\n")
+  cat("  Points with attributes → create_spatial_map()\n")
+  cat("  Polygons → create_spatial_map()\n")
+  cat("  Interactive needed → create_interactive_map()\n\n")
+  
+  cat("SPECIALIZED:\n")
+  cat("  Agricultural → create_crop_map()\n")
+  cat("  Water quality → create_water_quality_plot()\n")
+  cat("  Quick preview → quick_map()\n")
+}
+
+viz_decision_matrix()
+```
+
+### 2. Color Scheme Guidelines
+
+```{r eval=FALSE}
+# Color scheme selection guidelines
+color_scheme_guide <- function() {
+  cat("Color Scheme Selection Guidelines:\n\n")
+  
+  cat("DATA TYPE SPECIFIC:\n")
+  cat("  NDVI/vegetation → 'ndvi' (brown to green)\n")
+  cat("  Elevation/terrain → 'terrain' (standard terrain colors)\n")
+  cat("  Water indices → 'water' (brown to blue)\n")
+  cat("  Temperature → 'plasma' (dark to bright)\n")
+  cat("  General continuous → 'viridis' (perceptually uniform)\n\n")
+  
+  cat("CATEGORICAL DATA:\n")
+  cat("  Few categories (≤8) → 'categorical'\n")
+  cat("  Many categories → Consider grouping\n\n")
+  
+  cat("ACCESSIBILITY:\n")
+  cat("  Colorblind-friendly → 'viridis', 'plasma'\n")
+  cat("  High contrast needed → 'viridis'\n")
+  cat("  Grayscale printing → Test conversion\n")
+}
+
+color_scheme_guide()
+```
+
+## Summary
+
+GeoSpatialSuite's visualization system provides:
+
+### **Core Visualization Principles:**
+- **Reliability First**: Uses standard terra plotting - always works
+- **Professional Quality**: Publication-ready output without complex setup
+- **Universal Compatibility**: Same functions work with any spatial data
+- **Consistent Interface**: Predictable function behavior
+
+### **Visualization Functions:**
+- **quick_map()**: One-line mapping for any data type
+- **plot_raster_fast()**: Reliable raster visualization
+- **create_spatial_map()**: Universal spatial mapping
+- **create_ndvi_map()**: Specialized NDVI visualization
+- **plot_rgb_raster()**: Multi-band RGB composites
+- **create_comparison_map()**: Side-by-side and difference maps
+- **create_interactive_map()**: Web-based interactive maps
+
+### **Key Advantages:**
+1. **No Complex Dependencies**: Works with standard R installation
+2. **Always Reliable**: Terra-based plotting never fails
+3. **Professional Output**: High-quality, publication-ready maps
+4. **Flexible and Extensible**: Easy to customize and extend
+5. **Performance Optimized**: Efficient for large datasets
+6. **Quality Control Built-in**: Automated quality assessment
+
+### **Applications:**
+- Scientific publications and reports
+- Environmental monitoring dashboards
+- Agricultural precision mapping
+- Educational and outreach materials
+- Operational decision support
+- Web-based applications
+
+The visualization system in GeoSpatialSuite ensures you can always create professional, publication-quality maps without worrying about dependency issues or complex setup procedures!
+
+```{r}
+sessionInfo()
+```

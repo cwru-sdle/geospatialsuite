@@ -1,0 +1,458 @@
+---
+title: "Vegetation Analysis with 40+ Indices"
+author: "GeoSpatialSuite Development Team"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vegetation Analysis with 40+ Indices}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 10,
+  fig.height = 7,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+# Comprehensive Vegetation Analysis
+
+GeoSpatialSuite provides the most comprehensive collection of vegetation indices available in R, with **40+ indices** covering all major applications from basic vegetation detection to advanced stress analysis.
+
+```{r}
+library(geospatialsuite)
+```
+
+## Available Vegetation Indices
+
+Let's start by exploring what indices are available:
+
+```{r}
+# Get all available vegetation indices
+all_indices <- list_vegetation_indices(detailed = TRUE)
+print(head(all_indices))
+
+# Get indices by category
+stress_indices <- list_vegetation_indices(category = "stress")
+print(stress_indices)
+
+# Get indices by application
+agriculture_indices <- list_vegetation_indices(application = "agriculture")
+print(agriculture_indices)
+```
+
+## Creating Sample Spectral Data
+
+For this demonstration, we'll create realistic spectral data:
+
+```{r}
+# Create multi-band spectral data
+set.seed(42)
+spectral_data <- terra::rast(nrows = 100, ncols = 100, nlyr = 6,
+                            xmin = -84, xmax = -82, ymin = 39, ymax = 41)
+
+# Simulate realistic spectral reflectance values
+terra::values(spectral_data) <- matrix(c(
+  runif(10000, 0.02, 0.08),  # Blue (450-520nm)
+  runif(10000, 0.05, 0.15),  # Green (520-600nm)  
+  runif(10000, 0.03, 0.12),  # Red (630-690nm)
+  runif(10000, 0.4, 0.8),    # NIR (760-900nm)
+  runif(10000, 0.1, 0.3),    # SWIR1 (1550-1750nm)
+  runif(10000, 0.05, 0.2)    # SWIR2 (2080-2350nm)
+), ncol = 6)
+
+names(spectral_data) <- c("blue", "green", "red", "nir", "swir1", "swir2")
+
+print("Created realistic spectral data with 6 bands")
+```
+
+## Basic Vegetation Indices
+
+### 1. NDVI - The Foundation
+
+```{r eval=FALSE}
+# Calculate NDVI - the most widely used vegetation index
+ndvi <- calculate_vegetation_index(
+  spectral_data = spectral_data,
+  index_type = "NDVI",
+  auto_detect_bands = TRUE
+)
+
+# Visualize NDVI
+plot_raster_fast(ndvi, "NDVI - Normalized Difference Vegetation Index", 
+                color_scheme = "ndvi")
+
+# Print statistics
+values_ndvi <- terra::values(ndvi, mat = FALSE)
+cat("NDVI Statistics:\n")
+cat("Mean:", round(mean(values_ndvi, na.rm = TRUE), 3), "\n")
+cat("Range:", round(range(values_ndvi, na.rm = TRUE), 3), "\n")
+```
+
+### 2. Enhanced Vegetation Index (EVI)
+
+```{r eval=FALSE}
+# EVI provides better performance in high biomass areas
+evi <- calculate_vegetation_index(
+  spectral_data = spectral_data,
+  index_type = "EVI",
+  auto_detect_bands = TRUE
+)
+
+# Compare NDVI and EVI
+comparison_stack <- c(ndvi, evi)
+names(comparison_stack) <- c("NDVI", "EVI")
+
+# Plot comparison
+create_comparison_map(ndvi, evi, 
+                     comparison_type = "side_by_side",
+                     titles = c("NDVI", "EVI"))
+```
+
+### 3. Soil-Adjusted Vegetation Index (SAVI)
+
+```{r eval=FALSE}
+# SAVI reduces soil background effects
+savi <- calculate_vegetation_index(
+  spectral_data = spectral_data,
+  index_type = "SAVI"
+)
+
+plot_raster_fast(savi, "SAVI - Soil Adjusted Vegetation Index")
+```
+
+## Advanced Vegetation Indices
+
+### Red-Edge Indices for Precision Agriculture
+
+```{r eval=FALSE}
+# Simulate red-edge band (often band 5 in Sentinel-2)
+red_edge <- terra::rast(spectral_data)[[1]]
+terra::values(red_edge) <- runif(10000, 0.15, 0.4)
+names(red_edge) <- "red_edge"
+
+# Add red-edge to spectral data
+spectral_with_re <- c(spectral_data, red_edge)
+
+# Calculate red-edge indices
+ndre <- calculate_vegetation_index(
+  spectral_data = spectral_with_re,
+  index_type = "NDRE"
+)
+
+mtci <- calculate_vegetation_index(
+  spectral_data = spectral_with_re,
+  index_type = "MTCI"
+)
+
+# Visualize red-edge indices
+plot_raster_fast(ndre, "NDRE - Normalized Difference Red Edge")
+plot_raster_fast(mtci, "MTCI - MERIS Terrestrial Chlorophyll Index")
+```
+
+### Stress Detection Indices
+
+```{r eval=FALSE}
+# PRI - Photochemical Reflectance Index for stress detection
+pri <- calculate_vegetation_index(
+  spectral_data = spectral_data,
+  index_type = "PRI"
+)
+
+# SIPI - Structure Insensitive Pigment Index
+sipi <- calculate_vegetation_index(
+  spectral_data = spectral_data,
+  index_type = "SIPI"
+)
+
+# Create stress detection map
+stress_stack <- c(pri, sipi)
+names(stress_stack) <- c("PRI", "SIPI")
+```
+
+## Multiple Index Calculation
+
+Calculate multiple indices efficiently:
+
+```{r eval=FALSE}
+# Calculate multiple basic indices
+basic_indices <- calculate_multiple_indices(
+  spectral_data = spectral_data,
+  indices = c("NDVI", "EVI", "SAVI", "MSAVI", "GNDVI"),
+  output_stack = TRUE,
+  verbose = TRUE
+)
+
+# Calculate stress-related indices
+stress_indices <- calculate_multiple_indices(
+  spectral_data = spectral_data,
+  indices = c("PRI", "SIPI", "NDNI", "CCI"),
+  output_stack = TRUE
+)
+
+# Combine all indices
+all_veg_indices <- c(basic_indices, stress_indices)
+names(all_veg_indices) <- c("NDVI", "EVI", "SAVI", "MSAVI", "GNDVI",
+                           "PRI", "SIPI", "NDNI", "CCI")
+
+print(paste("Calculated", terra::nlyr(all_veg_indices), "vegetation indices"))
+```
+
+## Enhanced NDVI Analysis
+
+For time series or advanced applications:
+
+```{r eval=FALSE}
+# Create sample red and NIR time series
+red_files <- paste0("red_", 2020:2023, ".tif")
+nir_files <- paste0("nir_", 2020:2023, ".tif")
+
+# Enhanced NDVI with quality filtering and temporal smoothing
+enhanced_ndvi <- calculate_ndvi_enhanced(
+  red_data = spectral_data[["red"]],
+  nir_data = spectral_data[["nir"]],
+  quality_filter = TRUE,
+  temporal_smoothing = FALSE,  # Single layer
+  clamp_range = c(-0.2, 1.0),
+  verbose = TRUE
+)
+
+# Create NDVI map with classification
+create_ndvi_map(enhanced_ndvi,
+               region_boundary = c(-84, 39, -82, 41),
+               ndvi_classes = "standard",
+               title = "Enhanced NDVI with Classification")
+```
+
+## Specialized Crop Analysis
+
+### Comprehensive Crop Vegetation Analysis
+
+```{r eval=FALSE}
+# Analyze vegetation for specific crop types
+corn_analysis <- analyze_crop_vegetation(
+  spectral_data = spectral_data,
+  crop_type = "corn",
+  analysis_type = "comprehensive",
+  growth_stage = "mid",
+  verbose = TRUE
+)
+
+# View results
+print(names(corn_analysis))
+print(corn_analysis$metadata)
+
+# Stress analysis for soybeans
+soybean_stress <- analyze_crop_vegetation(
+  spectral_data = spectral_data,
+  crop_type = "soybeans",
+  analysis_type = "stress",
+  verbose = TRUE
+)
+```
+
+### Crop-Specific Index Selection
+
+```{r eval=FALSE}
+# Get recommended indices for different crops
+corn_indices <- c("NDVI", "EVI", "GNDVI", "NDRE", "MTCI", "CCI")
+wheat_indices <- c("NDVI", "EVI", "NDRE", "PSRI", "CRI1", "MTCI")
+cotton_indices <- c("NDVI", "EVI", "SAVI", "MSAVI", "GNDVI")
+
+# Calculate crop-specific indices
+corn_analysis_indices <- calculate_multiple_indices(
+  spectral_data = spectral_data,
+  indices = corn_indices,
+  output_stack = TRUE
+)
+```
+
+## Water and Moisture Indices
+
+Don't forget about water-related vegetation indices:
+
+```{r eval=FALSE}
+# Water indices for moisture content analysis
+ndwi <- calculate_water_index(
+  green = spectral_data[["green"]],
+  nir = spectral_data[["nir"]],
+  index_type = "NDWI"
+)
+
+mndwi <- calculate_water_index(
+  green = spectral_data[["green"]],
+  nir = spectral_data[["nir"]],
+  swir1 = spectral_data[["swir1"]],
+  index_type = "MNDWI"
+)
+
+ndmi <- calculate_water_index(
+  green = spectral_data[["green"]],
+  nir = spectral_data[["nir"]],
+  swir1 = spectral_data[["swir1"]],
+  index_type = "NDMI"
+)
+
+# Create water/moisture analysis
+water_stack <- c(ndwi, mndwi, ndmi)
+names(water_stack) <- c("NDWI", "MNDWI", "NDMI")
+```
+
+## Advanced Applications
+
+### 1. Index Validation and Quality Control
+
+```{r eval=FALSE}
+# Validate index calculations
+validate_indices <- function(indices_stack) {
+  for (i in 1:terra::nlyr(indices_stack)) {
+    layer_name <- names(indices_stack)[i]
+    values <- terra::values(indices_stack[[i]], mat = FALSE)
+    values <- values[!is.na(values)]
+    
+    cat("\n", layer_name, "Statistics:\n")
+    cat("  Mean:", round(mean(values), 3), "\n")
+    cat("  Range: [", round(min(values), 3), ",", round(max(values), 3), "]\n")
+    cat("  Valid pixels:", length(values), "\n")
+  }
+}
+
+# Validate our indices
+validate_indices(all_veg_indices)
+```
+
+### 2. Correlation Analysis
+
+```{r eval=FALSE}
+# Analyze correlations between different indices
+correlation_results <- analyze_variable_correlations(
+  variable_list = list(
+    NDVI = all_veg_indices[["NDVI"]],
+    EVI = all_veg_indices[["EVI"]],
+    SAVI = all_veg_indices[["SAVI"]],
+    PRI = all_veg_indices[["PRI"]]
+  ),
+  method = "pearson",
+  create_plots = TRUE
+)
+
+print(correlation_results$correlation_matrix)
+```
+
+### 3. Seasonal Analysis
+
+```{r eval=FALSE}
+# Simulate seasonal NDVI data
+seasonal_ndvi <- list()
+for (month in 1:12) {
+  # Simulate seasonal variation
+  seasonal_factor <- 0.5 + 0.5 * cos(2 * pi * (month - 6) / 12)
+  monthly_ndvi <- ndvi * seasonal_factor
+  names(monthly_ndvi) <- paste0("NDVI_Month_", month)
+  seasonal_ndvi[[month]] <- monthly_ndvi
+}
+
+# Analyze seasonal patterns
+seasonal_analysis <- analyze_temporal_changes(
+  data_list = seasonal_ndvi,
+  dates = paste0("2023-", sprintf("%02d", 1:12), "-01"),
+  analysis_type = "seasonal"
+)
+```
+
+## Best Practices
+
+### 1. Index Selection Guidelines
+
+```{r eval=FALSE}
+# Function to recommend indices based on application
+recommend_indices <- function(application, sensor = "Landsat") {
+  recommendations <- list(
+    "general_vegetation" = c("NDVI", "EVI", "SAVI"),
+    "agriculture" = c("NDVI", "EVI", "GNDVI", "SAVI", "MSAVI"),
+    "stress_detection" = c("PRI", "SIPI", "PSRI", "NDNI", "CCI"),
+    "high_biomass" = c("EVI", "SAVI", "MSAVI", "ARVI"),
+    "early_season" = c("SAVI", "MSAVI", "OSAVI"),
+    "forestry" = c("NDVI", "EVI", "LAI", "FAPAR", "NBR"),
+    "precision_ag" = c("NDVI", "NDRE", "MTCI", "CCI", "GNDVI")
+  )
+  
+  if (application %in% names(recommendations)) {
+    return(recommendations[[application]])
+  } else {
+    return(c("NDVI", "EVI", "SAVI"))  # Default
+  }
+}
+
+# Get recommendations
+ag_indices <- recommend_indices("agriculture")
+print(paste("Recommended agricultural indices:", paste(ag_indices, collapse = ", ")))
+```
+
+### 2. Data Quality Considerations
+
+```{r eval=FALSE}
+# Function to assess data quality for vegetation analysis
+assess_data_quality <- function(spectral_data) {
+  results <- list()
+  
+  for (i in 1:terra::nlyr(spectral_data)) {
+    band_name <- names(spectral_data)[i]
+    values <- terra::values(spectral_data[[i]], mat = FALSE)
+    
+    results[[band_name]] <- list(
+      n_valid = sum(!is.na(values)),
+      n_total = length(values),
+      completeness = sum(!is.na(values)) / length(values) * 100,
+      mean_value = mean(values, na.rm = TRUE),
+      value_range = range(values, na.rm = TRUE)
+    )
+  }
+  
+  return(results)
+}
+
+# Assess our spectral data quality
+quality_report <- assess_data_quality(spectral_data)
+print(quality_report)
+```
+
+## Summary
+
+GeoSpatialSuite's vegetation analysis capabilities include:
+
+### **40+ Vegetation Indices:**
+- **Basic**: NDVI, EVI, SAVI, MSAVI, DVI, RVI
+- **Enhanced**: ARVI, RDVI, GEMI, VARI, IPVI, TNDVI  
+- **Red-Edge**: NDRE, MTCI, IRECI, S2REP, PSRI, CRI1, CRI2
+- **Stress Detection**: PRI, SIPI, CCI, NDNI, CARI, MCARI, TCARI
+- **Water/Moisture**: NDWI, MNDWI, NDMI, MSI, NDII
+- **Specialized**: LAI, FAPAR, FCOVER, NBR, BAI, NDSI
+
+### **Key Features:**
+1. **Automatic band detection** from multi-band imagery
+2. **Quality filtering** and outlier removal
+3. **Temporal smoothing** for time series
+4. **Crop-specific analysis** with stress detection
+5. **Enhanced NDVI** with advanced options
+6. **Multi-scale analysis** capabilities
+7. **Comprehensive validation** tools
+
+### **Applications:**
+- Agricultural monitoring and precision farming
+- Forest health assessment
+- Environmental monitoring
+- Land cover classification
+- Stress detection and early warning systems
+- Yield prediction support
+- Seasonal vegetation dynamics
+
+The package provides everything you need for professional vegetation analysis in R!
+
+```{r}
+sessionInfo()
+```

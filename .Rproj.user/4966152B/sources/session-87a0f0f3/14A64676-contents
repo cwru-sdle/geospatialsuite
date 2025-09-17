@@ -1,0 +1,203 @@
+#' Create advanced water quality visualization
+#'
+#' @description
+#' Create professional water quality visualizations with river networks,
+#' threshold-based coloring, and regional boundaries.
+#'
+#' @param water_data Water quality data (data.frame or sf object)
+#' @param variable Variable to visualize
+#' @param region_boundary Region boundary
+#' @param river_network Optional river network data
+#' @param thresholds Named list of threshold values
+#' @param date_column Date column name (optional)
+#' @param output_file Output file path
+#'
+#' @return Plot object or file path
+#'
+#' @examples
+#' \dontrun{
+#' # Create water quality plot
+#' water_plot <- create_water_quality_plot(
+#'   water_data = "ohio_discharge.csv",
+#'   variable = "discharge",
+#'   region_boundary = "Ohio",
+#'   river_network = "rivers.geojson",
+#'   thresholds = list(
+#'     Normal = c(0, 50),
+#'     High = c(50, 200),
+#'     Warning = c(200, 500),
+#'     Extreme = c(500, Inf)
+#'   )
+#' )
+#' }
+#'
+#' @export
+create_water_quality_plot <- function(water_data, variable, region_boundary,
+                                      river_network = NULL,
+                                      thresholds = list(Normal = c(0, 4), High = c(4, 7),
+                                                        Warning = c(7, 10), Toxic = c(10, Inf)),
+                                      date_column = NULL, output_file = NULL) {
+
+  message("Creating water quality visualization...")
+
+  # Load required packages
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop("ggplot2 package required for visualization")
+  }
+
+  # Load and process data
+  if (is.character(water_data)) {
+    water_data <- read.csv(water_data)
+  }
+
+  # Convert to sf if needed
+  if (!inherits(water_data, "sf")) {
+    coord_cols <- c("lon", "lat")
+    if ("LongitudeMeasure" %in% names(water_data)) {
+      coord_cols <- c("LongitudeMeasure", "LatitudeMeasure")
+    }
+    water_data <- sf::st_as_sf(water_data, coords = coord_cols, crs = 4326)
+  }
+
+  # Create threshold groups
+  if (!is.null(thresholds)) {
+    water_data$threshold_group <- NA
+    for (threshold_name in names(thresholds)) {
+      threshold_range <- thresholds[[threshold_name]]
+      mask <- water_data[[variable]] >= threshold_range[1] &
+        water_data[[variable]] < threshold_range[2]
+      water_data$threshold_group[mask] <- threshold_name
+    }
+  }
+
+  # Get region boundary
+  boundary <- get_region_boundary(region_boundary)
+
+  # Create base plot
+  p <- ggplot2::ggplot() +
+    ggplot2::geom_sf(data = boundary, fill = "gray", color = "black") +
+    ggplot2::coord_sf() +
+    ggplot2::theme_minimal()
+
+  # Add river network if provided
+  if (!is.null(river_network)) {
+    if (is.character(river_network)) {
+      rivers <- sf::st_read(river_network)
+    } else {
+      rivers <- river_network
+    }
+    p <- p + ggplot2::geom_sf(data = rivers, color = "blue", size = 0.5)
+  }
+
+  # Add water quality points
+  if (!is.null(thresholds)) {
+    colors <- c("Normal" = "blue", "High" = "purple", "Warning" = "orange", "Toxic" = "red")
+    p <- p +
+      ggplot2::geom_sf(data = water_data, ggplot2::aes(color = threshold_group), size = 3, alpha = 0.8) +
+      ggplot2::scale_color_manual(name = paste(stringr::str_to_title(variable), "Levels"), values = colors)
+  } else {
+    p <- p +
+      ggplot2::geom_sf(data = water_data, ggplot2::aes(color = .data[[variable]]), size = 3) +
+      viridis::scale_color_viridis_c(name = stringr::str_to_title(variable))
+  }
+
+  # Add title
+  title_text <- paste(stringr::str_to_title(gsub("_", " ", variable)), "Levels")
+  if (!is.null(date_column) && date_column %in% names(water_data)) {
+    date_info <- unique(water_data[[date_column]])[1]
+    title_text <- paste(title_text, "on", date_info)
+  }
+
+  p <- p +
+    ggplot2::labs(title = title_text, x = "Longitude", y = "Latitude") +
+    ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))
+
+  # Save if output file specified
+  if (!is.null(output_file)) {
+    ggplot2::ggsave(output_file, plot = p, width = 12, height = 8, dpi = 300)
+    message(sprintf("Plot saved to: %s", output_file))
+    return(output_file)
+  }
+
+  return(p)
+}
+
+#' Create raster visualization plot
+#'
+#' @description
+#' Create professional raster visualizations with region boundaries and custom styling.
+#'
+#' @param raster_data SpatRaster or file path
+#' @param title Plot title
+#' @param data_type Type of data for appropriate color scheme
+#' @param region_boundary Optional region boundary to overlay
+#' @param color_scheme Color scheme: "viridis", "plasma", "terrain", "ndvi"
+#' @param output_file Optional output file path
+#'
+#' @return Plot object
+#'
+#' @examples
+#' \dontrun{
+#' # Create NDVI plot
+#' ndvi_plot <- create_raster_plot(
+#'   raster_data = "ndvi.tif",
+#'   title = "NDVI Analysis",
+#'   data_type = "ndvi",
+#'   region_boundary = "Ohio"
+#' )
+#' }
+#'
+#' @export
+create_raster_plot <- function(raster_data, title = "Raster Data", data_type = "general",
+                               region_boundary = NULL, color_scheme = "viridis",
+                               output_file = NULL) {
+
+  # Load required packages
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop("ggplot2 package required for visualization")
+  }
+
+  # Load raster data
+  if (is.character(raster_data)) {
+    raster_data <- terra::rast(raster_data)
+  }
+
+  # Convert to data frame for plotting
+  raster_df <- as.data.frame(raster_data, xy = TRUE)
+  colnames(raster_df)[3] <- "value"
+
+  # Create base plot
+  p <- ggplot2::ggplot(raster_df, ggplot2::aes(x = x, y = y, fill = value)) +
+    ggplot2::geom_raster() +
+    ggplot2::coord_fixed() +
+    ggplot2::theme_minimal() +
+    ggplot2::labs(title = title, x = "Longitude", y = "Latitude")
+
+  # Apply color scheme based on data type and preference
+  if (data_type == "ndvi") {
+    p <- p + ggplot2::scale_fill_gradient2(
+      low = "brown", mid = "yellow", high = "darkgreen",
+      midpoint = 0.5, name = "NDVI"
+    )
+  } else if (color_scheme == "terrain") {
+    p <- p + ggplot2::scale_fill_gradientn(colors = terrain.colors(255), name = "Value")
+  } else if (color_scheme == "viridis") {
+    p <- p + viridis::scale_fill_viridis_c(name = "Value")
+  } else if (color_scheme == "plasma") {
+    p <- p + viridis::scale_fill_viridis_c(option = "plasma", name = "Value")
+  }
+
+  # Add region boundary if provided
+  if (!is.null(region_boundary)) {
+    boundary <- get_region_boundary(region_boundary)
+    p <- p + ggplot2::geom_sf(data = boundary, fill = NA, color = "black", size = 1, inherit.aes = FALSE)
+  }
+
+  # Save if output file specified
+  if (!is.null(output_file)) {
+    ggplot2::ggsave(output_file, plot = p, width = 12, height = 8, dpi = 300)
+    message(sprintf("Plot saved to: %s", output_file))
+  }
+
+  return(p)
+}

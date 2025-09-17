@@ -1,0 +1,594 @@
+---
+title: "Universal Spatial Analysis and Joins"
+author: "GeoSpatialSuite Development Team"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Universal Spatial Analysis and Joins}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 10,
+  fig.height = 7,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+# Universal Spatial Analysis
+
+GeoSpatialSuite provides **universal spatial analysis** functions that work with **ANY** vector-raster combination. The core principle is that spatial analysis should be simple, reliable, and work with any data format.
+
+```{r}
+library(geospatialsuite)
+```
+
+## The Universal Spatial Join
+
+The `spatial_join_universal()` function is the cornerstone of GeoSpatialSuite's spatial analysis capabilities. It works with:
+
+- **Any vector geometry**: points, lines, polygons
+- **Any raster data**: single band, multi-band, time series
+- **Any coordinate system**: automatic reprojection
+- **Any file format**: shapefiles, CSVs, GeoTIFF, etc.
+
+## Creating Sample Data
+
+Let's create diverse sample data to demonstrate the universal capabilities:
+
+```{r}
+# 1. Create sample raster data (environmental variables)
+set.seed(123)
+
+# NDVI raster
+ndvi_raster <- terra::rast(nrows = 100, ncols = 100, 
+                          xmin = -84, xmax = -82, ymin = 39, ymax = 41)
+terra::values(ndvi_raster) <- runif(10000, 0.2, 0.8)
+names(ndvi_raster) <- "NDVI"
+
+# Soil nitrogen raster
+soil_n_raster <- terra::rast(ndvi_raster)
+terra::values(soil_n_raster) <- runif(10000, 10, 50)
+names(soil_n_raster) <- "soil_nitrogen"
+
+# Elevation raster
+elevation_raster <- terra::rast(ndvi_raster)
+terra::values(elevation_raster) <- runif(10000, 200, 400)
+names(elevation_raster) <- "elevation"
+
+# 2. Create sample vector data (different geometries)
+# Point data (field sampling sites)
+sample_points <- data.frame(
+  site_id = paste0("Site_", 1:25),
+  lon = runif(25, -84, -82),
+  lat = runif(25, 39, 41),
+  crop_type = sample(c("corn", "soybeans", "wheat"), 25, replace = TRUE),
+  yield = runif(25, 50, 150)
+)
+
+# Create polygons (field boundaries)
+n_polygons <- 8
+field_polygons <- data.frame(
+  field_id = paste0("Field_", 1:n_polygons),
+  area_ha = runif(n_polygons, 10, 100),
+  management = sample(c("organic", "conventional"), n_polygons, replace = TRUE)
+)
+
+# Add polygon geometries
+polygon_coords <- list()
+for (i in 1:n_polygons) {
+  center_x <- runif(1, -83.8, -82.2)
+  center_y <- runif(1, 39.2, 40.8)
+  size <- 0.05
+  
+  coords <- matrix(c(
+    center_x - size, center_y - size,
+    center_x + size, center_y - size,
+    center_x + size, center_y + size,
+    center_x - size, center_y + size,
+    center_x - size, center_y - size
+  ), ncol = 2, byrow = TRUE)
+  
+  polygon_coords[[i]] <- sf::st_polygon(list(coords))
+}
+
+field_polygons$geometry <- sf::st_sfc(polygon_coords, crs = 4326)
+field_polygons <- sf::st_sf(field_polygons)
+
+print("Sample data created successfully!")
+print(paste("Rasters:", terra::nlyr(ndvi_raster), "NDVI,", terra::nlyr(soil_n_raster), "Soil N,", terra::nlyr(elevation_raster), "Elevation"))
+print(paste("Points:", nrow(sample_points), "sampling sites"))
+print(paste("Polygons:", nrow(field_polygons), "field boundaries"))
+```
+
+## Basic Universal Spatial Join
+
+### 1. Points to Single Raster
+
+```{r eval=FALSE}
+# Extract NDVI values to sampling points
+points_with_ndvi <- spatial_join_universal(
+  vector_data = sample_points,
+  raster_data = ndvi_raster,
+  method = "simple",
+  verbose = TRUE
+)
+
+# View results
+head(points_with_ndvi)
+print(paste("Added", ncol(points_with_ndvi) - ncol(sample_points), "new columns"))
+```
+
+### 2. Points to Multiple Rasters
+
+```{r eval=FALSE}
+# Extract multiple environmental variables to points
+environmental_data <- spatial_join_universal(
+  vector_data = sample_points,
+  raster_data = list(
+    ndvi = ndvi_raster,
+    soil_nitrogen = soil_n_raster,
+    elevation = elevation_raster
+  ),
+  method = "simple",
+  variable_names = c("ndvi_value", "soil_n_ppm", "elevation_m"),
+  verbose = TRUE
+)
+
+# View comprehensive results
+head(environmental_data[, c("site_id", "crop_type", "ndvi_value", "soil_n_ppm", "elevation_m")])
+
+# Quick statistics
+cat("Environmental Variables Summary:\n")
+cat("NDVI range:", range(environmental_data$ndvi_value, na.rm = TRUE), "\n")
+cat("Soil N range:", range(environmental_data$soil_n_ppm, na.rm = TRUE), "\n")
+cat("Elevation range:", range(environmental_data$elevation_m, na.rm = TRUE), "\n")
+```
+
+### 3. Polygons with Buffer Analysis
+
+```{r eval=FALSE}
+# Extract values for field polygons using different methods
+fields_simple <- spatial_join_universal(
+  vector_data = field_polygons,
+  raster_data = ndvi_raster,
+  method = "simple",
+  summary_function = "mean",
+  variable_names = "field_ndvi_mean"
+)
+
+# Use buffer method for more comprehensive analysis
+fields_buffer <- spatial_join_universal(
+  vector_data = field_polygons,
+  raster_data = ndvi_raster,
+  method = "buffer",
+  buffer_size = 100,  # 100m buffer
+  summary_function = "mean",
+  variable_names = "ndvi_buffer_mean"
+)
+
+# Compare methods
+comparison_data <- merge(
+  sf::st_drop_geometry(fields_simple[, c("field_id", "field_ndvi_mean")]),
+  sf::st_drop_geometry(fields_buffer[, c("field_id", "ndvi_buffer_mean")]),
+  by = "field_id"
+)
+
+head(comparison_data)
+```
+
+## Advanced Spatial Join Methods
+
+### 1. Different Extraction Methods
+
+```{r eval=FALSE}
+# Test all extraction methods
+methods_comparison <- list()
+
+for (method in c("simple", "buffer", "bilinear", "nearest")) {
+  cat("Testing method:", method, "\n")
+  
+  result <- spatial_join_universal(
+    vector_data = sample_points[1:5, ],  # Use subset for demonstration
+    raster_data = ndvi_raster,
+    method = method,
+    buffer_size = if(method == "buffer") 250 else 1000,
+    variable_names = paste0("ndvi_", method),
+    verbose = FALSE
+  )
+  
+  methods_comparison[[method]] <- result[[paste0("ndvi_", method)]]
+}
+
+# Compare methods
+methods_df <- data.frame(
+  site = 1:5,
+  simple = methods_comparison$simple,
+  buffer = methods_comparison$buffer,
+  bilinear = methods_comparison$bilinear,
+  nearest = methods_comparison$nearest
+)
+
+print("Comparison of extraction methods:")
+print(methods_df)
+```
+
+### 2. Summary Functions for Polygons
+
+```{r eval=FALSE}
+# Test different summary functions for polygon extraction
+summary_functions <- c("mean", "median", "max", "min", "sd")
+polygon_summaries <- list()
+
+for (func in summary_functions) {
+  result <- spatial_join_universal(
+    vector_data = field_polygons[1:3, ],  # Use subset
+    raster_data = ndvi_raster,
+    method = "simple",
+    summary_function = func,
+    variable_names = paste0("ndvi_", func)
+  )
+  
+  polygon_summaries[[func]] <- result[[paste0("ndvi_", func)]]
+}
+
+# Create summary comparison
+summary_df <- data.frame(
+  field_id = field_polygons$field_id[1:3],
+  mean = polygon_summaries$mean,
+  median = polygon_summaries$median,
+  max = polygon_summaries$max,
+  min = polygon_summaries$min,
+  sd = polygon_summaries$sd
+)
+
+print("Polygon summary statistics comparison:")
+print(summary_df)
+```
+
+## Multi-Dataset Integration
+
+The real power comes from integrating multiple datasets:
+
+```{r eval=FALSE}
+# Comprehensive multi-dataset integration
+integrated_analysis <- integrate_multiple_datasets(
+  vector_data = sample_points,
+  raster_datasets = list(
+    vegetation = ndvi_raster,
+    soil_nitrogen = soil_n_raster,
+    elevation = elevation_raster
+  ),
+  analysis_functions = list(
+    mean = function(x) mean(x, na.rm = TRUE),
+    max = function(x) max(x, na.rm = TRUE),
+    cv = function(x) sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE)
+  ),
+  extraction_method = "buffer",
+  buffer_size = 200,
+  verbose = TRUE
+)
+
+# View integrated results
+print("Integrated dataset columns:")
+print(names(integrated_analysis))
+
+# Show sample of integrated data
+sample_cols <- c("site_id", "crop_type", "vegetation_mean", "soil_nitrogen_mean", "elevation_mean")
+head(integrated_analysis[, sample_cols])
+```
+
+## Working with Different Data Formats
+
+### 1. CSV Files with Coordinates
+
+```{r eval=FALSE}
+# Save sample points as CSV
+write.csv(sample_points, "sample_sites.csv", row.names = FALSE)
+
+# Read and process CSV with universal function
+csv_result <- spatial_join_universal(
+  vector_data = "sample_sites.csv",
+  raster_data = ndvi_raster,
+  coord_cols = c("lon", "lat"),
+  method = "simple"
+)
+
+# Clean up
+file.remove("sample_sites.csv")
+```
+
+### 2. Directory of Rasters
+
+```{r eval=FALSE}
+# Simulate a directory of raster files
+temp_dir <- tempdir()
+raster_dir <- file.path(temp_dir, "raster_data")
+dir.create(raster_dir, showWarnings = FALSE)
+
+# Save rasters to directory
+terra::writeRaster(ndvi_raster, file.path(raster_dir, "ndvi_2023.tif"), overwrite = TRUE)
+terra::writeRaster(soil_n_raster, file.path(raster_dir, "soil_nitrogen.tif"), overwrite = TRUE)
+terra::writeRaster(elevation_raster, file.path(raster_dir, "elevation.tif"), overwrite = TRUE)
+
+# Process entire directory
+directory_result <- spatial_join_universal(
+  vector_data = sample_points,
+  raster_data = raster_dir,
+  method = "simple",
+  verbose = TRUE
+)
+
+print("Processed entire directory:")
+print(names(directory_result))
+
+# Clean up
+unlink(raster_dir, recursive = TRUE)
+```
+
+## Advanced Point Extraction
+
+### Multi-Scale Analysis
+
+```{r eval=FALSE}
+# Advanced point extraction with multiple scales
+advanced_extraction <- extract_to_points_advanced(
+  points_data = sample_points[1:10, ],
+  raster_data = ndvi_raster,
+  sampling_strategy = "multi_scale",
+  buffer_sizes = c(50, 100, 250, 500),
+  summary_functions = list(
+    mean = function(x) mean(x, na.rm = TRUE),
+    cv = function(x) sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE),
+    majority = function(x) {
+      # For categorical data
+      names(sort(table(x), decreasing = TRUE))[1]
+    }
+  ),
+  verbose = TRUE
+)
+
+# View multi-scale results
+scale_cols <- grep("buffer_", names(advanced_extraction), value = TRUE)
+head(advanced_extraction[, c("site_id", scale_cols[1:6])])
+```
+
+### Systematic Sampling
+
+```{r eval=FALSE}
+# Systematic sampling within buffers
+systematic_extraction <- extract_to_points_advanced(
+  points_data = sample_points[1:5, ],
+  raster_data = ndvi_raster,
+  sampling_strategy = "systematic",
+  buffer_sizes = c(200, 500),
+  n_samples = 16,  # 4x4 grid
+  summary_functions = list(
+    mean = function(x) mean(x, na.rm = TRUE),
+    sd = function(x) sd(x, na.rm = TRUE)
+  )
+)
+```
+
+## Temporal Spatial Analysis
+
+### Time Series Integration
+
+```{r eval=FALSE}
+# Simulate time series data
+time_series_rasters <- list()
+dates <- seq(as.Date("2023-01-01"), as.Date("2023-12-01"), by = "month")
+
+for (i in 1:12) {
+  # Simulate seasonal NDVI variation
+  seasonal_factor <- 0.3 + 0.7 * (1 + cos(2 * pi * (i - 6) / 12)) / 2
+  monthly_ndvi <- ndvi_raster * seasonal_factor
+  names(monthly_ndvi) <- paste0("NDVI_", format(dates[i], "%Y_%m"))
+  time_series_rasters[[i]] <- monthly_ndvi
+}
+
+# Temporal spatial join
+temporal_result <- spatial_join_temporal(
+  vector_data = cbind(sample_points[1:10, ], 
+                     observation_date = sample(dates, 10, replace = TRUE)),
+  raster_time_series = time_series_rasters,
+  time_column = "observation_date",
+  time_tolerance = 15,  # 15 days tolerance
+  temporal_method = "nearest"
+)
+
+print("Temporal join completed:")
+print(names(temporal_result))
+```
+
+## Spatial Correlation Analysis
+
+### Correlation Between Variables
+
+```{r eval=FALSE}
+# Calculate spatial correlations between environmental variables
+correlation_result <- calculate_spatial_correlation(
+  raster1 = ndvi_raster,
+  raster2 = soil_n_raster,
+  method = "pearson"
+)
+
+cat("Correlation between NDVI and Soil Nitrogen:", round(correlation_result, 3), "\n")
+
+# Local correlation analysis
+local_correlation <- calculate_spatial_correlation(
+  raster1 = ndvi_raster,
+  raster2 = elevation_raster,
+  method = "pearson",
+  local_correlation = TRUE,
+  window_size = 5
+)
+
+# Visualize local correlation
+plot_raster_fast(local_correlation, "Local Correlation: NDVI vs Elevation", 
+                color_scheme = "RdBu")
+```
+
+### Multi-Variable Correlation Matrix
+
+```{r eval=FALSE}
+# Analyze correlations between multiple variables
+multi_correlation <- analyze_variable_correlations(
+  variable_list = list(
+    NDVI = ndvi_raster,
+    Soil_N = soil_n_raster,
+    Elevation = elevation_raster
+  ),
+  method = "pearson",
+  create_plots = TRUE
+)
+
+print("Correlation Matrix:")
+print(multi_correlation$correlation_matrix)
+```
+
+## Quality Control and Validation
+
+### Data Quality Assessment
+
+```{r eval=FALSE}
+# Function to assess spatial join quality
+assess_join_quality <- function(joined_data, original_data) {
+  results <- list()
+  
+  # Check for missing values
+  new_cols <- setdiff(names(joined_data), names(original_data))
+  
+  for (col in new_cols) {
+    n_valid <- sum(!is.na(joined_data[[col]]))
+    n_total <- nrow(joined_data)
+    
+    results[[col]] <- list(
+      completeness_pct = round((n_valid / n_total) * 100, 1),
+      n_valid = n_valid,
+      n_missing = n_total - n_valid,
+      value_range = range(joined_data[[col]], na.rm = TRUE),
+      mean_value = mean(joined_data[[col]], na.rm = TRUE)
+    )
+  }
+  
+  return(results)
+}
+
+# Assess quality of our joins
+quality_assessment <- assess_join_quality(environmental_data, sample_points)
+print("Data Quality Assessment:")
+for (var in names(quality_assessment)) {
+  cat("\n", var, ":\n")
+  cat("  Completeness:", quality_assessment[[var]]$completeness_pct, "%\n")
+  cat("  Range:", round(quality_assessment[[var]]$value_range, 3), "\n")
+  cat("  Mean:", round(quality_assessment[[var]]$mean_value, 3), "\n")
+}
+```
+
+## Best Practices and Tips
+
+### 1. Choosing the Right Method
+
+```{r eval=FALSE}
+# Guidelines for method selection
+method_guide <- function(geometry_type, analysis_goal) {
+  recommendations <- list(
+    point_simple = "Use 'simple' for exact point values",
+    point_representative = "Use 'buffer' for representative area values",
+    point_interpolated = "Use 'bilinear' for smooth interpolation",
+    polygon_summary = "Use 'simple' with summary functions",
+    polygon_buffer = "Use 'buffer' to include edge effects",
+    line_profile = "Use 'simple' for profile analysis"
+  )
+  
+  key <- paste(geometry_type, analysis_goal, sep = "_")
+  return(recommendations[[key]] %||% "Use 'simple' as default")
+}
+
+# Example recommendations
+cat("Method Recommendations:\n")
+cat("Point + exact values:", method_guide("point", "simple"), "\n")
+cat("Polygon + summary:", method_guide("polygon", "summary"), "\n")
+```
+
+### 2. Performance Optimization
+
+```{r eval=FALSE}
+# Tips for large datasets
+performance_tips <- function() {
+  cat("Performance Tips for Large Datasets:\n")
+  cat("1. Use 'simple' method when possible (fastest)\n")
+  cat("2. Reduce buffer size if using 'buffer' method\n")
+  cat("3. Process in chunks for very large datasets\n")
+  cat("4. Use appropriate summary functions for polygons\n")
+  cat("5. Consider coordinate system efficiency\n")
+  cat("6. Pre-crop rasters to study area when possible\n")
+}
+
+performance_tips()
+```
+
+### 3. Error Handling and Troubleshooting
+
+```{r eval=FALSE}
+# Common issues and solutions
+troubleshooting_guide <- function() {
+  cat("Common Issues and Solutions:\n\n")
+  
+  cat("1. CRS Mismatch:\n")
+  cat("   - Solution: Functions automatically reproject, but check results\n\n")
+  
+  cat("2. No Spatial Overlap:\n")
+  cat("   - Solution: Check coordinate systems and data extents\n\n")
+  
+  cat("3. All NA Values:\n")
+  cat("   - Solution: Verify raster has valid data in overlap area\n\n")
+  
+  cat("4. Memory Issues:\n")
+  cat("   - Solution: Process in smaller chunks or reduce resolution\n\n")
+  
+  cat("5. Slow Performance:\n")
+  cat("   - Solution: Use simpler methods or reduce data size\n")
+}
+
+troubleshooting_guide()
+```
+
+## Summary
+
+GeoSpatialSuite's universal spatial analysis provides:
+
+### **Core Capabilities:**
+- **Universal spatial join** for ANY vector-raster combination
+- **Multiple extraction methods**: simple, buffer, bilinear, nearest
+- **Flexible summary functions**: mean, median, max, min, sd, custom
+- **Multi-dataset integration** with comprehensive analysis
+- **Temporal spatial analysis** with date matching
+- **Advanced point extraction** with multi-scale analysis
+
+### **Key Advantages:**
+1. **Works with any data format** - no preprocessing required
+2. **Automatic coordinate system handling** - no manual reprojection
+3. **Robust error handling** - graceful failure with helpful messages
+4. **Comprehensive validation** - quality control built in
+5. **Performance optimized** - efficient for large datasets
+6. **Flexible and extensible** - supports custom analysis functions
+
+### **Applications:**
+- Environmental data integration
+- Agricultural precision farming
+- Ecological modeling
+- Urban planning analysis
+- Climate impact assessment
+- Natural resource management
+
+The universal approach means you can focus on your analysis rather than data wrangling!
+
+```{r}
+sessionInfo()
+```

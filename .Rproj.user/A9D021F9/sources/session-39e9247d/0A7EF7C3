@@ -1,0 +1,26 @@
+{
+    "id": "0A7EF7C3",
+    "path": "~/CSE_MSE_RXF131/staging/casf/EE/geospatialsuite-r/packages/geospatialsuite/test_diagnostics.R",
+    "project_path": "test_diagnostics.R",
+    "type": "r_source",
+    "hash": "921635094",
+    "contents": "",
+    "dirty": false,
+    "created": 1754100331826.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "74,64",
+        "scrollLine": "65"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1754101348,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1754101348312,
+    "read_only": false,
+    "read_only_alternatives": []
+}

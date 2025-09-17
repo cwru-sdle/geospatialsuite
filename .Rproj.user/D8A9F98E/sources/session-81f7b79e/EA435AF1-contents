@@ -1,0 +1,91 @@
+#' Calculate water indices including both NDWI variants
+#'
+#' @description
+#' Calculate various water indices including NDWI (McFeeters 1996),
+#' MNDWI (Xu 2006), and NDMI for water body detection and moisture content.
+#'
+#' @param green Green band SpatRaster
+#' @param nir NIR band SpatRaster
+#' @param swir1 SWIR1 band SpatRaster (for MNDWI)
+#' @param index_type Index type: "NDWI", "MNDWI", "NDMI"
+#'
+#' @return SpatRaster of water index
+#'
+#' @details
+#' Available water indices:
+#' \itemize{
+#'   \item NDWI: (Green - NIR) / (Green + NIR) - McFeeters 1996
+#'   \item MNDWI: (Green - SWIR1) / (Green + SWIR1) - Xu 2006
+#'   \item NDMI: (NIR - SWIR1) / (NIR + SWIR1) - Moisture index
+#' }
+#'
+#' @examples
+#' \dontrun{
+#' # Original NDWI
+#' ndwi1 <- calculate_water_index(green, nir, index_type = "NDWI")
+#'
+#' # Modified NDWI (requires SWIR1)
+#' ndwi2 <- calculate_water_index(green, nir, swir1, index_type = "MNDWI")
+#'
+#' # Moisture index
+#' ndmi <- calculate_water_index(green, nir, swir1, index_type = "NDMI")
+#' }
+#'
+#' @export
+calculate_water_index <- function(green, nir, swir1 = NULL, index_type = "NDWI") {
+  # Convert inputs to rasters if they are file paths
+  if (is.character(green)) green <- terra::rast(green)
+  if (is.character(nir)) nir <- terra::rast(nir)
+  if (!is.null(swir1) && is.character(swir1)) swir1 <- terra::rast(swir1)
+
+  index <- switch(index_type,
+                  # Original NDWI (McFeeters 1996) - Green and NIR
+                  "NDWI" = (green - nir) / (green + nir),
+
+                  # Modified NDWI (Xu 2006) - Green and SWIR1
+                  "MNDWI" = {
+                    if (is.null(swir1)) stop("MNDWI requires SWIR1 band.")
+                    (green - swir1) / (green + swir1)
+                  },
+
+                  # Normalized Difference Moisture Index
+                  "NDMI" = {
+                    if (is.null(swir1)) stop("NDMI requires SWIR1 band.")
+                    (nir - swir1) / (nir + swir1)
+                  },
+
+                  stop(paste("Unsupported water index type:", index_type))
+  )
+
+  names(index) <- index_type
+  return(index)
+}
+
+#' Get list of available water indices
+#'
+#' @description
+#' Returns information about all available water indices.
+#'
+#' @return Data frame with water index information
+#'
+#' @examples
+#' \dontrun{
+#' water_indices <- list_water_indices()
+#' print(water_indices)
+#' }
+#'
+#' @export
+list_water_indices <- function() {
+  data.frame(
+    Index = c("NDWI", "MNDWI", "NDMI"),
+    Type = c("Water", "Water", "Moisture"),
+    Required_Bands = c("Green, NIR", "Green, SWIR1", "NIR, SWIR1"),
+    Description = c("Normalized Difference Water Index (McFeeters 1996)",
+                    "Modified NDWI (Xu 2006)",
+                    "Normalized Difference Moisture Index"),
+    Formula = c("(Green - NIR) / (Green + NIR)",
+                "(Green - SWIR1) / (Green + SWIR1)",
+                "(NIR - SWIR1) / (NIR + SWIR1)"),
+    stringsAsFactors = FALSE
+  )
+}

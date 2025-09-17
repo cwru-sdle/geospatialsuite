@@ -1,0 +1,58 @@
+#' GeoSpatialSuite: Comprehensive Geospatial Analysis Toolkit
+#'
+#' @docType package
+#' @name GeoSpatialSuite
+#' @description A comprehensive toolkit for geospatial analysis including vegetation indices,
+#' water quality analysis, raster mosaicing, spatial joins, and temporal analysis.
+#' @author Olatunde David Akanbi
+#' @keywords geospatial spatial-analysis agriculture water-quality
+NULL
+
+# Define null-coalescing operator
+`%||%` <- function(x, y) if(is.null(x)) y else x
+
+# Package startup message
+.onAttach <- function(libname, pkgname) {
+  packageStartupMessage("GeoSpatialSuite package loaded successfully!")
+  packageStartupMessage("=====================================================")
+  packageStartupMessage("COMPREHENSIVE GEOSPATIAL ANALYSIS TOOLKIT")
+  packageStartupMessage("=====================================================")
+  packageStartupMessage("")
+  packageStartupMessage("KEY MODULES AVAILABLE:")
+  packageStartupMessage("• NDVI & Vegetation Indices (20+ indices)")
+  packageStartupMessage("• Water Indices (NDWI, MNDWI, NDMI)")
+  packageStartupMessage("• Raster Mosaicing (merge, mosaic, mean, max, min)")
+  packageStartupMessage("• Spatial Join (raster-vector integration)")
+  packageStartupMessage("• CDL Crop Analysis (comprehensive crop codes)")
+  packageStartupMessage("• Spatial Interpolation (IDW, kriging, MICE)")
+  packageStartupMessage("• Temporal Analysis (trends, change detection)")
+  packageStartupMessage("• Terrain Analysis (slope, aspect, TRI, TPI)")
+  packageStartupMessage("• Water Quality Analysis")
+  packageStartupMessage("• Dynamic Visualization")
+  packageStartupMessage("")
+  packageStartupMessage("For help: ?GeoSpatialSuite or test_package()")
+}
+
+# Load required libraries at package load
+.onLoad <- function(libname, pkgname) {
+  suppressPackageStartupMessages({
+    # Core spatial packages
+    requireNamespace("terra", quietly = TRUE)
+    requireNamespace("sf", quietly = TRUE)
+
+    # Data manipulation
+    requireNamespace("dplyr", quietly = TRUE)
+
+    # Geographic data
+    requireNamespace("tigris", quietly = TRUE)
+    requireNamespace("rnaturalearth", quietly = TRUE)
+
+    # Visualization
+    requireNamespace("viridis", quietly = TRUE)
+    requireNamespace("ggplot2", quietly = TRUE)
+
+    # Utilities
+    requireNamespace("tools", quietly = TRUE)
+    requireNamespace("stringr", quietly = TRUE)
+  })
+}

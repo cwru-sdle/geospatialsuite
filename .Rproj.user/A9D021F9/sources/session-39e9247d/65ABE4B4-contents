@@ -1,0 +1,27 @@
+# Tests for core utility functions
+# ===================================================================
+
+test_that("get_region_boundary works with custom bbox", {
+  boundary <- get_region_boundary(c(-84, 40, -83, 41))
+  expect_s3_class(boundary, "sf")
+  expect_equal(nrow(boundary), 1)
+})
+
+test_that("get_region_boundary handles invalid input", {
+  expect_error(get_region_boundary("NonexistentPlace"))
+  expect_error(get_region_boundary(NULL))
+})
+
+test_that("load_raster_data works with raster objects", {
+  test_raster <- create_test_raster()
+  rasters <- load_raster_data(list(test_raster))
+  expect_length(rasters, 1)
+  expect_s4_class(rasters[[1]], "SpatRaster")
+})
+
+test_that("extract_dates_universal works", {
+  files <- c("ndvi_2023-05-15.tif", "ndvi_2023-06-15.tif")
+  dates <- extract_dates_universal(files)
+  expect_length(dates, 2)
+  expect_true(any(grepl("2023", dates)))
+})

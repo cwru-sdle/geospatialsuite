@@ -1,0 +1,26 @@
+{
+    "id": "F46E0EC8",
+    "path": "~/CSE_MSE_RXF131/staging/casf/EE/geospatialsuite-r/packages/geospatialsuite/R/11-visualization.R",
+    "project_path": "R/11-visualization.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1753396667618.0,
+    "source_on_save": false,
+    "relative_order": 10,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "911,0",
+        "scrollLine": "887"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1753396682,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1753396682111,
+    "read_only": false,
+    "read_only_alternatives": []
+}

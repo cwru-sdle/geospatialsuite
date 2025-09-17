@@ -1,0 +1,444 @@
+---
+title: "Advanced Examples and Workflows"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{advanced-examples}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+```{r setup}
+library(GeoSpatialSuite)
+library(dplyr)
+```
+
+# Advanced GeoSpatialSuite Workflows
+
+This vignette demonstrates advanced use cases and complete workflows using GeoSpatialSuite for complex geospatial analysis projects.
+
+# Comprehensive Agricultural Analysis
+
+## Multi-Season NDVI Analysis with Crop Masking
+
+```{r agricultural-workflow}
+# Complete agricultural analysis workflow
+config <- list(
+  analysis_type = "ndvi_crop_analysis",
+  input_data = list(
+    red = "sentinel_red_bands/",
+    nir = "sentinel_nir_bands/"
+  ),
+  region_boundary = "Iowa", 
+  cdl_data = "cdl_2023.tif",
+  crop_codes = get_comprehensive_cdl_codes("soybeans"),
+  output_folder = "iowa_soybean_analysis/"
+)
+
+# Run comprehensive workflow
+results <- run_comprehensive_geospatial_workflow(config)
+
+# Extract seasonal patterns
+seasonal_analysis <- analyze_temporal_changes(
+  data_list = results$results$ndvi_data,
+  dates = extract_dates_universal("sentinel_red_bands/"),
+  region_boundary = "Iowa",
+  analysis_type = "seasonal"
+)
+```
+
+## Multi-Dataset Integration
+
+```{r multi-dataset-integration}
+# Integrate multiple environmental variables
+integrated_data <- integrate_multiple_datasets(
+  vector_data = "farm_fields.shp",
+  raster_datasets = list(
+    ndvi = "ndvi_time_series/",
+    soil_nitrogen = "soil_nitrogen.tif",
+    soil_phosphorus = "soil_phosphorus.tif", 
+    elevation = "dem.tif",
+    slope = "slope.tif",
+    precipitation = "annual_precip.tif",
+    temperature = "mean_temp.tif"
+  ),
+  analysis_functions = list(
+    mean = function(x) mean(x, na.rm = TRUE),
+    max = function(x) max(x, na.rm = TRUE),
+    cv = function(x) sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE)
+  )
+)
+
+# Correlation analysis between variables
+correlation_results <- analyze_variable_correlations(
+  variable_list = list(
+    ndvi = integrated_data$ndvi_mean,
+    nitrogen = integrated_data$soil_nitrogen_mean,
+    elevation = integrated_data$elevation_mean,
+    precipitation = integrated_data$precipitation_mean
+  ),
+  output_folder = "correlation_analysis/",
+  create_plots = TRUE
+)
+```
+
+# Environmental Monitoring Workflow
+
+## Water Quality Assessment with Multiple Parameters
+
+```{r water-quality-workflow}
+# Multi-parameter water quality analysis
+water_config <- list(
+  analysis_type = "water_quality_analysis",
+  input_data = "ohio_water_monitoring.csv",
+  region_boundary = "Ohio",
+  variable = "dissolved_oxygen",
+  river_network = "ohio_rivers.geojson",
+  thresholds = list(
+    Critical = c(0, 2),
+    Poor = c(2, 4),
+    Fair = c(4, 6), 
+    Good = c(6, 8),
+    Excellent = c(8, Inf)
+  )
+)
+
+water_results <- run_comprehensive_geospatial_workflow(water_config)
+
+# Analyze multiple water quality parameters
+parameters <- c("dissolved_oxygen", "nitrate_nitrite", "phosphorus", "turbidity")
+multi_param_results <- list()
+
+for (param in parameters) {
+  multi_param_results[[param]] <- analyze_water_quality_comprehensive(
+    water_data = "ohio_water_monitoring.csv",
+    variable = param,
+    region_boundary = "Ohio",
+    river_network = "ohio_rivers.geojson"
+  )
+}
+```
+
+## Spatial Interpolation for Missing Data
+
+```{r spatial-interpolation}
+# Handle missing environmental data
+monitoring_sites <- sf::st_read("monitoring_stations.shp")
+
+# Interpolate missing soil values using different methods
+interpolated_idw <- spatial_interpolation(
+  spatial_data = monitoring_sites,
+  target_variables = c("soil_ph", "organic_matter"),
+  method = "IDW",
+  idw_power = 2
+)
+
+# Multivariate imputation for complex relationships
+interpolated_mice <- spatial_interpolation(
+  spatial_data = monitoring_sites,
+  target_variables = c("temperature", "humidity", "pressure"),
+  method = "mice",
+  mice_method = "pmm"
+)
+```
+
+# Terrain and Landscape Analysis
+
+## Advanced Terrain Metrics
+
+```{r terrain-analysis}
+# Comprehensive terrain analysis
+terrain_results <- run_terrain_analysis_workflow(
+  elevation_data = "high_res_dem.tif",
+  vector_data = "study_plots.csv",
+  region_boundary = "Colorado",
+  terrain_vars = c("slope", "aspect", "TRI", "TPI", "flowdir"),
+  output_folder = "colorado_terrain_analysis/"
+)
+
+# Calculate advanced terrain metrics
+advanced_metrics <- calculate_advanced_terrain_metrics(
+  elevation_raster = "high_res_dem.tif",
+  metrics = c("wetness_index", "curvature", "convergence", "heat_load"),
+  region_boundary = "Colorado"
+)
+
+# Custom terrain analysis functions
+custom_terrain_functions <- list(
+  ruggedness = function(sf_data) {
+    sf_data$slope * sf_data$TRI
+  },
+  exposure = function(sf_data) {
+    # Calculate wind exposure based on aspect and slope
+    wind_direction <- 225  # SW wind in degrees
+    aspect_diff <- abs(sf_data$aspect - wind_direction)
+    aspect_diff <- pmin(aspect_diff, 360 - aspect_diff)
+    exposure <- sf_data$slope * cos(aspect_diff * pi / 180)
+    return(exposure)
+  }
+)
+
+terrain_custom <- integrate_terrain_analysis(
+  vector_data = "alpine_plots.csv",
+  elevation_raster = "high_res_dem.tif",
+  custom_terrain_functions = custom_terrain_functions
+)
+```
+
+# Temporal Change Detection
+
+## Land Use Change Analysis
+
+```{r temporal-analysis}
+# Analyze land cover changes over time
+landcover_files <- c(
+  "landcover_2010.tif",
+  "landcover_2015.tif", 
+  "landcover_2020.tif"
+)
+
+change_detection <- analyze_temporal_changes(
+  data_list = landcover_files,
+  dates = c("2010", "2015", "2020"),
+  region_boundary = "California:Los_Angeles",
+  analysis_type = "change_detection"
+)
+
+# Trend analysis for NDVI time series
+ndvi_trend <- analyze_temporal_changes(
+  data_list = "ndvi_monthly/",
+  dates = extract_dates_universal("ndvi_monthly/"),
+  region_boundary = "Sahel_region_bbox.shp",
+  analysis_type = "trend"
+)
+
+# Identify areas of significant change
+significant_changes <- change_detection$change_rasters$overall_change
+significant_areas <- significant_changes > 2  # Threshold for significant change
+```
+
+# Large-Scale Regional Analysis
+
+## Multi-State Agricultural Assessment
+
+```{r multi-state-analysis}
+# Analyze corn production across multiple states
+corn_states <- c("Iowa", "Illinois", "Nebraska", "Minnesota", "Indiana")
+multi_state_results <- list()
+
+for (state in corn_states) {
+  multi_state_results[[state]] <- analyze_cdl_crops_dynamic(
+    cdl_data = paste0("cdl_2023_", tolower(state), ".tif"),
+    crop_selection = "corn",
+    region_boundary = state,
+    analysis_type = "area"
+  )
+}
+
+# Compare results across states
+state_comparison <- data.frame(
+  state = corn_states,
+  corn_area_ha = sapply(multi_state_results, function(x) x$total_area_ha),
+  stringsAsFactors = FALSE
+)
+
+# Combine with NDVI analysis
+for (state in corn_states) {
+  corn_mask <- create_crop_mask(
+    cdl_data = paste0("cdl_2023_", tolower(state), ".tif"),
+    crop_codes = "corn",
+    region_boundary = state
+  )
+  
+  ndvi_masked <- spatial_join_universal(
+    vector_data = corn_mask,
+    raster_data = paste0("ndvi_", tolower(state), "/"),
+    method = "simple"
+  )
+  
+  state_comparison$mean_ndvi[state_comparison$state == state] <- 
+    mean(ndvi_masked$ndvi_mean, na.rm = TRUE)
+}
+```
+
+# Raster Mosaicking and Processing
+
+## Large-Scale Data Processing
+
+```{r raster-processing}
+# Process large collections of satellite imagery
+# Select relevant tiles for region
+region_files <- select_rasters_for_region(
+  input_folder = "/data/sentinel2_tiles/",
+  region_boundary = "Texas",
+  buffer_size = 0.1
+)
+
+# Create mosaic with different methods
+mosaic_merge <- create_raster_mosaic(
+  input_data = region_files,
+  method = "merge",
+  region_boundary = "Texas"
+)
+
+mosaic_mean <- create_raster_mosaic(
+  input_data = region_files,
+  method = "mean",
+  region_boundary = "Texas",
+  output_file = "texas_mean_composite.tif"
+)
+
+# Quality assessment of mosaic
+mosaic_quality <- list(
+  mean_value = terra::global(mosaic_mean, "mean", na.rm = TRUE),
+  coverage_percent = sum(!is.na(terra::values(mosaic_mean))) / terra::ncell(mosaic_mean) * 100,
+  value_range = range(terra::values(mosaic_mean), na.rm = TRUE)
+)
+```
+
+# Custom Analysis Workflows
+
+## Precision Agriculture Pipeline
+
+```{r precision-agriculture}
+# Complete precision agriculture workflow
+precision_ag_workflow <- function(field_boundary, satellite_data, soil_data, yield_data) {
+  
+  # Step 1: Extract satellite indices for field
+  field_indices <- spatial_join_universal(
+    vector_data = field_boundary,
+    raster_data = satellite_data,
+    method = "buffer",
+    buffer_size = 30  # Pixel size buffer
+  )
+  
+  # Step 2: Add soil information
+  field_with_soil <- spatial_join_universal(
+    vector_data = field_indices,
+    raster_data = soil_data,
+    method = "simple"
+  )
+  
+  # Step 3: Correlate with yield data
+  correlation_matrix <- analyze_variable_correlations(
+    variable_list = list(
+      ndvi = field_with_soil$ndvi,
+      soil_ph = field_with_soil$soil_ph,
+      organic_matter = field_with_soil$organic_matter,
+      yield = field_with_soil$yield
+    )
+  )
+  
+  # Step 4: Management zone delineation
+  # (Custom analysis based on correlations)
+  management_zones <- create_management_zones(field_with_soil)
+  
+  return(list(
+    field_data = field_with_soil,
+    correlations = correlation_matrix,
+    zones = management_zones
+  ))
+}
+
+# Apply to multiple fields
+field_results <- precision_ag_workflow(
+  field_boundary = "field_001.shp",
+  satellite_data = list(
+    ndvi = "field_001_ndvi.tif",
+    ndre = "field_001_ndre.tif"
+  ),
+  soil_data = "soil_sampling_results.tif",
+  yield_data = "yield_monitor_data.tif"
+)
+```
+
+# Performance Optimization
+
+## Handling Large Datasets
+
+```{r performance-tips}
+# Tips for working with large datasets
+
+# 1. Use verbose mode to monitor progress
+large_analysis <- spatial_join_universal(
+  vector_data = "10000_sample_points.csv",
+  raster_data = "large_raster_collection/",
+  verbose = TRUE
+)
+
+# 2. Process in chunks for memory efficiency
+chunk_process <- function(data_chunks, raster_data) {
+  results <- list()
+  for (i in seq_along(data_chunks)) {
+    message(sprintf("Processing chunk %d/%d", i, length(data_chunks)))
+    results[[i]] <- spatial_join_universal(
+      vector_data = data_chunks[[i]],
+      raster_data = raster_data,
+      method = "simple"
+    )
+  }
+  return(do.call(rbind, results))
+}
+
+# 3. Pre-select rasters for region to reduce processing
+regional_tiles <- select_rasters_for_region(
+  input_folder = "/massive_satellite_archive/",
+  region_boundary = study_region,
+  buffer_size = 0.05
+)
+```
+
+# Quality Control and Validation
+
+```{r quality-control}
+# Validate analysis results
+validation_report <- function(analysis_results) {
+  
+  # Check data completeness
+  completeness <- sapply(analysis_results, function(x) {
+    sum(!is.na(x)) / length(x) * 100
+  })
+  
+  # Check value ranges
+  value_ranges <- sapply(analysis_results, function(x) {
+    if (is.numeric(x)) {
+      paste(round(range(x, na.rm = TRUE), 3), collapse = " to ")
+    } else {
+      "Non-numeric"
+    }
+  })
+  
+  # Spatial coverage
+  if (inherits(analysis_results, "sf")) {
+    bbox <- sf::st_bbox(analysis_results)
+    spatial_extent <- paste("Extent:", paste(round(bbox, 3), collapse = ", "))
+  } else {
+    spatial_extent <- "Not spatial data"
+  }
+  
+  report <- list(
+    completeness = completeness,
+    value_ranges = value_ranges,
+    spatial_extent = spatial_extent,
+    n_features = if (inherits(analysis_results, "sf")) nrow(analysis_results) else length(analysis_results)
+  )
+  
+  return(report)
+}
+
+# Apply quality control
+quality_report <- validation_report(field_results$field_data)
+print(quality_report)
+```
+
+This vignette demonstrates the power and flexibility of GeoSpatialSuite for complex, real-world geospatial analysis workflows. The package's universal functions can be combined in countless ways to address diverse research and application needs across agriculture, environmental science, water resources, and landscape ecology.

@@ -1,0 +1,9 @@
+#' Hello World Function
+#'
+#' A simple hello world function for demonstration.
+#'
+#' @return A greeting string.
+#' @export
+hello <- function() {
+  "Hello, World!"
+}

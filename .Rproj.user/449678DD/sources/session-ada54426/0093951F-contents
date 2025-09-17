@@ -1,0 +1,329 @@
+---
+title: "GNN_R"
+output: pdf_document
+date: "2024-11-25"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+
+
+```{r}
+
+library(terra)
+library(torch)
+
+# Load and prepare data
+geo_file <- "/home/oda10/CSE_MSE_RXF131/sdle-ondemand/cde/geo/methane.tif"
+r <- rast(geo_file)
+layer <- r[[2]]
+
+# Print diagnostics
+cat("Raster dimensions:", dim(layer), "\n")
+cat("Resolution:", res(layer), "\n")
+cat("Extent:", paste(as.vector(ext(layer)), collapse=", "), "\n")
+
+# Prepare mask and missing values
+layer_values <- values(layer)
+is_ohio <- !is.na(layer_values)
+cat("Total cells:", length(layer_values), "\n")
+cat("Ohio cells:", sum(is_ohio), "\n")
+
+# Introduce missing values
+set.seed(42)
+valid_ohio_cells <- which(is_ohio)
+n_missing <- round(0.1 * length(valid_ohio_cells))
+missing_indices <- sample(valid_ohio_cells, size = n_missing)
+layer_values[missing_indices] <- NA
+original_values <- layer_values
+
+# Prepare graph data
+valid_cells <- which(!is.na(layer_values) & is_ohio)
+adjacency <- terra::adjacent(layer, cells = valid_cells, directions = 8, pairs = TRUE)
+valid_edges <- adjacency[adjacency[,1] %in% valid_cells & adjacency[,2] %in% valid_cells, ]
+cell_coords <- xyFromCell(layer, valid_cells)
+
+# Calculate edge weights efficiently
+edge_weights <- sapply(1:nrow(valid_edges), function(i) {
+    coord1 <- cell_coords[valid_cells == valid_edges[i,1], ]
+    coord2 <- cell_coords[valid_cells == valid_edges[i,2], ]
+    1 / sqrt(sum((coord1 - coord2)^2))
+})
+edge_weights <- edge_weights / max(edge_weights)
+
+# Create node features
+node_features <- data.frame(
+    id = valid_cells,
+    value = scale(layer_values[valid_cells]),
+    x = scale(cell_coords[,1]),
+    y = scale(cell_coords[,2])
+)
+
+# Convert to torch tensors
+x <- torch_tensor(as.matrix(node_features[,c("value", "x", "y")]), dtype = torch_float())
+edges <- torch_tensor(t(valid_edges - 1), dtype = torch_long())
+edge_weights <- torch_tensor(edge_weights, dtype = torch_float())
+
+# Define GNN Layer
+gnn_layer <- nn_module(
+  "SpatialGNN",
+  initialize = function(in_features = 3, hidden_features = 64) {
+    self$w1 <- nn_parameter(torch_randn(in_features, hidden_features))
+    self$w2 <- nn_parameter(torch_randn(hidden_features, hidden_features))
+    self$w3 <- nn_parameter(torch_randn(hidden_features, 1))
+    self$attention <- nn_parameter(torch_randn(hidden_features * 2, 1))
+    self$ln1 <- nn_layer_norm(hidden_features)
+    self$ln2 <- nn_layer_norm(hidden_features)
+    self$dropout <- nn_dropout(0.2)
+    self$activation <- nn_leaky_relu()
+  },
+  forward = function(x, edges, edge_weights) {
+    h <- self$activation(self$ln1(x$mm(self$w1)))
+    h <- self$dropout(h)
+    row <- edges[1, ] + 1
+    col <- edges[2, ] + 1
+    edge_h <- torch_cat(list(h[row,], h[col,]), dim = 2)
+    alpha <- torch_sigmoid(edge_h$mm(self$attention))$squeeze()
+    alpha <- alpha * edge_weights
+    msg <- h[row, ] * alpha$unsqueeze(2)
+    agg <- torch_zeros_like(h)
+    for(i in 1:edges$size(2)) {
+        agg[col[i], ] <- agg[col[i], ] + msg[i, ]
+    }
+    h <- self$activation(self$ln2(agg$mm(self$w2)))
+    h <- self$dropout(h)
+    output <- h$mm(self$w3)
+    output$squeeze()
+  }
+)
+
+# Initialize model and training parameters
+gnn <- gnn_layer()
+optimizer <- optim_adam(gnn$parameters, lr = 0.001)
+criterion <- nn_mse_loss()
+num_epochs <- 200
+loss_history <- numeric(num_epochs)
+best_loss <- Inf
+patience <- 15
+patience_counter <- 0
+best_model_state <- NULL
+
+# Training loop
+for(epoch in 1:num_epochs) {
+    gnn$train()
+    optimizer$zero_grad()
+    output <- gnn(x, edges, edge_weights)
+    train_loss <- criterion(output, x[, 1])
+    train_loss$backward()
+    optimizer$step()
+    loss_history[epoch] <- train_loss$item()
+    
+    if(train_loss$item() < best_loss * 0.995) {
+        best_loss <- train_loss$item()
+        patience_counter <- 0
+        # Save best model state
+        best_model_state <- lapply(gnn$state_dict(), function(x) x$clone())
+    } else {
+        patience_counter <- patience_counter + 1
+        if(patience_counter >= patience) {
+            cat("Early stopping at epoch", epoch, "\n")
+            break
+        }
+    }
+    
+    if(epoch %% 10 == 0) {
+        cat(sprintf("Epoch %d - Loss: %.6f\n", epoch, train_loss$item()))
+    }
+}
+
+# Restore best model
+if(!is.null(best_model_state)) {
+    for(name in names(best_model_state)) {
+        gnn$state_dict()[[name]]$copy_(best_model_state[[name]])
+    }
+}
+
+# Generate predictions
+gnn$eval()
+with_no_grad({
+    predicted <- gnn(x, edges, edge_weights)$detach()$cpu()$numpy()
+})
+
+# Reconstruct and save raster
+filled_values <- layer_values
+filled_values[valid_cells] <- predicted * sd(layer_values[valid_cells], na.rm = TRUE) + 
+                            mean(layer_values[valid_cells], na.rm = TRUE)
+filled_values[!is_ohio] <- NA
+values(layer) <- filled_values
+
+# Calculate metrics
+known_values <- !is.na(original_values)
+rmse <- sqrt(mean((original_values[known_values] - filled_values[known_values])^2, na.rm = TRUE))
+mae <- mean(abs(original_values[known_values] - filled_values[known_values]), na.rm = TRUE)
+r2 <- cor(original_values[known_values], filled_values[known_values])^2
+
+# Print metrics and save results
+cat(sprintf("\nFinal Metrics:\nRMSE: %.4f\nMAE: %.4f\nR-squared: %.4f\n", rmse, mae, r2))
+writeRaster(layer, "/home/oda10/CSE_MSE_RXF131/sdle-ondemand/cde/geo/methane_filled.tif", overwrite = TRUE)
+
+# Save training curve
+pdf("/home/oda10/CSE_MSE_RXF131/sdle-ondemand/cde/geo/training_curve.pdf")
+plot(loss_history[1:epoch], type = "l", xlab = "Epoch", ylab = "Loss", 
+     main = "Training Loss History")
+dev.off()
+
+
+
+
+```
+
+
+
+
+
+
+```{r}
+
+library(terra)
+library(torch)
+
+# Step 1: Load and prepare the GeoTIFF with improved diagnostics
+geo_file <- "/home/oda10/CSE_MSE_RXF131/sdle-ondemand/cde/geo/methane.tif"
+r <- rast(geo_file)
+layer <- r[[2]]
+
+# Print raster information safely
+cat("Raster dimensions:", dim(layer), "\n")
+cat("Resolution:", res(layer), "\n")
+ext_coords <- as.vector(ext(layer))
+cat("Extent coordinates:", paste(ext_coords, collapse=", "), "\n")
+
+# Get original values and mask with improved handling
+layer_values <- values(layer)
+is_ohio <- !is.na(layer_values)
+cat("Total cells:", length(layer_values), "\n")
+cat("Cells within Ohio:", sum(is_ohio), "\n")
+
+# Step 2: Introduce Missing Values more strategically
+set.seed(42)
+valid_ohio_cells <- which(is_ohio)
+n_missing <- round(0.1 * length(valid_ohio_cells))
+missing_indices <- sample(valid_ohio_cells, size = n_missing)
+cat("Number of introduced missing values:", length(missing_indices), "\n")
+
+layer_values[missing_indices] <- NA
+original_values <- layer_values
+
+# Step 3: Prepare Data for GNN with improved spatial awareness
+valid_cells <- which(!is.na(layer_values) & is_ohio)
+
+# Generate adjacency matrix with better neighborhood handling
+adjacency <- terra::adjacent(layer, cells = valid_cells, directions = 8, pairs = TRUE)
+
+# Filter valid edges and add spatial weights
+valid_edges <- adjacency[adjacency[,1] %in% valid_cells & adjacency[,2] %in% valid_cells, ]
+cell_coords <- xyFromCell(layer, valid_cells)
+
+# Calculate edge weights based on spatial proximity
+edge_weights <- apply(valid_edges, 1, function(edge) {
+    coord1 <- cell_coords[which(valid_cells == edge[1]), ]
+    coord2 <- cell_coords[which(valid_cells == edge[2]), ]
+    1 / sqrt(sum((coord1 - coord2)^2))
+})
+
+# Normalize edge weights
+edge_weights <- edge_weights / max(edge_weights)
+
+# Create node features with normalized spatial coordinates and values
+node_features <- data.frame(
+    id = valid_cells,
+    value = scale(layer_values[valid_cells]),  # Normalize values
+    x = scale(cell_coords[,1]),
+    y = scale(cell_coords[,2])
+)
+
+# Convert to torch tensors with corrected data types
+x <- torch_tensor(as.matrix(node_features[,c("value", "x", "y")]), dtype = torch_float())
+edges <- torch_tensor(t(valid_edges - 1), dtype = torch_long())  # Convert to 0-based indexing
+edge_weights <- torch_tensor(edge_weights, dtype = torch_float())
+
+# Step 4: Define GNN Layer
+gnn_layer <- nn_module(
+  "SpatialGNN",
+  initialize = function(in_features = 3, hidden_features = 64) {
+    self$w1 <- nn_parameter(torch_randn(in_features, hidden_features))
+    self$w2 <- nn_parameter(torch_randn(hidden_features, hidden_features))
+    self$w3 <- nn_parameter(torch_randn(hidden_features, 1))
+    self$attention <- nn_parameter(torch_randn(hidden_features * 2, 1))
+    self$ln1 <- nn_layer_norm(hidden_features)
+    self$ln2 <- nn_layer_norm(hidden_features)
+    self$dropout <- nn_dropout(0.2)
+    self$activation <- nn_leaky_relu()
+  },
+  forward = function(x, edges, edge_weights) {
+    h <- self$activation(self$ln1(x$mm(self$w1)))
+    h <- self$dropout(h)
+    row <- edges[1, ] + 1
+    col <- edges[2, ] + 1
+    edge_h <- torch_cat(list(h[row,], h[col,]), dim = 2)
+    alpha <- torch_sigmoid(edge_h$mm(self$attention))$squeeze()
+    alpha <- alpha * edge_weights
+    msg <- h[row, ] * alpha$unsqueeze(2)
+    agg <- torch_zeros_like(h)
+    for(i in 1:edges$size(2)) {
+        agg[col[i], ] <- agg[col[i], ] + msg[i, ]
+    }
+    h <- self$activation(self$ln2(agg$mm(self$w2)))
+    h <- self$dropout(h)
+    output <- h$mm(self$w3)
+    output$squeeze()
+  }
+)
+
+# Initialize the model
+gnn <- gnn_layer()
+optimizer <- optim_adam(gnn$parameters, lr = 0.001)
+criterion <- nn_mse_loss()
+
+# Training setup
+num_epochs <- 200
+loss_history <- numeric(num_epochs)
+
+for(epoch in 1:num_epochs) {
+    gnn$train()
+    optimizer$zero_grad()
+    output <- gnn(x, edges, edge_weights)
+    train_loss <- criterion(output, x[, 1])  # Assuming the target is the value feature
+    train_loss$backward()
+    optimizer$step()
+    loss_history[epoch] <- train_loss$item()
+    if(epoch %% 10 == 0) {
+        cat(sprintf("Epoch %d - Loss: %.6f\n", epoch, train_loss$item()))
+    }
+}
+
+# Save predictions back to the raster
+gnn$eval()
+with_no_grad({
+    predicted <- gnn(x, edges, edge_weights)$detach()$cpu()$numpy()
+})
+
+# Update raster with predictions
+filled_values <- layer_values
+filled_values[valid_cells] <- predicted * sd(layer_values[valid_cells], na.rm = TRUE) + 
+                              mean(layer_values[valid_cells], na.rm = TRUE)
+values(layer) <- filled_values
+writeRaster(layer, "/home/oda10/CSE_MSE_RXF131/sdle-ondemand/cde/geo/methane_filled.tif", overwrite = TRUE)
+
+cat("Completed processing and saved the filled raster.\n")
+
+
+
+
+```
+

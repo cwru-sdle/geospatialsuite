@@ -1,0 +1,234 @@
+#' Calculate spatial correlation between raster layers
+#'
+#' @description
+#' Calculate spatial correlation between two raster layers using various methods.
+#' Supports pixel-wise correlation and local correlation analysis.
+#'
+#' @param raster1 First raster layer
+#' @param raster2 Second raster layer
+#' @param method Correlation method: "pearson", "spearman", "kendall"
+#' @param local_correlation Calculate local correlation using moving window
+#' @param window_size Window size for local correlation (in pixels)
+#'
+#' @return Correlation coefficient or SpatRaster of local correlations
+#'
+#' @examples
+#' \dontrun{
+#' # These examples require external data files not included with the package
+#' # Global correlation between NDVI and soil nitrogen
+#' correlation <- calculate_spatial_correlation(ndvi_raster, nitrogen_raster)
+#'
+#' # Local correlation with moving window
+#' local_corr <- calculate_spatial_correlation(
+#'   ndvi_raster, nitrogen_raster,
+#'   local_correlation = TRUE,
+#'   window_size = 5
+#' )
+#' }
+#'
+#' @export
+calculate_spatial_correlation <- function(raster1, raster2, method = "pearson",
+                                          local_correlation = FALSE, window_size = 3) {
+
+  message("Calculating spatial correlation...")
+
+  # Load rasters if file paths provided
+  if (is.character(raster1)) raster1 <- terra::rast(raster1)
+  if (is.character(raster2)) raster2 <- terra::rast(raster2)
+
+  # Ensure rasters have same extent and resolution
+  if (!terra::compareGeom(raster1, raster2)) {
+    message("Resampling raster2 to match raster1...")
+    raster2 <- terra::resample(raster2, raster1)
+  }
+
+  if (local_correlation) {
+    # Calculate local correlation using moving window
+    message(sprintf("Calculating local correlation with window size %d...", window_size))
+
+    # Create correlation function for focal operation
+    corr_fun <- function(x) {
+      n <- length(x) / 2
+      x1 <- x[1:n]
+      x2 <- x[(n+1):(2*n)]
+
+      # Remove NAs
+      valid <- !is.na(x1) & !is.na(x2)
+      if (sum(valid) < 3) return(NA)
+
+      cor(x1[valid], x2[valid], method = method, use = "complete.obs")
+    }
+
+    # Stack rasters and apply focal correlation
+    raster_stack <- c(raster1, raster2)
+    local_corr <- terra::focal(raster_stack, w = window_size, fun = corr_fun)
+    names(local_corr) <- paste0("local_correlation_", method)
+
+    return(local_corr)
+
+  } else {
+    # Calculate global correlation
+    values1 <- terra::values(raster1, mat = FALSE)
+    values2 <- terra::values(raster2, mat = FALSE)
+
+    # Remove NAs
+    valid <- !is.na(values1) & !is.na(values2)
+
+    if (sum(valid) < 10) {
+      warning("Too few valid overlapping pixels for correlation")
+      return(NA)
+    }
+
+    correlation <- cor(values1[valid], values2[valid], method = method)
+
+    message(sprintf("Global %s correlation: %.3f", method, correlation))
+    return(correlation)
+  }
+}
+
+#' Analyze correlations between multiple variables
+#'
+#' @description
+#' Analyze correlations between multiple raster variables and create
+#' correlation matrices and plots.
+#'
+#' @param variable_list Named list of raster variables
+#' @param output_folder Output directory for results
+#' @param region_boundary Optional region boundary
+#' @param method Correlation method
+#' @param create_plots Create correlation plots
+#'
+#' @return List with correlation results
+#'
+#' @examples
+#' \dontrun{
+#' # These examples require directory structures with multiple data files
+#' # Analyze correlations between multiple variables
+#' variables <- list(
+#'   ndvi = "ndvi.tif",
+#'   nitrogen = "soil_nitrogen.tif",
+#'   elevation = "dem.tif",
+#'   precipitation = "precip.tif"
+#' )
+#'
+#' correlation_results <- analyze_variable_correlations(
+#'   variables,
+#'   output_folder = "correlations/",
+#'   region_boundary = "Ohio"
+#' )
+#' }
+#'
+#' @export
+analyze_variable_correlations <- function(variable_list, output_folder = NULL,
+                                          region_boundary = NULL, method = "pearson",
+                                          create_plots = TRUE) {
+
+  message("Starting multi-variable correlation analysis...")
+
+  # Load all rasters
+  rasters <- list()
+  for (var_name in names(variable_list)) {
+    message(sprintf("Loading %s...", var_name))
+
+    raster_data <- variable_list[[var_name]]
+    if (is.character(raster_data)) {
+      rasters[[var_name]] <- terra::rast(raster_data)
+    } else {
+      rasters[[var_name]] <- raster_data
+    }
+
+    # Apply region boundary if provided
+    if (!is.null(region_boundary)) {
+      boundary <- get_region_boundary(region_boundary)
+      boundary_vect <- terra::vect(boundary)
+      rasters[[var_name]] <- terra::crop(rasters[[var_name]], boundary_vect)
+      rasters[[var_name]] <- terra::mask(rasters[[var_name]], boundary_vect)
+    }
+  }
+
+  # Create correlation matrix
+  n_vars <- length(rasters)
+  var_names <- names(rasters)
+  correlation_matrix <- matrix(NA, n_vars, n_vars)
+  rownames(correlation_matrix) <- var_names
+  colnames(correlation_matrix) <- var_names
+
+  # Calculate pairwise correlations
+  for (i in 1:n_vars) {
+    for (j in 1:n_vars) {
+      if (i == j) {
+        correlation_matrix[i, j] <- 1.0
+      } else if (i < j) {
+        correlation_matrix[i, j] <- calculate_spatial_correlation(
+          rasters[[i]], rasters[[j]], method = method
+        )
+        correlation_matrix[j, i] <- correlation_matrix[i, j]  # Symmetric
+      }
+    }
+  }
+
+  # Create data frame for easier handling
+  correlation_df <- as.data.frame(correlation_matrix)
+
+  # Save results if output folder provided
+  if (!is.null(output_folder)) {
+    if (!dir.exists(output_folder)) {
+      dir.create(output_folder, recursive = TRUE)
+    }
+
+    # Save correlation matrix
+    write.csv(correlation_df, file.path(output_folder, "correlation_matrix.csv"))
+
+    # Create correlation plots if requested
+    if (create_plots && requireNamespace("ggplot2", quietly = TRUE)) {
+      create_correlation_plots(correlation_matrix, output_folder)
+    }
+  }
+
+  message("Multi-variable correlation analysis completed!")
+
+  return(list(
+    correlation_matrix = correlation_matrix,
+    correlation_df = correlation_df,
+    method = method,
+    variables = var_names
+  ))
+}
+
+#' Create correlation plots
+#'
+#' @description
+#' Internal function to create correlation plots and heatmaps.
+#'
+#' @param correlation_matrix Correlation matrix
+#' @param output_folder Output directory
+#'
+#' @keywords internal
+create_correlation_plots <- function(correlation_matrix, output_folder) {
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    warning("ggplot2 required for correlation plots")
+    return()
+  }
+
+  # Convert matrix to long format for ggplot
+  correlation_long <- expand.grid(Var1 = rownames(correlation_matrix),
+                                  Var2 = colnames(correlation_matrix))
+  correlation_long$Correlation <- as.vector(correlation_matrix)
+
+  # Create correlation heatmap
+  p <- ggplot2::ggplot(correlation_long, ggplot2::aes(Var1, Var2, fill = Correlation)) +
+    ggplot2::geom_tile() +
+    ggplot2::scale_fill_gradient2(low = "blue", mid = "white", high = "red",
+                                  midpoint = 0, limits = c(-1, 1)) +
+    ggplot2::geom_text(ggplot2::aes(label = round(Correlation, 2)), color = "black", size = 3) +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)) +
+    ggplot2::labs(title = "Variable Correlation Matrix",
+                  x = "Variables", y = "Variables")
+
+  # Save plot
+  ggplot2::ggsave(file.path(output_folder, "correlation_heatmap.png"),
+                  plot = p, width = 8, height = 6, dpi = 300)
+
+  message("Correlation plots saved to output folder")
+}

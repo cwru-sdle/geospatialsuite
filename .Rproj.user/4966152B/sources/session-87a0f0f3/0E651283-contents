@@ -1,0 +1,211 @@
+#' Calculate NDVI from red and NIR bands
+#'
+#' @description
+#' Calculate Normalized Difference Vegetation Index (NDVI) from red and NIR bands
+#' with automatic matching by date if filenames contain date information.
+#'
+#' @param red_data Red band data (files, directory, or raster objects)
+#' @param nir_data NIR band data (files, directory, or raster objects)
+#' @param clamp_range Range to clamp NDVI values (default: c(-0.2, 1))
+#' @param match_by_date Logical: match rasters by date using filenames
+#'
+#' @return SpatRaster with NDVI layers
+#'
+#' @examples
+#' \dontrun{
+#' # Calculate NDVI from directories
+#' ndvi <- calculate_ndvi("red_bands/", "nir_bands/")
+#'
+#' # Calculate with custom clamp range
+#' ndvi <- calculate_ndvi(red_files, nir_files, clamp_range = c(-1, 1))
+#' }
+#'
+#' @export
+calculate_ndvi <- function(red_data, nir_data, clamp_range = c(-0.2, 1), match_by_date = TRUE) {
+  if (match_by_date) {
+    matched_df <- match_rasters_by_date(red_data, nir_data)
+    if (nrow(matched_df) == 0) stop("No red-NIR matches by date.")
+    red_files <- matched_df$red
+    nir_files <- matched_df$nir
+    layer_dates <- matched_df$date
+  } else {
+    red_files <- red_data
+    nir_files <- nir_data
+    layer_dates <- paste0("Layer_", seq_along(red_files))
+  }
+
+  red_rasters <- load_raster_data(red_files)
+  nir_rasters <- load_raster_data(nir_files)
+
+  if (length(red_rasters) != length(nir_rasters)) {
+    stop("Number of red and NIR rasters must match")
+  }
+
+  ndvi_list <- vector("list", length(red_rasters))
+  for (i in seq_along(red_rasters)) {
+    red <- red_rasters[[i]]
+    nir <- nir_rasters[[i]]
+    if (terra::nlyr(red) > 1) red <- red[[1]]
+    if (terra::nlyr(nir) > 1) nir <- nir[[1]]
+
+    ndvi <- (nir - red) / (nir + red)
+    if (!is.null(clamp_range)) {
+      ndvi <- terra::clamp(ndvi, clamp_range[1], clamp_range[2])
+    }
+    names(ndvi) <- paste0("NDVI_", layer_dates[i])
+    ndvi_list[[i]] <- ndvi
+  }
+
+  if (length(ndvi_list) == 1) {
+    return(ndvi_list[[1]])
+  } else {
+    return(terra::rast(ndvi_list))
+  }
+}
+
+#' Calculate vegetation indices from spectral bands
+#'
+#' @description
+#' Calculate various vegetation indices including NDVI, EVI, SAVI, and many others.
+#'
+#' @param red Red band SpatRaster
+#' @param nir NIR band SpatRaster
+#' @param blue Optional blue band
+#' @param green Optional green band
+#' @param swir1 Optional SWIR1 band (1.6 μm)
+#' @param swir2 Optional SWIR2 band (2.2 μm)
+#' @param red_edge Optional Red Edge band (0.74 μm)
+#' @param index_type Index name (see list_vegetation_indices() for options)
+#' @param ndvi_min Minimum NDVI for VCI calculation
+#' @param ndvi_max Maximum NDVI for VCI calculation
+#'
+#' @return SpatRaster of vegetation index
+#'
+#' @examples
+#' \dontrun{
+#' # Calculate NDVI
+#' ndvi <- calculate_vegetation_index(red, nir, index_type = "NDVI")
+#'
+#' # Calculate EVI (requires blue band)
+#' evi <- calculate_vegetation_index(red, nir, blue, index_type = "EVI")
+#'
+#' # Calculate SAVI
+#' savi <- calculate_vegetation_index(red, nir, index_type = "SAVI")
+#' }
+#'
+#' @export
+calculate_vegetation_index <- function(red, nir, blue = NULL, green = NULL,
+                                       swir1 = NULL, swir2 = NULL, red_edge = NULL,
+                                       index_type = "NDVI",
+                                       ndvi_min = NULL, ndvi_max = NULL) {
+  # Convert inputs to rasters if they are file paths
+  if (is.character(red)) red <- terra::rast(red)
+  if (is.character(nir)) nir <- terra::rast(nir)
+  if (!is.null(blue) && is.character(blue)) blue <- terra::rast(blue)
+  if (!is.null(green) && is.character(green)) green <- terra::rast(green)
+  if (!is.null(swir1) && is.character(swir1)) swir1 <- terra::rast(swir1)
+  if (!is.null(swir2) && is.character(swir2)) swir2 <- terra::rast(swir2)
+  if (!is.null(red_edge) && is.character(red_edge)) red_edge <- terra::rast(red_edge)
+
+  index <- switch(index_type,
+                  # Basic vegetation indices
+                  "NDVI" = (nir - red) / (nir + red),
+                  "EVI" = {
+                    if (is.null(blue)) stop("EVI requires blue band.")
+                    2.5 * ((nir - red) / (nir + 6 * red - 7.5 * blue + 1))
+                  },
+                  "SAVI" = {
+                    L <- 0.5
+                    ((nir - red) / (nir + red + L)) * (1 + L)
+                  },
+                  "GNDVI" = {
+                    if (is.null(green)) stop("GNDVI requires green band.")
+                    (nir - green) / (nir + green)
+                  },
+                  "ARVI" = {
+                    if (is.null(blue)) stop("ARVI requires blue band.")
+                    (nir - (2 * red - blue)) / (nir + (2 * red - blue))
+                  },
+                  "MSAVI" = {
+                    0.5 * (2 * nir + 1 - sqrt((2 * nir + 1)^2 - 8 * (nir - red)))
+                  },
+                  "DVI" = nir - red,
+                  "RVI" = nir / red,
+                  "OSAVI" = (nir - red) / (nir + red + 0.16),
+
+                  stop(paste("Unsupported index type:", index_type))
+  )
+
+  names(index) <- index_type
+  return(index)
+}
+
+#' Get list of available vegetation indices
+#'
+#' @description
+#' Returns a data frame with information about all available vegetation indices.
+#'
+#' @return Data frame with index names, required bands, and descriptions
+#'
+#' @examples
+#' \dontrun{
+#' indices_info <- list_vegetation_indices()
+#' print(indices_info)
+#' }
+#'
+#' @export
+list_vegetation_indices <- function() {
+  data.frame(
+    Index = c("NDVI", "EVI", "SAVI", "GNDVI", "ARVI", "MSAVI", "DVI", "RVI", "OSAVI"),
+    Type = c(rep("Vegetation", 9)),
+    Required_Bands = c("Red, NIR", "Red, NIR, Blue", "Red, NIR", "Green, NIR",
+                       "Red, NIR, Blue", "Red, NIR", "Red, NIR", "Red, NIR", "Red, NIR"),
+    Description = c("Normalized Difference Vegetation Index",
+                    "Enhanced Vegetation Index",
+                    "Soil Adjusted Vegetation Index",
+                    "Green NDVI",
+                    "Atmospherically Resistant Vegetation Index",
+                    "Modified Soil Adjusted Vegetation Index",
+                    "Difference Vegetation Index",
+                    "Ratio Vegetation Index",
+                    "Optimized Soil Adjusted Vegetation Index"),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' Match red and NIR raster files by extracted date
+#'
+#' @description
+#' Internal function to match red and NIR files based on dates extracted from filenames.
+#'
+#' @param red_data Character vector (files or folder)
+#' @param nir_data Character vector (files or folder)
+#' @param date_patterns Optional custom date patterns
+#'
+#' @return Data frame with matched red and NIR file paths and dates
+#'
+#' @keywords internal
+match_rasters_by_date <- function(red_data, nir_data, date_patterns = NULL) {
+  red_files <- if (length(red_data) == 1 && dir.exists(red_data)) {
+    list.files(red_data, pattern = "\\.tif(f)?$", full.names = TRUE)
+  } else red_data
+
+  nir_files <- if (length(nir_data) == 1 && dir.exists(nir_data)) {
+    list.files(nir_data, pattern = "\\.tif(f)?$", full.names = TRUE)
+  } else nir_data
+
+  red_dates <- extract_dates_universal(red_files, date_patterns)
+  nir_dates <- extract_dates_universal(nir_files, date_patterns)
+
+  matched <- merge(
+    data.frame(date = red_dates, red = red_files, stringsAsFactors = FALSE),
+    data.frame(date = nir_dates, nir = nir_files, stringsAsFactors = FALSE),
+    by = "date"
+  )
+
+  if (nrow(matched) == 0) {
+    warning("No matching red and NIR rasters found based on dates.")
+  }
+
+  return(matched)
+}

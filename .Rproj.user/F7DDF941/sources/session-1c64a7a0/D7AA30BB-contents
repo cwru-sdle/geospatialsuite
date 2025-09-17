@@ -1,0 +1,63 @@
+Package: geospatialsuite
+Title: Comprehensive Geospatiotemporal Analysis and Multimodal Integration
+    Toolkit
+Version: 0.1.0
+Authors@R: c(
+    person("Olatunde D.", "Akanbi", , "olatunde.akanbi@case.edu", role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0000-0001-7719-2619")),
+    person("Vibha", "Mandayam", role = "aut"),
+    person("Yinghui", "Wu", role = "aut",
+           comment = c(ORCID = "0000-0003-3991-5155")),
+    person("Jeffrey", "Yarus", role = "aut",
+           comment = c(ORCID = "0000-0002-9331-9568")),
+    person("Erika I.", "Barcelos", , "erika.barcelos@case.edu", role = c("aut", "cph"),
+           comment = c(ORCID = "0000-0002-9273-8488")),
+    person("Roger H.", "French", , "roger.french@case.edu", role = c("aut", "cph"),
+           comment = c(ORCID = "0000-0002-6162-0532"))
+  )
+Maintainer: Olatunde D. Akanbi <olatunde.akanbi@case.edu>
+Description: A comprehensive toolkit for geospatiotemporal analysis
+    featuring 60+ vegetation indices, advanced raster visualization,
+    universal spatial mapping, water quality analysis, CDL crop analysis,
+    spatial interpolation, temporal analysis, and terrain analysis.
+    Designed for agricultural research, environmental monitoring, remote
+    sensing applications, and publication-quality mapping with support for
+    any geographic region and robust error handling.  Funding: This
+    material is based upon financial support by the National Science
+    Foundation, EEC Division of Engineering Education and Centers, NSF
+    Engineering Research Center for Advancing Sustainable and Distributed
+    Fertilizer production (CASFER), NSF 20-553 Gen-4 Engineering Research
+    Centers award 2133576.
+License: MIT + file LICENSE
+Depends: 
+    R (>= 3.5.0)
+Imports:
+    dplyr,
+    ggplot2,
+    graphics,
+    grDevices,
+    htmlwidgets,
+    leaflet,
+    magrittr,
+    mice,
+    parallel,
+    RColorBrewer,
+    rnaturalearth,
+    sf,
+    stats,
+    stringr,
+    terra,
+    tigris,
+    tools,
+    utils,
+    viridis
+Suggests:
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: 
+    knitr
+Config/testthat/edition: 3
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2

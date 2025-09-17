@@ -1,0 +1,198 @@
+# ===================================================================
+# Test Runner and Diagnostic Script for GeoSpatialSuite
+# Run this to diagnose and fix test issues
+# ===================================================================
+
+# Load required packages
+library(testthat)
+library(terra)
+library(sf)
+library(dplyr)
+
+cat("GeoSpatialSuite Test Diagnostics\n")
+cat("================================\n\n")
+
+# Function to run individual test files with better error reporting
+run_test_file <- function(test_file) {
+  cat(sprintf("Testing: %s\n", basename(test_file)))
+  cat(strrep("-", 40), "\n")
+
+  tryCatch({
+    test_results <- test_file(test_file, reporter = "summary")
+    return(test_results)
+  }, error = function(e) {
+    cat(sprintf("ERROR in %s: %s\n", basename(test_file), e$message))
+    return(NULL)
+  })
+}
+
+# Check if core functions exist
+cat("1. CHECKING CORE FUNCTIONS\n")
+core_functions <- c(
+  "get_region_boundary", "load_raster_data", "extract_dates_universal",
+  "calculate_vegetation_index", "calculate_multiple_indices",
+  "universal_spatial_join", "create_spatial_map", "quick_map"
+)
+
+for (func in core_functions) {
+  if (exists(func)) {
+    cat(sprintf("  ✓ %s exists\n", func))
+  } else {
+    cat(sprintf("  ✗ %s MISSING\n", func))
+  }
+}
+
+cat("\n2. TESTING BASIC FUNCTIONALITY\n")
+
+# Test 1: Basic terra operations
+cat("Testing terra operations... ")
+tryCatch({
+  test_raster <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 5, ymin = 0, ymax = 5)
+  terra::values(test_raster) <- 1:25
+  terra::crs(test_raster) <- "EPSG:4326"
+  cat("✓ PASS\n")
+}, error = function(e) {
+  cat(sprintf("✗ FAIL: %s\n", e$message))
+})
+
+# Test 2: Basic sf operations
+cat("Testing sf operations... ")
+tryCatch({
+  points_df <- data.frame(x = c(1, 2, 3), y = c(1, 2, 3), value = c(10, 20, 30))
+  points_sf <- sf::st_as_sf(points_df, coords = c("x", "y"), crs = 4326)
+  cat("✓ PASS\n")
+}, error = function(e) {
+  cat(sprintf("✗ FAIL: %s\n", e$message))
+})
+
+# Test 3: Check problematic functions individually
+cat("\n3. TESTING PROBLEMATIC FUNCTIONS\n")
+
+# Test extract_dates_universal
+cat("Testing extract_dates_universal... ")
+tryCatch({
+  if (exists("extract_dates_universal")) {
+    test_files <- c("data_20230515.tif", "data_20230615.tif")
+    suppressWarnings({
+      dates <- extract_dates_universal(test_files)
+    })
+    if (any(grepl("2023", dates))) {
+      cat("✓ PASS\n")
+    } else {
+      cat(sprintf("⚠ PARTIAL: Got dates but no 2023: %s\n", paste(dates, collapse = ", ")))
+    }
+  } else {
+    cat("✗ FUNCTION NOT FOUND\n")
+  }
+}, error = function(e) {
+  cat(sprintf("✗ FAIL: %s\n", e$message))
+})
+
+# Test create_crop_mask with simple approach
+cat("Testing create_crop_mask... ")
+tryCatch({
+  if (exists("create_crop_mask")) {
+    # Create simple test raster
+    cdl_raster <- terra::rast(nrows = 3, ncols = 3, xmin = 0, xmax = 3, ymin = 0, ymax = 3)
+    terra::values(cdl_raster) <- c(1, 1, 5, 5, 1, 5, 21, 21, 1)  # Simple pattern
+    terra::crs(cdl_raster) <- "EPSG:4326"
+
+    # Test with direct numeric codes
+    mask <- create_crop_mask(
+      cdl_data = cdl_raster,
+      crop_codes = c(1, 5),
+      mask_type = "binary"
+    )
+
+    if (inherits(mask, "SpatRaster")) {
+      cat("✓ PASS\n")
+    } else {
+      cat("✗ FAIL: Did not return SpatRaster\n")
+    }
+  } else {
+    cat("✗ FUNCTION NOT FOUND\n")
+  }
+}, error = function(e) {
+  cat(sprintf("✗ FAIL: %s\n", e$message))
+})
+
+# Test raster operations alignment
+cat("Testing raster CRS operations... ")
+tryCatch({
+  if (exists("raster_to_raster_ops")) {
+    r1 <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 5, ymin = 0, ymax = 5)
+    r2 <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 5, ymin = 0, ymax = 5)
+    terra::values(r1) <- runif(25)
+    terra::values(r2) <- runif(25)
+    terra::crs(r1) <- "EPSG:4326"
+    terra::crs(r2) <- "EPSG:4326"
+
+    result <- raster_to_raster_ops(r1, r2, operation = "add")
+    cat("✓ PASS\n")
+  } else {
+    cat("✗ FUNCTION NOT FOUND\n")
+  }
+}, error = function(e) {
+  cat(sprintf("✗ FAIL: %s\n", e$message))
+})
+
+cat("\n4. RUNNING SPECIFIC FIXED TESTS\n")
+
+# Run core tests only
+cat("Running core utility tests...\n")
+tryCatch({
+  # Source the helper functions
+  source("tests/testthat/helper-test-data.R", local = TRUE)
+
+  # Run a minimal set of tests
+  test_that("minimal core functions work", {
+    # Test region boundary
+    boundary <- get_region_boundary(c(-84, 40, -83, 41))
+    expect_s3_class(boundary, "sf")
+
+    # Test basic NDVI
+    red <- create_test_raster()
+    terra::values(red) <- runif(terra::ncell(red), 0.1, 0.3)
+    nir <- create_test_raster()
+    terra::values(nir) <- runif(terra::ncell(nir), 0.4, 0.8)
+
+    ndvi <- calculate_vegetation_index(red = red, nir = nir, index_type = "NDVI")
+    expect_s4_class(ndvi, "SpatRaster")
+  })
+
+  cat("✓ Core tests PASSED\n")
+}, error = function(e) {
+  cat(sprintf("✗ Core tests FAILED: %s\n", e$message))
+})
+
+cat("\n5. RECOMMENDATIONS\n")
+cat("==================\n")
+cat("Based on the test results above:\n\n")
+
+cat("For the extract_dates_universal issue:\n")
+cat("- The function expects specific date patterns in filenames\n")
+cat("- Use files like 'data_YYYYMMDD.tif' or 'file_YYYY-MM-DD.tif'\n")
+cat("- Or update the test to use realistic filename patterns\n\n")
+
+cat("For the create_crop_mask issue:\n")
+cat("- The terra %in% operation needs vector arguments\n")
+cat("- Ensure crop codes are properly formatted as numeric vector\n")
+cat("- Consider using terra::ifel() instead of direct indexing\n\n")
+
+cat("For the CRS/extent issues:\n")
+cat("- Ensure test rasters have identical extents before CRS operations\n")
+cat("- Use terra::ext() to set matching extents\n")
+cat("- Test alignment functions separately\n\n")
+
+cat("For the mapping syntax error:\n")
+cat("- Check test-mapping.R for syntax issues\n")
+cat("- Ensure proper R comment syntax (# not //) \n")
+cat("- Verify file encoding is UTF-8\n\n")
+
+cat("NEXT STEPS:\n")
+cat("1. Fix the test files using the corrected versions provided\n")
+cat("2. Run: devtools::test() or testthat::test_dir('tests/testthat')\n")
+cat("3. Address any remaining failures one by one\n")
+cat("4. Consider using simpler test data for problematic functions\n\n")
+
+cat("✅ Diagnostic complete! Use the fixed test files provided above.\n")

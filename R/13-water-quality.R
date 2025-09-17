@@ -1,0 +1,1077 @@
+#' Analyze water quality comprehensively with flexible data handling
+#'
+#' @description
+#' Complete water quality analysis with flexible data input handling, robust error checking,
+#' and comprehensive spatial integration. Supports any water quality dataset format with
+#' automatic column detection and standardized processing.
+#'
+#' @param water_data Water quality data in various formats:
+#'   \itemize{
+#'     \item File path (CSV, shapefile, GeoJSON)
+#'     \item data.frame with coordinates
+#'     \item sf object
+#'     \item List of datasets for multi-dataset analysis
+#'   }
+#' @param variable Variable to analyze (auto-detected if NULL)
+#' @param region_boundary Region boundary (optional)
+#' @param river_network Optional river network data for context
+#' @param output_folder Output directory (default: tempdir())
+#' @param thresholds Named list of threshold values for classification (optional)
+#' @param coord_cols Coordinate column names (auto-detected if NULL)
+#' @param date_column Date/time column name (auto-detected if NULL)
+#' @param station_id_col Station ID column name (auto-detected if NULL)
+#' @param quality_filters Quality control filters to apply
+#' @param verbose Print detailed progress messages
+#'
+#' @return List with comprehensive water quality analysis results:
+#' \itemize{
+#'   \item \code{water_data}: Processed spatial data
+#'   \item \code{statistics}: Summary statistics by variable and category
+#'   \item \code{spatial_analysis}: Spatial pattern analysis
+#'   \item \code{temporal_analysis}: Temporal trends (if date data available)
+#'   \item \code{threshold_analysis}: Threshold exceedance analysis
+#'   \item \code{output_files}: Paths to generated output files
+#'   \item \code{metadata}: Analysis metadata and parameters
+#' }
+#'
+#' @examples
+#' \dontrun{
+#' # These examples require external data files not included with the package
+#' # Flexible data input - auto-detects columns
+#' results <- analyze_water_quality_comprehensive("water_stations.csv")
+#'
+#' # Specify parameters for custom data
+#' results <- analyze_water_quality_comprehensive(
+#'   water_data = my_data,
+#'   variable = "nitrate_concentration",
+#'   region_boundary = "Ohio",
+#'   coord_cols = c("longitude", "latitude"),
+#'   thresholds = list(
+#'     Normal = c(0, 2),
+#'     Elevated = c(2, 5),
+#'     High = c(5, 10),
+#'     Critical = c(10, Inf)
+#'   )
+#' )
+#'
+#' # Multi-dataset analysis
+#' results <- analyze_water_quality_comprehensive(
+#'   water_data = list(
+#'     surface = "surface_water.csv",
+#'     groundwater = "groundwater.csv"
+#'   ),
+#'   variable = "total_nitrogen"
+#' )
+#' }
+#'
+#' @export
+analyze_water_quality_comprehensive <- function(water_data,
+                                                variable = NULL,
+                                                region_boundary = NULL,
+                                                river_network = NULL,
+                                                output_folder = tempdir(),
+                                                thresholds = NULL,
+                                                coord_cols = NULL,
+                                                date_column = NULL,
+                                                station_id_col = NULL,
+                                                quality_filters = list(),
+                                                verbose = FALSE) {
+
+  if (verbose) {
+    message("=== COMPREHENSIVE WATER QUALITY ANALYSIS ===")
+    message("Starting flexible water quality analysis...")
+  }
+
+  start_time <- Sys.time()
+
+  # Input validation
+  if (is.null(water_data)) {
+    stop("water_data cannot be NULL", call. = FALSE)
+  }
+
+  # Create output directory
+  if (!dir.exists(output_folder)) {
+    dir.create(output_folder, recursive = TRUE)
+    if (verbose) message("Created output directory: ", output_folder)
+  }
+
+  # ================================================================
+  # STEP 1: FLEXIBLE DATA LOADING AND PROCESSING
+  # ================================================================
+  if (verbose) message("\nStep 1: Loading and processing water quality data...")
+
+  water_sf_list <- load_water_quality_data_flexible(water_data, coord_cols, verbose)
+
+  # Handle multiple datasets or single dataset
+  if (length(water_sf_list) == 1) {
+    water_sf <- water_sf_list[[1]]
+    dataset_names <- "main"
+  } else {
+    # For multiple datasets, combine them with source tracking
+    water_sf <- combine_water_datasets(water_sf_list, verbose)
+    dataset_names <- names(water_sf_list)
+  }
+
+  if (nrow(water_sf) == 0) {
+    stop("No valid water quality data found", call. = FALSE)
+  }
+
+  if (verbose) {
+    message(sprintf("Loaded %d water quality observations", nrow(water_sf)))
+    message(sprintf("Available columns: %s", paste(names(water_sf)[1:min(10, ncol(water_sf))], collapse = ", ")))
+    if (ncol(water_sf) > 10) message("... and ", ncol(water_sf) - 10, " more columns")
+  }
+
+  # ================================================================
+  # STEP 2: INTELLIGENT COLUMN DETECTION
+  # ================================================================
+  if (verbose) message("\nStep 2: Detecting data structure and key columns...")
+
+  column_info <- detect_water_quality_columns(water_sf, variable, date_column, station_id_col, verbose)
+
+  variable <- column_info$variable
+  date_column <- column_info$date_column
+  station_id_col <- column_info$station_id_col
+  numeric_vars <- column_info$numeric_vars
+  categorical_vars <- column_info$categorical_vars
+
+  if (is.null(variable)) {
+    warning("No suitable numeric variable found for analysis. Using first numeric column.")
+    if (length(numeric_vars) > 0) {
+      variable <- numeric_vars[1]
+    } else {
+      stop("No numeric variables found in data", call. = FALSE)
+    }
+  }
+
+  if (verbose) {
+    message(sprintf("Primary variable: %s", variable))
+    message(sprintf("Date column: %s", date_column %||% "None detected"))
+    message(sprintf("Station ID column: %s", station_id_col %||% "None detected"))
+    message(sprintf("Numeric variables: %s", paste(numeric_vars[1:min(5, length(numeric_vars))], collapse = ", ")))
+  }
+
+  # ================================================================
+  # STEP 3: SPATIAL FILTERING AND PROCESSING
+  # ================================================================
+  if (!is.null(region_boundary)) {
+    if (verbose) message("\nStep 3: Applying spatial filtering...")
+
+    tryCatch({
+      boundary <- get_region_boundary(region_boundary)
+
+      # Reproject if needed
+      if (!identical(sf::st_crs(water_sf), sf::st_crs(boundary))) {
+        if (verbose) message("Reprojecting data to match boundary CRS...")
+        water_sf <- sf::st_transform(water_sf, crs = sf::st_crs(boundary))
+      }
+
+      # Spatial filter
+      water_sf <- sf::st_filter(water_sf, boundary)
+
+      if (verbose) message(sprintf("Filtered to %d observations within region", nrow(water_sf)))
+
+      if (nrow(water_sf) == 0) {
+        stop("No observations found within specified region boundary", call. = FALSE)
+      }
+
+    }, error = function(e) {
+      warning(sprintf("Failed to apply region boundary: %s", e$message))
+      boundary <- NULL
+    })
+  }
+
+  # ================================================================
+  # STEP 4: QUALITY CONTROL AND DATA VALIDATION
+  # ================================================================
+  if (verbose) message("\nStep 4: Applying quality control filters...")
+
+  water_sf <- apply_water_quality_filters(water_sf, variable, quality_filters, verbose)
+
+  # ================================================================
+  # STEP 5: THRESHOLD ANALYSIS
+  # ================================================================
+  threshold_results <- NULL
+  if (!is.null(thresholds)) {
+    if (verbose) message("\nStep 5: Performing threshold analysis...")
+    threshold_results <- perform_threshold_analysis(water_sf, variable, thresholds, verbose)
+    water_sf <- threshold_results$data_with_categories
+  }
+
+  # ================================================================
+  # STEP 6: STATISTICAL ANALYSIS
+  # ================================================================
+  if (verbose) message("\nStep 6: Calculating comprehensive statistics...")
+
+  statistics <- calculate_water_quality_statistics(water_sf, variable, numeric_vars,
+                                                   threshold_results, verbose)
+
+  # ================================================================
+  # STEP 7: SPATIAL PATTERN ANALYSIS
+  # ================================================================
+  if (verbose) message("\nStep 7: Analyzing spatial patterns...")
+
+  spatial_analysis <- analyze_water_spatial_patterns(water_sf, variable, verbose)
+
+  # ================================================================
+  # STEP 8: TEMPORAL ANALYSIS (if date data available)
+  # ================================================================
+  temporal_analysis <- NULL
+  if (!is.null(date_column) && date_column %in% names(water_sf)) {
+    if (verbose) message("\nStep 8: Performing temporal analysis...")
+    temporal_analysis <- analyze_water_temporal_patterns(water_sf, variable, date_column, verbose)
+  }
+
+  # ================================================================
+  # STEP 9: VISUALIZATION AND OUTPUT
+  # ================================================================
+  if (verbose) message("\nStep 9: Creating visualizations and saving results...")
+
+  output_files <- save_water_quality_results(
+    water_sf = water_sf,
+    variable = variable,
+    statistics = statistics,
+    threshold_results = threshold_results,
+    spatial_analysis = spatial_analysis,
+    temporal_analysis = temporal_analysis,
+    region_boundary = region_boundary,
+    river_network = river_network,
+    output_folder = output_folder,
+    verbose = verbose
+  )
+
+  # ================================================================
+  # STEP 10: COMPILE FINAL RESULTS
+  # ================================================================
+  end_time <- Sys.time()
+  processing_time <- round(as.numeric(difftime(end_time, start_time, units = "secs")), 2)
+
+  if (verbose) {
+    message("\n=== ANALYSIS COMPLETED ===")
+    message(sprintf("Processing time: %.2f seconds", processing_time))
+    message(sprintf("Results saved to: %s", output_folder))
+  }
+
+  # Return comprehensive results
+  results <- list(
+    water_data = water_sf,
+    statistics = statistics,
+    spatial_analysis = spatial_analysis,
+    temporal_analysis = temporal_analysis,
+    threshold_analysis = threshold_results,
+    output_files = output_files,
+    metadata = list(
+      variable = variable,
+      n_observations = nrow(water_sf),
+      date_column = date_column,
+      station_id_col = station_id_col,
+      region_boundary = region_boundary,
+      thresholds_used = thresholds,
+      processing_time_seconds = processing_time,
+      timestamp = Sys.time(),
+      dataset_names = dataset_names,
+      columns_analyzed = list(
+        numeric = numeric_vars,
+        categorical = categorical_vars
+      )
+    )
+  )
+
+  return(results)
+}
+
+# ==================== HELPER FUNCTIONS ==================== #
+
+#' Load water quality data with flexible format handling
+#' @keywords internal
+load_water_quality_data_flexible <- function(water_data, coord_cols, verbose) {
+
+  water_sf_list <- list()
+
+  if (is.list(water_data) && !inherits(water_data, c("sf", "data.frame"))) {
+    # Multiple datasets provided
+    if (verbose) message("Processing multiple water quality datasets...")
+
+    for (i in seq_along(water_data)) {
+      dataset_name <- names(water_data)[i] %||% paste0("dataset_", i)
+      if (verbose) message(sprintf("  Loading dataset: %s", dataset_name))
+
+      tryCatch({
+        dataset_sf <- load_single_water_dataset(water_data[[i]], coord_cols, verbose)
+        dataset_sf$dataset_source <- dataset_name
+        water_sf_list[[dataset_name]] <- dataset_sf
+      }, error = function(e) {
+        warning(sprintf("Failed to load dataset %s: %s", dataset_name, e$message))
+      })
+    }
+
+  } else {
+    # Single dataset
+    water_sf_list[["main"]] <- load_single_water_dataset(water_data, coord_cols, verbose)
+  }
+
+  # Remove failed datasets
+  water_sf_list <- water_sf_list[!sapply(water_sf_list, is.null)]
+
+  if (length(water_sf_list) == 0) {
+    stop("No valid datasets could be loaded", call. = FALSE)
+  }
+
+  return(water_sf_list)
+}
+
+#' Load single water quality dataset
+#' @keywords internal
+load_single_water_dataset <- function(data_input, coord_cols, verbose) {
+
+  if (is.character(data_input)) {
+    # File path provided
+    if (!file.exists(data_input)) {
+      stop(sprintf("File does not exist: %s", data_input), call. = FALSE)
+    }
+
+    file_ext <- tolower(tools::file_ext(data_input))
+
+    if (file_ext == "csv") {
+      water_df <- read.csv(data_input, stringsAsFactors = FALSE)
+    } else if (file_ext %in% c("shp", "gpkg", "geojson")) {
+      water_sf <- sf::st_read(data_input, quiet = !verbose)
+      return(water_sf)
+    } else {
+      stop(sprintf("Unsupported file format: %s", file_ext), call. = FALSE)
+    }
+
+  } else if (inherits(data_input, "sf")) {
+    return(data_input)
+
+  } else if (is.data.frame(data_input)) {
+    water_df <- data_input
+
+  } else {
+    stop("Unsupported water data format", call. = FALSE)
+  }
+
+  # Convert data.frame to sf with flexible coordinate detection
+  water_sf <- convert_to_spatial_flexible(water_df, coord_cols, verbose)
+
+  return(water_sf)
+}
+
+#' Convert data.frame to sf with flexible coordinate detection
+#' @keywords internal
+convert_to_spatial_flexible <- function(water_df, coord_cols, verbose) {
+
+  # Auto-detect coordinate columns if not provided
+  if (is.null(coord_cols)) {
+    coord_cols <- detect_coordinate_columns(water_df, verbose)
+  }
+
+  # Validate coordinate columns exist
+  missing_coords <- setdiff(coord_cols, names(water_df))
+  if (length(missing_coords) > 0) {
+    stop(sprintf("Coordinate columns not found: %s", paste(missing_coords, collapse = ", ")),
+         call. = FALSE)
+  }
+
+  # Check for valid coordinate values
+  x_vals <- water_df[[coord_cols[1]]]
+  y_vals <- water_df[[coord_cols[2]]]
+
+  if (!is.numeric(x_vals) || !is.numeric(y_vals)) {
+    stop("Coordinate columns must be numeric", call. = FALSE)
+  }
+
+  # Remove rows with missing coordinates
+  valid_coords <- !is.na(x_vals) & !is.na(y_vals)
+  if (sum(valid_coords) == 0) {
+    stop("No valid coordinates found", call. = FALSE)
+  }
+
+  if (sum(!valid_coords) > 0) {
+    if (verbose) {
+      message(sprintf("Removed %d rows with missing coordinates", sum(!valid_coords)))
+    }
+    water_df <- water_df[valid_coords, ]
+  }
+
+  # Convert to sf
+  water_sf <- sf::st_as_sf(water_df, coords = coord_cols, crs = 4326)
+
+  return(water_sf)
+}
+
+#' Detect coordinate columns automatically
+#' @keywords internal
+detect_coordinate_columns <- function(water_df, verbose) {
+
+  # Common coordinate column patterns
+  x_patterns <- c("lon", "longitude", "x", "lng", "long", "LongitudeMeasure",
+                  "LONGITUDE", "Longitude", "LON")
+  y_patterns <- c("lat", "latitude", "y", "LatitudeMeasure",
+                  "LATITUDE", "Latitude", "LAT")
+
+  x_col <- NULL
+  y_col <- NULL
+
+  # Find x coordinate column
+  for (pattern in x_patterns) {
+    if (pattern %in% names(water_df)) {
+      x_col <- pattern
+      break
+    }
+  }
+
+  # Find y coordinate column
+  for (pattern in y_patterns) {
+    if (pattern %in% names(water_df)) {
+      y_col <- pattern
+      break
+    }
+  }
+
+  if (is.null(x_col) || is.null(y_col)) {
+    # Try to find numeric columns that could be coordinates
+    numeric_cols <- names(water_df)[sapply(water_df, is.numeric)]
+
+    if (length(numeric_cols) >= 2) {
+      # Check if values are in reasonable coordinate ranges
+      for (i in 1:(length(numeric_cols) - 1)) {
+        for (j in (i + 1):length(numeric_cols)) {
+          col1_vals <- water_df[[numeric_cols[i]]]
+          col2_vals <- water_df[[numeric_cols[j]]]
+
+          # Check if values are in lat/lon ranges
+          if (all(col1_vals >= -180 & col1_vals <= 180, na.rm = TRUE) &&
+              all(col2_vals >= -90 & col2_vals <= 90, na.rm = TRUE)) {
+            x_col <- numeric_cols[i]
+            y_col <- numeric_cols[j]
+            break
+          }
+
+          if (all(col2_vals >= -180 & col2_vals <= 180, na.rm = TRUE) &&
+              all(col1_vals >= -90 & col1_vals <= 90, na.rm = TRUE)) {
+            x_col <- numeric_cols[j]
+            y_col <- numeric_cols[i]
+            break
+          }
+        }
+        if (!is.null(x_col)) break
+      }
+    }
+  }
+
+  if (is.null(x_col) || is.null(y_col)) {
+    stop("Could not auto-detect coordinate columns. Please specify coord_cols parameter.\n",
+         "Available columns: ", paste(names(water_df), collapse = ", "), call. = FALSE)
+  }
+
+  if (verbose) {
+    message(sprintf("Auto-detected coordinate columns: %s, %s", x_col, y_col))
+  }
+
+  return(c(x_col, y_col))
+}
+
+#' Combine multiple water quality datasets
+#' @keywords internal
+combine_water_datasets <- function(water_sf_list, verbose) {
+
+  if (length(water_sf_list) == 1) {
+    return(water_sf_list[[1]])
+  }
+
+  # Find common columns across datasets
+  all_columns <- lapply(water_sf_list, names)
+  common_columns <- Reduce(intersect, all_columns)
+
+  if (length(common_columns) < 2) {
+    stop("Datasets have no common columns for combining", call. = FALSE)
+  }
+
+  if (verbose) {
+    message(sprintf("Combining %d datasets using %d common columns",
+                    length(water_sf_list), length(common_columns)))
+  }
+
+  # Subset each dataset to common columns and combine
+  water_sf_subset <- lapply(water_sf_list, function(x) x[, common_columns])
+
+  # Combine all datasets
+  combined_sf <- do.call(rbind, water_sf_subset)
+
+  return(combined_sf)
+}
+
+#' Detect water quality data columns intelligently
+#' @keywords internal
+detect_water_quality_columns <- function(water_sf, variable, date_column, station_id_col, verbose) {
+
+  # Get non-geometry column names
+  col_names <- names(water_sf)
+  if (inherits(water_sf, "sf")) {
+    col_names <- setdiff(col_names, attr(water_sf, "sf_column"))
+  }
+
+  # Detect numeric and categorical columns
+  numeric_vars <- col_names[sapply(water_sf[col_names], is.numeric)]
+  categorical_vars <- col_names[sapply(water_sf[col_names], function(x) is.character(x) || is.factor(x))]
+
+  # Auto-detect variable if not provided
+  if (is.null(variable)) {
+    # Priority patterns for water quality variables
+    priority_patterns <- c("discharge", "flow", "temperature", "ph", "oxygen", "nitrogen",
+                           "phosphorus", "nitrate", "ammonia", "turbidity", "tss", "bod",
+                           "conductivity", "salinity", "chloride")
+
+    for (pattern in priority_patterns) {
+      matches <- numeric_vars[grepl(pattern, numeric_vars, ignore.case = TRUE)]
+      if (length(matches) > 0) {
+        variable <- matches[1]
+        break
+      }
+    }
+
+    # If no priority matches, use first numeric variable
+    if (is.null(variable) && length(numeric_vars) > 0) {
+      variable <- numeric_vars[1]
+    }
+  }
+
+  # Auto-detect date column if not provided
+  if (is.null(date_column)) {
+    date_patterns <- c("date", "time", "datetime", "timestamp", "sample_date",
+                       "ActivityStartDate", "Date", "TIME")
+
+    for (pattern in date_patterns) {
+      matches <- col_names[grepl(pattern, col_names, ignore.case = TRUE)]
+      if (length(matches) > 0) {
+        date_column <- matches[1]
+        break
+      }
+    }
+  }
+
+  # Auto-detect station ID column if not provided
+  if (is.null(station_id_col)) {
+    id_patterns <- c("station", "site", "id", "MonitoringLocationIdentifier",
+                     "StationID", "SiteID", "station_id", "site_id")
+
+    for (pattern in id_patterns) {
+      matches <- col_names[grepl(pattern, col_names, ignore.case = TRUE)]
+      if (length(matches) > 0) {
+        station_id_col <- matches[1]
+        break
+      }
+    }
+  }
+
+  return(list(
+    variable = variable,
+    date_column = date_column,
+    station_id_col = station_id_col,
+    numeric_vars = numeric_vars,
+    categorical_vars = categorical_vars
+  ))
+}
+
+#' Apply water quality filters
+#' @keywords internal
+apply_water_quality_filters <- function(water_sf, variable, quality_filters, verbose) {
+
+  if (length(quality_filters) == 0) {
+    return(water_sf)
+  }
+
+  original_count <- nrow(water_sf)
+
+  # Apply range filters
+  if ("valid_range" %in% names(quality_filters)) {
+    valid_range <- quality_filters$valid_range
+    if (is.numeric(valid_range) && length(valid_range) == 2) {
+      water_sf <- water_sf[water_sf[[variable]] >= valid_range[1] &
+                             water_sf[[variable]] <= valid_range[2], ]
+    }
+  }
+
+  # Apply outlier removal
+  if ("remove_outliers" %in% names(quality_filters) && quality_filters$remove_outliers) {
+    values <- water_sf[[variable]]
+    values <- values[!is.na(values)]
+
+    if (length(values) > 10) {
+      q1 <- quantile(values, 0.25)
+      q3 <- quantile(values, 0.75)
+      iqr <- q3 - q1
+      lower_bound <- q1 - 1.5 * iqr
+      upper_bound <- q3 + 1.5 * iqr
+
+      water_sf <- water_sf[water_sf[[variable]] >= lower_bound &
+                             water_sf[[variable]] <= upper_bound, ]
+    }
+  }
+
+  # Remove missing values if specified
+  if ("remove_na" %in% names(quality_filters) && quality_filters$remove_na) {
+    water_sf <- water_sf[!is.na(water_sf[[variable]]), ]
+  }
+
+  filtered_count <- nrow(water_sf)
+
+  if (verbose && filtered_count != original_count) {
+    message(sprintf("Quality filters applied: %d -> %d observations (%.1f%% retained)",
+                    original_count, filtered_count, (filtered_count/original_count)*100))
+  }
+
+  return(water_sf)
+}
+
+#' Perform threshold analysis
+#' @keywords internal
+perform_threshold_analysis <- function(water_sf, variable, thresholds, verbose) {
+
+  if (verbose) message("Applying water quality thresholds...")
+
+  # Validate thresholds structure
+  for (thresh_name in names(thresholds)) {
+    thresh_vals <- thresholds[[thresh_name]]
+    if (!is.numeric(thresh_vals) || length(thresh_vals) != 2) {
+      stop(sprintf("Invalid threshold structure for '%s'. Must be numeric vector of length 2.",
+                   thresh_name), call. = FALSE)
+    }
+  }
+
+  # Apply thresholds
+  water_sf$quality_category <- NA_character_
+
+  for (thresh_name in names(thresholds)) {
+    thresh_range <- thresholds[[thresh_name]]
+    mask <- !is.na(water_sf[[variable]]) &
+      water_sf[[variable]] >= thresh_range[1] &
+      water_sf[[variable]] < thresh_range[2]
+
+    water_sf$quality_category[mask] <- thresh_name
+  }
+
+  # Calculate threshold statistics
+  category_counts <- table(water_sf$quality_category, useNA = "ifany")
+  category_percentages <- round(prop.table(category_counts) * 100, 1)
+
+  threshold_stats <- list(
+    category_counts = category_counts,
+    category_percentages = category_percentages,
+    thresholds_used = thresholds
+  )
+
+  if (verbose) {
+    message("Threshold analysis results:")
+    for (cat in names(category_counts)) {
+      message(sprintf("  %s: %d observations (%.1f%%)", cat, category_counts[[cat]], category_percentages[[cat]]))
+    }
+  }
+
+  return(list(
+    data_with_categories = water_sf,
+    threshold_statistics = threshold_stats
+  ))
+}
+
+#' Calculate comprehensive water quality statistics
+#' @keywords internal
+calculate_water_quality_statistics <- function(water_sf, variable, numeric_vars,
+                                               threshold_results, verbose) {
+
+  statistics <- list()
+
+  # Basic statistics for primary variable
+  values <- water_sf[[variable]]
+  valid_values <- values[!is.na(values)]
+
+  if (length(valid_values) > 0) {
+    statistics$primary_variable <- list(
+      variable_name = variable,
+      n_observations = length(valid_values),
+      n_missing = sum(is.na(values)),
+      mean = mean(valid_values),
+      median = median(valid_values),
+      sd = sd(valid_values),
+      min = min(valid_values),
+      max = max(valid_values),
+      range = max(valid_values) - min(valid_values),
+      cv = sd(valid_values) / mean(valid_values),
+      percentiles = quantile(valid_values, c(0.05, 0.1, 0.25, 0.75, 0.9, 0.95))
+    )
+  }
+
+  # Statistics for all numeric variables
+  statistics$all_variables <- list()
+  for (var in numeric_vars[1:min(10, length(numeric_vars))]) {  # Limit to first 10
+    var_values <- water_sf[[var]]
+    valid_var_values <- var_values[!is.na(var_values)]
+
+    if (length(valid_var_values) > 0) {
+      statistics$all_variables[[var]] <- list(
+        n_valid = length(valid_var_values),
+        mean = mean(valid_var_values),
+        median = median(valid_var_values),
+        sd = sd(valid_var_values),
+        range = c(min(valid_var_values), max(valid_var_values))
+      )
+    }
+  }
+
+  # Threshold statistics if available
+  if (!is.null(threshold_results)) {
+    statistics$threshold_analysis <- threshold_results$threshold_statistics
+  }
+
+  return(statistics)
+}
+
+#' Analyze spatial patterns in water quality data
+#' @keywords internal
+analyze_water_spatial_patterns <- function(water_sf, variable, verbose) {
+
+  spatial_analysis <- list()
+
+  # Basic spatial statistics
+  coords <- sf::st_coordinates(water_sf)
+  values <- water_sf[[variable]]
+  valid_idx <- !is.na(values)
+
+  if (sum(valid_idx) > 0) {
+    spatial_analysis$extent <- list(
+      x_range = range(coords[valid_idx, 1]),
+      y_range = range(coords[valid_idx, 2]),
+      n_locations = sum(valid_idx)
+    )
+
+    # Simple spatial correlation (if enough points)
+    if (sum(valid_idx) > 10) {
+      tryCatch({
+        x_coords <- coords[valid_idx, 1]
+        y_coords <- coords[valid_idx, 2]
+        valid_values <- values[valid_idx]
+
+        spatial_analysis$spatial_correlations <- list(
+          x_correlation = cor(x_coords, valid_values),
+          y_correlation = cor(y_coords, valid_values)
+        )
+      }, error = function(e) {
+        spatial_analysis$spatial_correlations <- list(error = e$message)
+      })
+    }
+  }
+
+  return(spatial_analysis)
+}
+
+#' Analyze temporal patterns in water quality data
+#' @keywords internal
+analyze_water_temporal_patterns <- function(water_sf, variable, date_column, verbose) {
+
+  temporal_analysis <- list()
+
+  # Try to parse dates
+  date_values <- water_sf[[date_column]]
+  parsed_dates <- tryCatch({
+    as.Date(date_values)
+  }, error = function(e) {
+    # Try other date formats
+    tryCatch({
+      as.Date(date_values, format = "%m/%d/%Y")
+    }, error = function(e2) {
+      NULL
+    })
+  })
+
+  if (is.null(parsed_dates) || all(is.na(parsed_dates))) {
+    temporal_analysis$error <- "Could not parse date column"
+    return(temporal_analysis)
+  }
+
+  # Basic temporal statistics
+  valid_dates <- !is.na(parsed_dates) & !is.na(water_sf[[variable]])
+  if (sum(valid_dates) > 0) {
+    temporal_analysis$date_range <- range(parsed_dates[valid_dates])
+    temporal_analysis$n_temporal_observations <- sum(valid_dates)
+
+    # Simple temporal trend if enough data
+    if (sum(valid_dates) > 5) {
+      tryCatch({
+        time_numeric <- as.numeric(parsed_dates[valid_dates])
+        values_valid <- water_sf[[variable]][valid_dates]
+
+        lm_result <- lm(values_valid ~ time_numeric)
+        temporal_analysis$trend <- list(
+          slope = coef(lm_result)[2],
+          p_value = summary(lm_result)$coefficients[2, 4],
+          r_squared = summary(lm_result)$r.squared
+        )
+      }, error = function(e) {
+        temporal_analysis$trend <- list(error = e$message)
+      })
+    }
+  }
+
+  return(temporal_analysis)
+}
+
+#' Save water quality analysis results
+#' @keywords internal
+save_water_quality_results <- function(water_sf, variable, statistics, threshold_results,
+                                       spatial_analysis, temporal_analysis, region_boundary,
+                                       river_network, output_folder, verbose) {
+
+  output_files <- list()
+
+  # Save processed data
+  tryCatch({
+    # Save as CSV with coordinates
+    coords <- sf::st_coordinates(water_sf)
+    water_df_export <- sf::st_drop_geometry(water_sf)
+    water_df_export$longitude <- coords[, 1]
+    water_df_export$latitude <- coords[, 2]
+
+    data_file <- file.path(output_folder, "water_quality_processed.csv")
+    write.csv(water_df_export, data_file, row.names = FALSE)
+    output_files$processed_data <- data_file
+
+    if (verbose) message("Saved processed data to: ", basename(data_file))
+  }, error = function(e) {
+    warning("Failed to save processed data: ", e$message)
+  })
+
+  # Save comprehensive statistics report
+  tryCatch({
+    stats_file <- file.path(output_folder, "water_quality_statistics.txt")
+    stats_text <- generate_statistics_report(statistics, threshold_results, spatial_analysis,
+                                             temporal_analysis, variable, region_boundary)
+    writeLines(stats_text, stats_file)
+    output_files$statistics_report <- stats_file
+
+    if (verbose) message("Saved statistics report to: ", basename(stats_file))
+  }, error = function(e) {
+    warning("Failed to save statistics report: ", e$message)
+  })
+
+  # Create visualization
+  tryCatch({
+    plot_file <- file.path(output_folder, paste0("water_quality_", gsub("[^A-Za-z0-9_]", "_", variable), "_map.png"))
+    create_water_quality_plot_robust(
+      water_data = water_sf,
+      variable = variable,
+      region_boundary = region_boundary,
+      river_network = river_network,
+      threshold_results = threshold_results,
+      output_file = plot_file
+    )
+    output_files$visualization <- plot_file
+
+    if (verbose) message("Saved visualization to: ", basename(plot_file))
+  }, error = function(e) {
+    warning("Failed to create visualization: ", e$message)
+  })
+
+  # Save analysis results as RDS for further analysis
+  tryCatch({
+    results_file <- file.path(output_folder, "water_quality_analysis_results.rds")
+    analysis_data <- list(
+      statistics = statistics,
+      spatial_analysis = spatial_analysis,
+      temporal_analysis = temporal_analysis,
+      threshold_results = threshold_results
+    )
+    saveRDS(analysis_data, results_file)
+    output_files$analysis_results <- results_file
+
+    if (verbose) message("Saved analysis results to: ", basename(results_file))
+  }, error = function(e) {
+    warning("Failed to save analysis results: ", e$message)
+  })
+
+  return(output_files)
+}
+
+#' Generate comprehensive statistics report
+#' @keywords internal
+generate_statistics_report <- function(statistics, threshold_results, spatial_analysis,
+                                       temporal_analysis, variable, region_boundary) {
+
+  report_lines <- c(
+    "COMPREHENSIVE WATER QUALITY ANALYSIS REPORT",
+    strrep("=", 50),
+    "",
+    paste("Analysis Date:", Sys.time()),
+    paste("Variable Analyzed:", variable),
+    paste("Region:", region_boundary %||% "Not specified"),
+    "",
+    "PRIMARY VARIABLE STATISTICS:",
+    strrep("-", 30)
+  )
+
+  # Primary variable statistics
+  if (!is.null(statistics$primary_variable)) {
+    ps <- statistics$primary_variable
+    report_lines <- c(report_lines,
+                      paste("Variable:", ps$variable_name),
+                      paste("Valid Observations:", ps$n_observations),
+                      paste("Missing Values:", ps$n_missing),
+                      paste("Mean:", sprintf("%.3f", ps$mean)),
+                      paste("Median:", sprintf("%.3f", ps$median)),
+                      paste("Standard Deviation:", sprintf("%.3f", ps$sd)),
+                      paste("Range:", sprintf("%.3f - %.3f", ps$min, ps$max)),
+                      paste("Coefficient of Variation:", sprintf("%.3f", ps$cv)),
+                      "",
+                      "PERCENTILES:",
+                      paste("5th:", sprintf("%.3f", ps$percentiles[1])),
+                      paste("10th:", sprintf("%.3f", ps$percentiles[2])),
+                      paste("25th:", sprintf("%.3f", ps$percentiles[3])),
+                      paste("75th:", sprintf("%.3f", ps$percentiles[4])),
+                      paste("90th:", sprintf("%.3f", ps$percentiles[5])),
+                      paste("95th:", sprintf("%.3f", ps$percentiles[6]))
+    )
+  }
+
+  # Threshold analysis
+  if (!is.null(threshold_results$threshold_statistics)) {
+    ts <- threshold_results$threshold_statistics
+    report_lines <- c(report_lines,
+                      "",
+                      "THRESHOLD ANALYSIS:",
+                      strrep("-", 20)
+    )
+
+    for (cat in names(ts$category_counts)) {
+      count <- ts$category_counts[[cat]]
+      pct <- ts$category_percentages[[cat]]
+      report_lines <- c(report_lines,
+                        paste(cat, ":", count, "observations", sprintf("(%.1f%%)", pct))
+      )
+    }
+  }
+
+  # Spatial analysis
+  if (!is.null(spatial_analysis$extent)) {
+    sa <- spatial_analysis
+    report_lines <- c(report_lines,
+                      "",
+                      "SPATIAL ANALYSIS:",
+                      strrep("-", 17),
+                      paste("Number of Locations:", sa$extent$n_locations),
+                      paste("Longitude Range:", sprintf("%.3f - %.3f", sa$extent$x_range[1], sa$extent$x_range[2])),
+                      paste("Latitude Range:", sprintf("%.3f - %.3f", sa$extent$y_range[1], sa$extent$y_range[2]))
+    )
+
+    if (!is.null(sa$spatial_correlations) && is.null(sa$spatial_correlations$error)) {
+      report_lines <- c(report_lines,
+                        paste("Longitude Correlation:", sprintf("%.3f", sa$spatial_correlations$x_correlation)),
+                        paste("Latitude Correlation:", sprintf("%.3f", sa$spatial_correlations$y_correlation))
+      )
+    }
+  }
+
+  # Temporal analysis
+  if (!is.null(temporal_analysis) && is.null(temporal_analysis$error)) {
+    ta <- temporal_analysis
+    report_lines <- c(report_lines,
+                      "",
+                      "TEMPORAL ANALYSIS:",
+                      strrep("-", 18),
+                      paste("Date Range:", paste(ta$date_range, collapse = " to ")),
+                      paste("Temporal Observations:", ta$n_temporal_observations)
+    )
+
+    if (!is.null(ta$trend) && is.null(ta$trend$error)) {
+      trend_direction <- ifelse(ta$trend$slope > 0, "increasing", "decreasing")
+      significance <- ifelse(ta$trend$p_value < 0.05, "significant", "not significant")
+      report_lines <- c(report_lines,
+                        paste("Temporal Trend:", trend_direction, sprintf("(slope: %.6f)", ta$trend$slope)),
+                        paste("Trend Significance:", significance, sprintf("(p-value: %.3f)", ta$trend$p_value)),
+                        paste("R-squared:", sprintf("%.3f", ta$trend$r_squared))
+      )
+    }
+  }
+
+  # Additional variable summary
+  if (!is.null(statistics$all_variables) && length(statistics$all_variables) > 1) {
+    report_lines <- c(report_lines,
+                      "",
+                      "ADDITIONAL VARIABLES SUMMARY:",
+                      strrep("-", 30)
+    )
+
+    for (var_name in names(statistics$all_variables)[1:min(5, length(statistics$all_variables))]) {
+      if (var_name != variable) {
+        var_stats <- statistics$all_variables[[var_name]]
+        report_lines <- c(report_lines,
+                          paste(var_name, ":",
+                                sprintf("Mean=%.3f, Range=[%.3f,%.3f], N=%d",
+                                        var_stats$mean,
+                                        var_stats$range[1], var_stats$range[2],
+                                        var_stats$n_valid))
+        )
+      }
+    }
+  }
+
+  report_lines <- c(report_lines,
+                    "",
+                    strrep("=", 50),
+                    "Report generated by GeoSpatialSuite water quality analysis"
+  )
+
+  return(report_lines)
+}
+
+#' Create robust water quality visualization
+#' @keywords internal
+create_water_quality_plot_robust <- function(water_data, variable, region_boundary,
+                                             river_network, threshold_results, output_file) {
+
+  # Use base plotting for maximum reliability
+  tryCatch({
+    # Convert to points for plotting if sf object
+    if (inherits(water_data, "sf")) {
+      coords <- sf::st_coordinates(water_data)
+      values <- water_data[[variable]]
+
+      # Create simple plot
+      png(output_file, width = 1200, height = 800, res = 200)
+
+      # Set up plot area
+      plot(coords[, 1], coords[, 2],
+           col = colorRampPalette(c("blue", "red"))(100)[cut(values, 100)],
+           pch = 16, cex = 1.2,
+           xlab = "Longitude", ylab = "Latitude",
+           main = paste("Water Quality:", stringr::str_to_title(gsub("_", " ", variable))))
+
+      # Add region boundary if available
+      if (!is.null(region_boundary)) {
+        tryCatch({
+          boundary <- get_region_boundary(region_boundary)
+          if (!is.null(boundary)) {
+            boundary_coords <- sf::st_coordinates(boundary)
+            lines(boundary_coords[, 1], boundary_coords[, 2], col = "black", lwd = 2)
+          }
+        }, error = function(e) {
+          # Ignore boundary plotting errors
+        })
+      }
+
+      # Add legend
+      legend("topright",
+             legend = c("Low", "High"),
+             col = c("blue", "red"),
+             pch = 16,
+             title = stringr::str_to_title(gsub("_", " ", variable)))
+
+      dev.off()
+    }
+
+  }, error = function(e) {
+    warning("Visualization creation failed: ", e$message)
+  })
+}
+
+# Null coalescing operator
+`%||%` <- function(x, y) if (is.null(x)) y else x

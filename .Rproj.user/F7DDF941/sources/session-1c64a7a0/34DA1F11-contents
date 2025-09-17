@@ -1,0 +1,220 @@
+#' Integrate terrain analysis with vector data
+#'
+#' @description
+#' Specialized function for terrain analysis integration. Calculates terrain
+#' variables from DEM and extracts values to vector data points/polygons.
+#'
+#' @param vector_data Vector data (points, lines, or polygons)
+#' @param elevation_raster Digital elevation model
+#' @param terrain_vars Terrain variables to calculate
+#' @param custom_terrain_functions Custom terrain analysis functions
+#' @param extraction_method Method for extracting terrain values
+#'
+#' @return sf object with terrain attributes
+#'
+#' @examples
+#' \dontrun{
+#' # Extract terrain variables for study sites
+#' sites_with_terrain <- integrate_terrain_analysis(
+#'   vector_data = "study_sites.shp",
+#'   elevation_raster = "dem.tif",
+#'   terrain_vars = c("slope", "aspect", "TRI", "TPI")
+#' )
+#'
+#' # Use custom terrain functions
+#' custom_functions <- list(
+#'   ruggedness = function(sf_data) {
+#'     sf_data$slope * sf_data$TRI
+#'   }
+#' )
+#'
+#' terrain_analysis <- integrate_terrain_analysis(
+#'   vector_data = field_boundaries,
+#'   elevation_raster = dem_raster,
+#'   custom_terrain_functions = custom_functions
+#' )
+#' }
+#'
+#' @export
+integrate_terrain_analysis <- function(vector_data, elevation_raster,
+                                       terrain_vars = c("slope", "aspect", "TRI", "TPI", "flowdir"),
+                                       custom_terrain_functions = NULL,
+                                       extraction_method = "simple") {
+
+  message("Starting specialized terrain analysis integration...")
+  message("This is a specific case of the universal spatial join for DEM data")
+
+  # Load data
+  vector_sf <- process_vector_data(vector_data)
+  if (is.character(elevation_raster)) {
+    elevation_raster <- terra::rast(elevation_raster)
+  }
+
+  # First, extract elevation using universal join
+  vector_sf <- universal_spatial_join(
+    source_data = vector_sf,
+    target_data = elevation_raster,
+    method = "extract"
+  )
+
+
+  # Calculate terrain variables
+  terrain_rasters <- list()
+
+  for (var in terrain_vars) {
+    message(sprintf("Calculating %s...", var))
+
+    terrain_raster <- switch(var,
+                             "slope" = terra::terrain(elevation_raster, opt = "slope", unit = "degrees"),
+                             "aspect" = terra::terrain(elevation_raster, opt = "aspect", unit = "degrees"),
+                             "TRI" = terra::terrain(elevation_raster, opt = "TRI"),
+                             "TPI" = terra::terrain(elevation_raster, opt = "TPI"),
+                             "flowdir" = terra::terrain(elevation_raster, opt = "flowdir"),
+                             "roughness" = terra::terrain(elevation_raster, opt = "roughness"),
+                             stop(paste("Unsupported terrain variable:", var))
+    )
+
+    terrain_rasters[[var]] <- terrain_raster
+  }
+
+  # Extract terrain values using universal join
+  for (var in names(terrain_rasters)) {
+    temp_result <- universal_spatial_join(vector_sf, terrain_rasters[[var]],
+                                          variable_names = var,
+                                          method = extraction_method)
+    vector_sf[[var]] <- temp_result[[var]]
+  }
+
+  # Apply custom terrain functions if provided
+  if (!is.null(custom_terrain_functions)) {
+    message("Applying custom terrain analysis functions...")
+
+    for (func_name in names(custom_terrain_functions)) {
+      func <- custom_terrain_functions[[func_name]]
+      vector_sf[[func_name]] <- func(vector_sf)
+    }
+  }
+
+  message("Terrain analysis integration completed!")
+  return(vector_sf)
+}
+
+#' Calculate advanced terrain metrics
+#'
+#' @description
+#' Calculate advanced terrain metrics from DEM including curvature,
+#' wetness index, and stream power index.
+#'
+#' @param elevation_raster Digital elevation model
+#' @param metrics Vector of metrics to calculate
+#' @param region_boundary Optional region boundary
+#'
+#' @return List of terrain metric rasters
+#'
+#' @examples
+#' \dontrun{
+#' # Calculate advanced terrain metrics
+#' terrain_metrics <- calculate_advanced_terrain_metrics(
+#'   elevation_raster = "dem.tif",
+#'   metrics = c("wetness_index", "curvature", "convergence"),
+#'   region_boundary = "watershed.shp"
+#' )
+#' }
+#'
+#' @export
+calculate_advanced_terrain_metrics <- function(elevation_raster,
+                                               metrics = c("wetness_index", "curvature", "convergence"),
+                                               region_boundary = NULL) {
+
+  message("Calculating advanced terrain metrics...")
+
+  # Load elevation data
+  if (is.character(elevation_raster)) {
+    dem <- terra::rast(elevation_raster)
+  } else {
+    dem <- elevation_raster
+  }
+
+  # Apply region boundary if provided
+  if (!is.null(region_boundary)) {
+    boundary <- get_region_boundary(region_boundary)
+    boundary_vect <- terra::vect(boundary)
+    dem <- terra::crop(dem, boundary_vect)
+    dem <- terra::mask(dem, boundary_vect)
+  }
+
+  # Calculate basic terrain variables needed for advanced metrics
+  slope <- terra::terrain(dem, opt = "slope", unit = "radians")
+  aspect <- terra::terrain(dem, opt = "aspect", unit = "radians")
+
+  # Initialize results list
+  result_rasters <- list()
+
+  for (metric in metrics) {
+    message(sprintf("Calculating %s...", metric))
+
+    metric_raster <- switch(metric,
+                            "wetness_index" = {
+                              # Topographic Wetness Index
+                              contributing_area <- calculate_contributing_area(dem)
+                              log10(contributing_area / (tan(slope) + 0.001))
+                            },
+
+                            "curvature" = {
+                              # Profile curvature
+                              terra::terrain(dem, opt = "TPI") / (terra::terrain(dem, opt = "TRI") + 1)
+                            },
+
+                            "convergence" = {
+                              # Convergence index
+                              focal_mean_aspect <- terra::focal(aspect, w = matrix(1/9, 3, 3), fun = mean, na.rm = TRUE)
+                              abs(aspect - focal_mean_aspect)
+                            },
+
+                            "heat_load" = {
+                              # Heat load index
+                              latitude_rad <- 0.7854  # 45 degrees in radians (adjust as needed)
+                              0.339 + 0.808 * cos(latitude_rad) * cos(slope) -
+                                0.196 * sin(latitude_rad) * sin(slope) -
+                                0.482 * cos(aspect) * sin(slope)
+                            },
+
+                            stop(paste("Unsupported terrain metric:", metric))
+    )
+
+    names(metric_raster) <- metric
+    result_rasters[[metric]] <- metric_raster
+  }
+
+  message("Advanced terrain metrics calculation completed!")
+  return(result_rasters)
+}
+
+#' Calculate contributing area
+#'
+#' @description
+#' Internal function to calculate contributing area for wetness index.
+#'
+#' @param dem Digital elevation model
+#'
+#' @return SpatRaster of contributing area
+#'
+#' @keywords internal
+calculate_contributing_area <- function(dem) {
+  # Contributing area calculation
+  # In practice, this would use more sophisticated flow accumulation algorithms
+
+  # Calculate flow direction
+  flow_dir <- terra::terrain(dem, opt = "flowdir")
+
+  # Simple approximation of contributing area based on local topography
+  slope <- terra::terrain(dem, opt = "slope", unit = "degrees")
+
+  # Areas with lower slope tend to have higher contributing areas
+  contributing_area <- 1 / (slope + 1)
+
+  # Smooth the result
+  contributing_area <- terra::focal(contributing_area, w = matrix(1/9, 3, 3), fun = mean, na.rm = TRUE)
+
+  return(contributing_area)
+}

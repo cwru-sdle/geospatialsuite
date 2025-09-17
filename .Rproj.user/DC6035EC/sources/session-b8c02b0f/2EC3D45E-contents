@@ -1,0 +1,3079 @@
+---
+title: "Methane"
+output: pdf_document
+date: "2024-04-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+```{r}
+
+
+# Load required libraries
+library(raster)
+
+library(maps)
+library(viridis)
+
+# Set the path to the folder containing the geotiff images
+geotiff_folder <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine/nsf_vist/methane_ohio"
+
+# Set the path to the folder where you want to save the PNG plots
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane"
+
+
+
+# Get a list of all geotiff files in the folder
+geotiff_files <- list.files(geotiff_folder, pattern = "\\.tif$", full.names = TRUE)
+
+
+
+
+
+# Iterate over each geotiff file
+for (file in geotiff_files) {
+  # Read the geotiff image
+  image <- raster(file)
+  
+  # Crop the image to the extent of Ohio
+  ohio_extent <- extent(map("state", "ohio", plot = FALSE)$range)
+  cropped_image <- crop(image, ohio_extent)
+  
+  # Create a plot of the cropped image with the custom color palette
+  png(file.path(output_folder, paste0(tools::file_path_sans_ext(basename(file)), ".png")),
+      width = 800, height = 600, res = 150)
+  
+  par(mar = c(2, 2, 2, 2))
+  plot(cropped_image, xlab = "Longitude", ylab = "Latitude", main = basename(file))
+  map("state", "ohio", add = TRUE, col = "black", lwd = 1)
+  
+  dev.off()
+}
+
+
+
+```
+
+
+
+
+```{r}
+
+# Load necessary libraries
+library(raster)
+library(tigris)
+library(maps)
+
+# Define file paths
+image_folder <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine/nsf_vist/methane_ohio"
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane"
+
+
+
+tigris::st
+# Load shape data for Ohio
+ohio_shape <- tigris::counties(state = "Ohio", cb = TRUE)
+
+# Convert the shape data to a SpatialPolygons object if necessary
+ohio_shape <- as(ohio_shape, "Spatial")
+
+
+
+# Get a list of geotiff files in the image folder
+image_files <- list.files(path = image_folder, pattern = "\\.tif$", full.names = TRUE)
+
+# Iterate over each image file
+for (image_file in image_files) {
+    # Read the geotiff image
+    image <- raster(image_file)
+    
+    # Crop the image to the Ohio shape
+    cropped_image <- crop(image, extent(ohio_shape))
+    masked_image <- mask(cropped_image, ohio_shape)
+    
+    # Define the output file name
+    output_file <- file.path(output_folder, paste0(basename(image_file), ".png"))
+    
+    # Plot the masked image
+    png(filename = output_file)
+    plot(masked_image, main = basename(image_file))
+    # Add the ohio map
+maps::map("state",
+          "ohio",
+          add = TRUE,
+          col = "black",
+          lwd = 1)
+
+    dev.off()
+}
+
+print("All images processed and saved as PNGs.")
+
+
+
+```
+
+
+
+
+```{r}
+
+
+
+
+# Load necessary libraries
+library(raster)
+library(tigris)
+library(maps)
+library(ggplot2)
+
+# Define file paths
+image_folder <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine/nsf_vist/methane_ohio"
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane"
+
+# Load shape data for Ohio
+ohio_shape <- tigris::counties(state = "Ohio", cb = TRUE)
+
+# Convert the shape data to a SpatialPolygons object if necessary
+ohio_shape <- as(ohio_shape, "Spatial")
+
+# Get a list of geotiff files in the image folder
+image_files <- list.files(path = image_folder, pattern = "\\.tif$", full.names = TRUE)
+
+# Specify the range for the color scheme
+color_range <- c(1285, 2405)
+
+# Iterate over each image file
+for (image_file in image_files) {
+    # Read the geotiff image
+    image <- raster(image_file)
+    
+    # Check if the image contains data
+    # Sum of non-NA values
+    valid_pixel_sum <- cellStats(image, sum, na.rm = TRUE)
+    
+    # If the sum of non-NA values is zero, skip the image
+    if (valid_pixel_sum == 0) {
+        message("Skipping image with no data: ", image_file)
+        next
+    }
+    
+    # Crop the image to the Ohio shape
+    cropped_image <- crop(image, extent(ohio_shape))
+    masked_image <- mask(cropped_image, ohio_shape)
+    
+    # Define the output file name
+    output_file <- file.path(output_folder, paste0(basename(image_file), ".png"))
+    
+    # Plot the masked image with specified color range
+    png(filename = output_file)
+    plot(masked_image, main = basename(image_file), zlim = color_range)
+    
+    # Add the Ohio state border map
+    maps::map("state", "ohio", add = TRUE, col = "black", lwd = 1)
+    
+    dev.off()
+}
+
+print("All images processed and saved as PNGs.")
+
+
+
+```
+
+
+
+
+```{r}
+
+
+
+
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/monthly"
+color_range <- c(1285, 2405)
+
+# Load necessary libraries
+library(raster)
+library(tigris)
+library(maps)
+library(ggplot2)
+
+# Load shape data for Ohio
+ohio_shape <- tigris::counties(state = "OH", cb = TRUE)
+ohio_shape <- as(ohio_shape, "Spatial")
+
+# Get a list of geotiff files in the image folder
+image_files <- list.files(path = image_folder, pattern = "\\.tif$", full.names = TRUE)
+
+# Create a list to hold running sum and count arrays for each month
+monthly_data <- list()
+
+# Group images by month and stack them
+for (image_file in image_files) {
+    # Read the geotiff image
+    image <- raster(image_file)
+    
+    # Check if the image contains data
+    valid_pixel_sum <- cellStats(image, sum, na.rm = TRUE)
+    if (valid_pixel_sum == 0) {
+        message("Skipping image with no data: ", image_file)
+        next
+    }
+    
+    # Crop the image to the Ohio shape
+    cropped_image <- crop(image, extent(ohio_shape))
+    masked_image <- mask(cropped_image, ohio_shape)
+    
+    # Extract month from filename
+    filename <- basename(image_file)
+    date_part <- strsplit(filename, "_")[[1]][1]
+    image_date <- as.Date(date_part, format = "%Y%m%dT%H%M%S")
+    image_month <- format(image_date, "%Y-%m") # Year and month
+    
+    # Add masked image to monthly list
+    if (!(image_month %in% names(monthly_images))) {
+        monthly_images[[image_month]] <- list(masked_image)
+    } else {
+        monthly_images[[image_month]] <- c(monthly_images[[image_month]], list(masked_image))
+    }
+}
+
+# Compute monthly averages
+for (month in names(monthly_images)) {
+    # Stack images for the month
+    month_stack <- stack(monthly_images[[month]])
+    
+    # Compute the average only where data is present
+    monthly_avg <- overlay(month_stack, fun = sum, na.rm = TRUE)
+    
+    # Define the output file name
+    output_file <- file.path(output_folder, paste0(month, "_average.png"))
+    
+    # Plot and save the average image with specified color range
+    png(filename = output_file)
+    plot(monthly_avg, main = paste0("Average for ", month), zlim = color_range)
+    
+    # Add the Ohio state border map
+    maps::map("state", "ohio", add = TRUE, col = "black", lwd = 1)
+    
+    dev.off()
+}
+
+
+
+```
+
+
+
+
+```{r}
+
+
+# Load necessary libraries
+library(raster)
+library(tigris)
+library(maps)
+library(ggplot2)
+
+# Define file paths
+image_folder <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine/nsf_vist/methane_ohio"
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/monthly"
+
+# Load shape data for Ohio
+ohio_shape <- tigris::counties(state = "Ohio", cb = TRUE)
+
+# Convert the shape data to a SpatialPolygons object if necessary
+ohio_shape <- as(ohio_shape, "Spatial")
+
+# Get a list of geotiff files in the image folder
+image_files <- list.files(path = image_folder, pattern = "\\.tif$", full.names = TRUE)
+
+# Load the farm points data
+farm_points <- farm_data
+
+# Convert the farm points to an sf object
+farm_points_sf <- st_as_sf(farm_points, coords = c("Longitude", "Latitude"), crs = 4326)
+
+# Define the months
+months <- c("01", "02", "03", "04", "05", "06")
+
+# Initialize variables to store the minimum and maximum values
+min_value <- Inf
+max_value <- -Inf
+
+# Iterate over each month
+for (month in months) {
+  # Filter image files for the current month
+  month_image_files <- image_files[grepl(paste0("2023", month), image_files)]
+  
+  # Initialize an empty raster stack and a counter raster
+  raster_sum <- NULL
+  raster_count <- NULL
+  
+  # Iterate over each image file for the current month
+  for (image_file in month_image_files) {
+    # Read the geotiff image
+    image <- raster(image_file)
+    
+    # Check if the image contains data
+    # Sum of non-NA values
+    valid_pixel_sum <- cellStats(image, sum, na.rm = TRUE)
+    
+    # If the sum of non-NA values is zero, skip the image
+    if (valid_pixel_sum == 0) {
+      message("Skipping image with no data: ", image_file)
+      next
+    }
+    
+    # Crop the image to the Ohio shape
+    cropped_image <- crop(image, extent(ohio_shape))
+    masked_image <- mask(cropped_image, ohio_shape)
+    
+    # If raster_sum is NULL, initialize it with the masked image
+    if (is.null(raster_sum)) {
+      raster_sum <- masked_image
+      raster_count <- !is.na(masked_image)
+    } else {
+      # Add the masked image to raster_sum
+      raster_sum <- raster_sum + masked_image
+      raster_count <- raster_count + !is.na(masked_image)
+    }
+  }
+  
+  # Check if raster_sum is NULL (no valid images for the month)
+  if (is.null(raster_sum)) {
+    message("No valid images found for month: ", month)
+    next
+  }
+  
+  # Calculate the average image for the current month
+  avg_image <- raster_sum / raster_count
+  avg_image[raster_count == 0] <- NA
+  
+  # Update the minimum and maximum values
+  min_value <- min(min_value, minValue(avg_image), na.rm = TRUE)
+  max_value <- max(max_value, maxValue(avg_image), na.rm = TRUE)
+}
+
+# Set the color range based on the minimum and maximum values
+color_range <- c(min_value, max_value)
+
+# Iterate over each month again to plot the averaged images
+for (month in months) {
+  # Define the output file name
+  output_file <- file.path(output_folder, paste0("avg_methane_", month, "_2023.png"))
+  
+  # Plot the averaged image with the updated color range
+  png(filename = output_file)
+  plot(avg_image, main = paste("Average Methane for", month, "2023"), zlim = color_range)
+  
+  
+  # Add the Ohio state border map
+  maps::map("state", "ohio", add = TRUE, col = "black", lwd = 1)
+  dev.off()
+}
+
+print("Monthly average images processed and saved as PNGs.")
+```
+
+
+
+
+
+```{r}
+
+# Create vectors for the farm names, latitudes, and longitudes
+farm_names <- c("Our Farm Sanctuary", "The Farm At Walnut Creek", "Spring Mist Farms", "Cytraas Farm",
+                "Wild Hooves Farm Animal Rescue & Traveling Petting Zoo", "Hidden Pastures Farm", "OLD ACRES FAMILY FARM LLC",
+                "Rising River Farm", "Whispering Acres Farm Animal Sanctuary", "Three Oaks Animal Farm", 
+                "Feels Like Home Farm", "Downs On The Farm, Shawna Hodges", "Party at The Barn", "Stahl's No Harm Farm Animal Sanctuary",
+                "Livinthedreamfarm", "Happy Trails Farm Animal Sanctuary, Inc.", "Alpaca Sunrise Farm", "The Spicy Lamb Farm",
+                "Wild Acres Ranch", "Majestic Meadows Alpacas & Boutique", "Dettore Farm", "Westmeister Farms", 
+                "The Ross Farm", "Noah's Lost Ark Animal Sanctuary", "Fulcrum Farms", "Pink Pig", "Wild Hearts African Farm",
+                "Keleman Point Farm", "Accoyo Alpaca Farm", "Guyette Farms", "Osborne Farms Inc", "Fox's High Rock Farm",
+                "Stearns Homestead", "Idle-Hour Ranch", "Jacobs Heritage Farm", "Eugene and Dorothy Kavanagh Wildlife Farm",
+                "Good Green Earth Farm", "Slate Run Living Historical Farm", "Sunrise Sanctuary", "Mill Creek MetroParks Farm",
+                "Flying Squirrel Farm", "Rose Valley Animal Park", "Mirtel Manor Farm", "Promised Land Farms", "Rosenbloom's Farm",
+                "The Windmill Hill Farm", "Mystic Acre's Farm", "Diamond S Ranch", "Hord Family Farms", "The Barker Farm")
+
+latitudes <- c(39.9654, 40.5721, 41.3615, 41.5012, 41.3274, 41.2534, 41.2219, 41.4693, 41.2021, 41.0205,
+              41.5076, 41.3634, 41.2534, 40.8948, 40.8506, 41.1921, 41.2347, 41.2411, 41.3247, 41.2654,
+              41.3893, 40.7501, 40.9225, 40.9245, 41.1657, 41.5092, 39.8856, 41.2393, 41.4756, 41.2385,
+              41.6832, 39.6077, 41.3913, 39.9717, 41.1601, 39.8263, 39.2351, 39.8026, 40.2434, 40.9896,
+              39.8572, 39.9311, 41.3495, 39.9504, 41.5954, 41.4563, 41.5039, 41.2045, 40.7791, 38.7434)
+
+longitudes <- c(-84.1786, -81.7469, -81.8349, -81.4765, -81.3511, -81.4906, -82.3583, -81.3958, -82.1612,
+              -81.5495, -81.9826, -82.3471, -81.4906, -81.3878, -81.2385, -81.3709, -81.8804, -81.5595,
+              -83.3698, -81.8958, -81.9877, -82.4258, -81.5392, -81.4623, -81.5169, -81.4656, -84.0538,
+              -81.5585, -81.9894, -81.4718, -81.3766, -82.5065, -81.7358, -84.1244, -81.4845, -84.2049,
+              -84.6977, -82.8237, -83.4663, -80.7267, -83.5297, -82.7481, -81.1954, -83.0392, -83.6396,
+              -81.4742, -81.2722, -81.3878, -82.7681, -82.6048)
+
+# Combine the data into a data frame
+farm_data <- data.frame(CAFOs = farm_names, Latitude = latitudes, Longitude = longitudes)
+
+
+
+```
+
+```{r}
+# cafos location with permit
+# Create vectors for latitude and longitude
+latitude <- c(40.39, 40.53, 39.67, 41.44, 40.57, 40.88, 40.97,
+              40.20, 40.22, 40.19, 40.21, 40.21, 40.22, 40.19, 40.21, 40.22,
+              40.69, 40.69, 40.63, 40.53, 40.39, 40.39)
+
+longitude <- c(-84.78, -84.19, -83.06, -81.53, -81.61, -81.26, -82.22,
+               -82.65, -82.67, -82.67, -82.68, -82.69, -82.69, -82.69, -82.71, -82.72,
+               -83.06, -83.36, -83.42, -83.44, -83.45, -83.49)
+
+# Combine the latitude and longitude vectors into a data frame
+farm_data <- data.frame(Latitude = latitude, Longitude = longitude)
+
+
+
+
+```
+
+
+```{r}
+# working...USED
+# Load necessary libraries
+library(raster)
+library(tigris)
+library(maps)
+library(ggplot2)
+library(sf)
+library(viridis)
+
+# Define file paths
+image_folder <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine/nsf_vist/methane_ohio"
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/wwtp"
+
+# Load shape data for Ohio
+ohio_shape <- tigris::counties(state = "Ohio", cb = TRUE)
+
+# Convert the shape data to a SpatialPolygons object if necessary
+ohio_shape <- as(ohio_shape, "Spatial")
+
+# Get a list of geotiff files in the image folder
+image_files <- list.files(path = image_folder, pattern = "\\.tif$", full.names = TRUE)
+
+# Define the months
+months <- c("01", "02", "03", "04", "05", "06")
+
+# Initialize variables to store the minimum and maximum values
+min_value <- Inf
+max_value <- -Inf
+
+
+
+# Iterate over each month
+for (month in months) {
+  # Filter image files for the current month
+  month_image_files <- image_files[grepl(paste0("2023", month), image_files)]
+  
+  # Initialize an empty raster stack and a counter raster
+  raster_sum <- NULL
+  raster_count <- NULL
+  
+  # Iterate over each image file for the current month
+  for (image_file in month_image_files) {
+    # Read the geotiff image
+    image <- raster(image_file)
+    
+    # Check if the image contains data
+    # Sum of non-NA values
+    valid_pixel_sum <- cellStats(image, sum, na.rm = TRUE)
+    
+    # If the sum of non-NA values is zero, skip the image
+    if (valid_pixel_sum == 0) {
+      message("Skipping image with no data: ", image_file)
+      next
+    }
+    
+    # Crop the image to the Ohio shape
+    cropped_image <- crop(image, extent(ohio_shape))
+    masked_image <- mask(cropped_image, ohio_shape)
+    
+    # If raster_sum is NULL, initialize it with the masked image
+    if (is.null(raster_sum)) {
+      raster_sum <- masked_image
+      raster_count <- !is.na(masked_image)
+    } else {
+      # Add the masked image to raster_sum
+      raster_sum <- raster_sum + masked_image
+      raster_count <- raster_count + !is.na(masked_image)
+    }
+  }
+  
+  # Check if raster_sum is NULL (no valid images for the month)
+  if (is.null(raster_sum)) {
+    message("No valid images found for month: ", month)
+    next
+  }
+  
+  # Calculate the average image for the current month
+  avg_image <- raster_sum / raster_count
+  avg_image[raster_count == 0] <- NA
+  
+  # Update the minimum and maximum values
+  min_value <- min(min_value, minValue(avg_image), na.rm = TRUE)
+  max_value <- max(max_value, maxValue(avg_image), na.rm = TRUE)
+}
+
+# Define the custom color palette
+#palette_colors <- c("#CBC3E3", "cyan", "green", "yellow", "red")
+#custom_palette <- colorRampPalette(palette_colors)(255)  USE BETTER COLOR
+
+# Iterate over each month again to plot the averaged images
+for (month in months) {
+  # Define the output file name
+  output_file <- file.path(output_folder, paste0("avg_methane_", month, "_2023.png"))
+  
+  # Plot the averaged image with the custom color palette
+  png(filename = output_file, width = 800, height = 600)
+  plot(avg_image, main = paste("Average Methane Emmision and Permitted CAFOs Centers for", month.name[as.numeric(month)], "2023"), col = custom_palette)
+  
+  # Add the Ohio state border map
+  maps::map("state", "ohio", add = TRUE, col = "black", lwd = 1)
+  
+  # Add the farm points to the map
+  plot(farm_points_sf, add = TRUE, pch = 6, col = "black", cex = 1)
+
+  
+  dev.off()
+}
+
+print("Monthly average images processed and saved as PNGs.")
+
+
+```
+
+
+
+
+```{r}
+# Remianinp [part with cows]
+library(png)
+library(sf)
+library(viridis)
+# Load the farm points data
+
+output_folder <- "/mnt/vstor/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/plots_meth"
+
+farm_points <- wwtp_data
+
+# Convert the farm points to an sf object
+farm_points_sf <- st_as_sf(farm_points, coords = c("Longitude", "Latitude"), crs = 4326)
+
+# Iterate over each month again to plot the averaged images
+for (month in months) {
+  # Define the output file name
+  output_file <- file.path(output_folder, paste0("avg_methane_", month, "_2023.png"))
+  
+  # Plot the averaged image with the custom color palette
+  png(filename = output_file, width = 800, height = 600)
+  plot(avg_image, main = paste("Average Methane Emission and WWTP Locations for", month.name[as.numeric(month)], "2023"), col = viridis:: turbo(256))
+  
+  # Add the Ohio state border map
+  maps::map("state", "ohio", add = TRUE, col = "black", lwd = 1)
+  
+  # Load the cow icon image
+  cow_icon <- readPNG("~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/meth2/wwtp.png")
+  
+  # Get the coordinates of the farm points
+  farm_coords <- st_coordinates(farm_points_sf)
+  
+  # Plot the cow icon at each farm location
+  for (i in 1:nrow(farm_coords)) {
+    rasterImage(cow_icon, farm_coords[i, 1] - 0.06, farm_coords[i, 2] - 0.06, 
+                farm_coords[i, 1] + 0.06, farm_coords[i, 2] + 0.06)
+  }
+  
+  dev.off()
+}
+
+```
+
+
+
+
+```{r}
+
+# Load necessary library
+library(dplyr)
+
+# Create a data frame with the name, latitude, and longitude of the locations
+wwtp_data <- data.frame(
+    WWTPs = c(
+        "Easterly WWTP",
+        "NEORSD Westerly Wastewater Treatment Plant",
+        "Southerly Wastewater Treatment Plant",
+        "City of Euclid WWTP",
+        "French Creek Wastewater Treatment Plant",
+        "Windham Water Treatment Plant",
+        "Wadsworth Waste Water Plant",
+        "Logan County Sewer District - Flat Branch WWTP",
+        "Ashtabula Wastewater Treatment Plant",
+        "Greenville WWTP",
+        "Waynesburg Water Treatment Plant",
+        "Baldwin Water Treatment Plant",
+        "Mansfield Waste Water Treatment Plant",
+        "Ottawa Wastewater Treatment Plant",
+        "Logan County Sewer District - Indian Lake WWTP",
+        "Nottingham Water Treatment Plant",
+        "Newark Wastewater Treatment Plant",
+        "City of Sidney, Ohio Wastewater Treatment Plant",
+        "Waste Water Treatment Plant",
+        "Lima Wastewater Treatment Plant",
+        "Marietta Wastewater Treatment Plant",
+        "Bedford Heights Wastewater",
+        "Wauseon Water Treatment Plant",
+        "Pickerington Waste Water Treatment Plant",
+        "Alliance Waste Water Treatment",
+        "Jackson Waste Water Plant",
+        "Middletown Wastewater Plant",
+        "Napoleon Wastewater Treatment Plant",
+        "Akron Water Reclamation Facility",
+        "Piqua Waste Water Plant",
+        "Lorain Sewage Treatment Plant",
+        "City of Oregon Wastewater Treatment Plant",
+        "Water Reclamation Facility",
+        "Barberton Wastewater Treatment",
+        "Chardon Village Wastewater",
+        "Crown Water Treatment Plant",
+        "Shelby Wastewater Treatment",
+        "Wapakoneta Wastewater Treatment",
+        "Philip Q Maiorana Water Pollution",
+        "Springfield Wastewater Treatment",
+        "Troy Sewage Treatment Plant",
+        "North Canton Water Treatment",
+        "Mansfield Water Treatment Plant",
+        "Girard City Sewage Plant",
+        "Wauseon Wastewater Treatment",
+        "Van Wert Sewage Treatment Plant",
+        "Wilmington Wastewater Plant",
+        "Pataskala Water Treatment Plant",
+        "Solon Water Reclamation Department",
+        "Troy Water Treatment Plant",
+        "Sunbury Sewage Plant",
+        "Toledo Water Treatment",
+        "Delaware Waste Water Treatment",
+        "Sugar Creek Waste Water Treat",
+        "Van Wert Water Treatment Plant",
+        "Eaton Waste Water Treatment",
+        "Belpre Sewer Treatment Plant",
+        "Defiance County Wastewater Office",
+        "Chillicothe Water Pollution",
+        "Lorain County Rural Wastewater"
+    ),
+    Latitude = c(
+        41.5642,
+        41.4847,
+        41.3936,
+        41.5939,
+        41.4299,
+        41.2341,
+        41.0264,
+        40.4134,
+        41.8622,
+        40.1053,
+        40.6656,
+        41.5304,
+        40.7563,
+        41.0213,
+        40.4456,
+        41.5811,
+        40.0623,
+        40.2947,
+        39.9459,
+        40.7325,
+        39.4127,
+        41.4047,
+        41.5647,
+        39.9205,
+        40.9406,
+        39.0511,
+        39.5165,
+        41.3887,
+        41.1165,
+        40.1439,
+        41.4594,
+        41.6865,
+        40.7767,
+        40.9669,
+        41.5816,
+        41.4022,
+        40.8630,
+        40.5689,
+        41.4427,
+        39.9434,
+        40.0558,
+        40.9016,
+        40.7377,
+        41.1534,
+        41.5527,
+        40.8787,
+        39.4414,
+        40.0009,
+        41.3816,
+        40.0481,
+        40.1488,
+        41.6733,
+        40.3003,
+        39.6479,
+        40.8657,
+        39.7357,
+        39.2754,
+        41.2820,
+        39.3342,
+        41.2733
+    ),
+    Longitude = c(
+        -81.5843,
+        -81.7358,
+        -81.6571,
+        -81.5446,
+        -82.0655,
+        -81.0507,
+        -81.7224,
+        -83.8462,
+        -80.8027,
+        -84.6270,
+        -81.2573,
+        -81.5934,
+        -82.5234,
+        -84.0586,
+        -83.8723,
+        -81.5450,
+        -82.3890,
+        -84.1399,
+        -82.0029,
+        -84.0580,
+        -81.4512,
+        -81.4940,
+        -84.1389,
+        -82.7923,
+        -81.0994,
+        -82.6352,
+        -84.3637,
+        -84.1197,
+        -81.5404,
+        -84.2428,
+        -82.1854,
+        -83.4815,
+        -81.3728,
+        -81.6073,
+        -81.2097,
+        -81.9055,
+        -82.6613,
+        -84.1842,
+        -82.1898,
+        -83.7823,
+        -84.2135,
+        -81.4228,
+        -82.5480,
+        -80.6959,
+        -84.1184,
+        -84.5795,
+        -83.8205,
+        -82.7847,
+        -81.4659,
+        -84.1867,
+        -82.8590,
+        -83.5410,
+        -83.0686,
+        -83.9760,
+        -84.5839,
+        -84.6318,
+        -81.5996,
+        -84.3626,
+        -82.9828,
+        -82.1649
+    )
+)
+
+
+
+
+
+
+
+
+```
+
+
+
+
+```{r}
+library(sf)
+
+ww <- st_read("~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/kml/FRS_Wastewater.xml")
+
+
+# Assuming 'CWA_summaries_060314.gdb' is the path to the geodatabase folder
+gdb_path <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/kml/CWA_summaries_060314.gdb"
+
+# List all layers in the geodatabase
+layers <- st_layers(gdb_path)
+
+
+
+# Read a specific layer
+layer_name <- layers$name[1] # Choose the desired layer from the layers list
+data <- st_read(dsn = gdb_path, layer = layer_name)
+
+coords <- st_coordinates(data$SHAPE)
+
+plot(data$SHAPE)
+
+```
+
+
+
+```{r}
+
+
+a <- st_read("~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/kml/wwtp.kml")
+
+
+# Load the necessary libraries
+library(sf)
+library(tigris)
+library(dplyr)
+library(ggplot2)
+
+counties_sf <- counties(cb = TRUE, resolution = "20m", year = 2021)
+counties_sf <- counties_sf %>% filter(STATEFP != "02", STATEFP != "15", STATEFP != "72") # Exclude Alaska, Hawaii, and Puerto Rico
+counties_sf <- st_transform(counties_sf, crs = 4326)
+# Read the KML file using sf
+data <- st_read("~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/kml/wwtp.kml")
+
+# Filter the data for CONUS
+# Load CONUS shapefile from tigris
+
+conus_shapefile <- counties_sf
+
+# Perform a spatial join to filter the data for CONUS
+data_conus <- st_intersection(data, conus_shapefile)
+
+# Plot the data using ggplot2
+
+
+
+m <- ggplot() + 
+  geom_sf(data = data_conus, aes(geometry = geometry), shape = 16, color = "blue") + # Use triangle shape
+  geom_sf(data = conus_shapefile, fill = NA, color = "black") +
+  labs(title = "Waste Water Treatment Plant Locations",
+       x = "Longitude",
+       y = "Latitude") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5)) # Center the title
+
+ggsave(
+  filename = "/mnt/vstor/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/kml/wwtp.png",
+  plot = m,
+  width = 12,
+  height = 7, 
+  units = "in",
+  dpi = 600
+)
+
+
+
+
+
+
+
+
+
+
+# Assuming you have the sf dataframe
+library(sf)
+
+# Extracting the coordinates (lat, long) from the geometry column
+coords <- st_coordinates(data_conus)
+
+# Adding the coordinates as new columns to the dataframe
+data_conus$Longitude <- coords[, 1]  # Longitude
+data_conus$Latitude <- coords[, 2]   # Latitude
+
+# Dropping the geometry column
+data_conus$geometry <- NULL
+
+write.csv(data_conus, "wwtp_conus.csv")
+
+
+```
+
+
+
+
+```{r}
+
+terra::writeRaster(raster_stack, "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/methane.tif", filetype = "GTiff", overwrite = TRUE)
+
+a <- rast("~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/methane.tif")
+
+plot(a)
+
+
+write_csv(wwtp_data, "wwtp_ohio.csv")
+```
+
+
+
+```{r}
+# for raster stack
+# Load necessary libraries
+library(raster)
+library(tigris)
+library(maps)
+library(ggplot2)
+library(sf)
+library(viridis)
+
+# Define file paths
+image_folder <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine/nsf_vist/methane_ohio"
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/wwtp"
+
+# Load shape data for Ohio
+ohio_shape <- tigris::counties(state = "Ohio", cb = TRUE)
+
+# Convert the shape data to a SpatialPolygons object if necessary
+ohio_shape <- as(ohio_shape, "Spatial")
+
+# Get a list of geotiff files in the image folder
+image_files <- list.files(path = image_folder, pattern = "\\.tif$", full.names = TRUE)
+
+# Define the months
+months <- c("01", "02", "03", "04", "05", "06")
+
+# Initialize variables to store the minimum and maximum values
+min_value <- Inf
+max_value <- -Inf
+
+# Initialize an empty RasterStack
+raster_stack <- stack()
+
+# Iterate over each month
+for (month in months) {
+  # Filter image files for the current month
+  month_image_files <- image_files[grepl(paste0("2023", month), image_files)]
+  
+  # Initialize an empty raster sum and count
+  raster_sum <- NULL
+  raster_count <- NULL
+  
+  # Iterate over each image file for the current month
+  for (image_file in month_image_files) {
+    # Read the geotiff image
+    image <- raster(image_file)
+    
+    # Check if the image contains data
+    valid_pixel_sum <- cellStats(image, sum, na.rm = TRUE)
+    
+    # If the sum of non-NA values is zero, skip the image
+    if (valid_pixel_sum == 0) {
+      message("Skipping image with no data: ", image_file)
+      next
+    }
+    
+    # Crop the image to the Ohio shape
+    cropped_image <- crop(image, extent(ohio_shape))
+    masked_image <- mask(cropped_image, ohio_shape)
+    
+    # Initialize raster sum and count if they are NULL
+    if (is.null(raster_sum)) {
+      raster_sum <- masked_image
+      raster_count <- !is.na(masked_image)
+    } else {
+      # Add the masked image to raster_sum
+      raster_sum <- raster_sum + masked_image
+      raster_count <- raster_count + !is.na(masked_image)
+    }
+  }
+  
+  # Check if raster sum is NULL (no valid images for the month)
+  if (is.null(raster_sum)) {
+    message("No valid images found for month: ", month)
+    next
+  }
+  
+  # Calculate the average image for the current month
+  avg_image <- raster_sum / raster_count
+  avg_image[raster_count == 0] <- NA
+  
+  # Add the average image to the raster stack
+  raster_stack <- stack(raster_stack, avg_image)
+  
+  # Update the minimum and maximum values
+  min_value <- min(min_value, minValue(avg_image), na.rm = TRUE)
+  max_value <- max(max_value, maxValue(avg_image), na.rm = TRUE)
+}
+
+# The raster_stack now contains a stack of average methane emission rasters for each month from January to June 2023.
+# You can save the stack to a file or plot it using appropriate methods.
+
+
+
+#WORKING WITH SAVED RASTER
+
+# Load the raster stack for methane emissions in Ohio 2023
+avg_image <- stack("~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/methane_rast/oh_raster_stack.tif")
+
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/plots_meth"
+
+raster_stack <- avg_image
+
+min_value <- min(min_value, minValue(avg_image), na.rm = TRUE)
+max_value <- max(max_value, maxValue(avg_image), na.rm = TRUE)
+
+
+casfer_base_folder <-
+  "/mnt/vstor/CSE_MSE_RXF131/staging/casf/result_outputs"
+
+# Load the CAFO data for Ohio
+cafo_data <- read.csv(paste0(casfer_base_folder, "/cafos_ohio.csv"))
+
+# load wwtps ohio
+
+wwtp_data <- read.csv(paste0(casfer_base_folder, "/wwtp_ohio.csv"))
+
+
+# Define the months
+months <- sprintf("%02d", 1:12)
+
+library(png)
+library(sf)
+library(viridis)
+# Load the farm points data
+farm_points <- cafo_data
+
+# Convert the farm points to an sf object
+farm_points_sf <- st_as_sf(farm_points, coords = c("Longitude", "Latitude"), crs = 4326)
+
+library(grid)
+
+# Plot and save each layer (month) uniquely
+for (i in seq_along(months)) {
+    # Retrieve the current layer (average raster for the month)
+    current_layer <- raster_stack[[i]]
+    
+    # Define the output file name based on the month index
+    month_index <- formatC(i, width = 2, flag = "0")
+    output_file <- file.path(output_folder, paste0("avg_methane_", month_index, "_2023.png"))
+    
+    # Create a plot and save it as an image file
+    png(filename = output_file, width = 800, height = 600)
+    
+    # Plot the current layer with the custom color palette
+    plot(current_layer, main = paste("Average Methane Emission in ppb with CAFO Locations for", month.name[as.numeric(month_index)], "2023"), xlab = "Longitude", ylab = "Latitude",   col = 
+  viridis::turbo(256),
+  cex.lab = 1.5,  # Adjust the size of xlab and ylab
+     cex.main = 1.5,  # Adjust the size of main
+     font.main = 2)  # Make the title bold
+    
+    # Add Ohio state border map
+    maps::map("state", "ohio", add = TRUE, col = "black", lwd = 1)
+    
+    # Load the cow icon image
+    cow_icon <- readPNG("~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/meth2/cow3.png")
+    
+    #cow_icon <- readPNG((paste0(casfer_base_folder, "/wwtp2.png")))
+  
+    # Get the coordinates of the farm points
+    farm_coords <- st_coordinates(farm_points_sf)
+  
+    # Plot the cow icon at each farm location
+    for (j in 1:nrow(farm_coords)) {
+        rasterImage(cow_icon, farm_coords[j, 1] - 0.06, farm_coords[j, 2] - 0.06, 
+                    farm_coords[j, 1] + 0.06, farm_coords[j, 2] + 0.06)
+    }
+    
+    
+    
+    # Add a legend for the cow icon
+  # Add a legend for the cow icon
+  legend("bottomright", legend = "-CAFOs-", pch = NA, bty = "n", xpd = TRUE, inset = c(0.05, 0.05))
+         
+  
+  # Calculate the position for the cow icon in the legend
+  legend_width <- strwidth("CAFOs", units = "user")
+  legend_height <- strheight("CAFOs", units = "user")
+  cow_size <- 3 * legend_height
+  
+  # Add the cow icon to the legend
+  rasterImage(cow_icon, xleft = par("usr")[2] - 1.8 * cow_size - legend_width,
+              ybottom = par("usr")[3] + 0.25 * cow_size,
+              xright = par("usr")[2] - 0.8 * cow_size - legend_width,
+              ytop = par("usr")[3] + 1.25 * cow_size)
+    # Close the plotting device
+    dev.off()
+}
+
+
+
+
+
+```
+
+
+
+
+```{r}
+
+# Load necessary libraries
+library(raster)
+library(tigris)
+library(maps)
+library(ggplot2)
+library(sf)
+library(viridis)
+
+# Define file paths
+image_folder <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine/nsf_vist/methane_ohio"
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/meth2"
+
+# Load shape data for Ohio
+ohio_shape <- tigris::counties(state = "Ohio", cb = TRUE)
+
+# Convert the shape data to a SpatialPolygons object if necessary
+ohio_shape <- as(ohio_shape, "Spatial")
+
+# Get a list of geotiff files in the image folder
+image_files <- list.files(path = image_folder, pattern = "\\.tif$", full.names = TRUE)
+
+# Define the months
+months <- c("01", "02", "03", "04", "05", "06")
+
+# Initialize variables to store the minimum and maximum values
+min_value <- Inf
+max_value <- -Inf
+
+# Initialize an empty list to store the average images
+avg_image_list <- list()
+
+# Iterate over each month
+for (month in months) {
+  # Filter image files for the current month
+  month_image_files <- image_files[grepl(paste0("2023", month), image_files)]
+  
+  # Initialize an empty raster sum and count
+  raster_sum <- NULL
+  raster_count <- NULL
+  
+  # Iterate over each image file for the current month
+  for (image_file in month_image_files) {
+    # Read the geotiff image
+    image <- raster(image_file)
+    
+    # Check if the image contains data
+    valid_pixel_sum <- cellStats(image, sum, na.rm = TRUE)
+    
+    # If the sum of non-NA values is zero, skip the image
+    if (valid_pixel_sum == 0) {
+      message("Skipping image with no data: ", image_file)
+      next
+    }
+    
+    # Crop the image to the Ohio shape
+    cropped_image <- crop(image, extent(ohio_shape))
+    masked_image <- mask(cropped_image, ohio_shape)
+    
+    # Initialize raster sum and count if they are NULL
+    if (is.null(raster_sum)) {
+      raster_sum <- masked_image
+      raster_count <- !is.na(masked_image)
+    } else {
+      # Add the masked image to raster_sum
+      raster_sum <- raster_sum + masked_image
+      raster_count <- raster_count + !is.na(masked_image)
+    }
+  }
+  
+  # Check if raster sum is NULL (no valid images for the month)
+  if (is.null(raster_sum)) {
+    message("No valid images found for month: ", month)
+    next
+  }
+  
+  # Calculate the average image for the current month
+  avg_image <- raster_sum / raster_count
+  avg_image[raster_count == 0] <- NA
+  
+  # Add the average image to the list
+  avg_image_list[[month]] <- avg_image
+  
+  # Update the minimum and maximum values
+  min_value <- min(min_value, minValue(avg_image), na.rm = TRUE)
+  max_value <- max(max_value, maxValue(avg_image), na.rm = TRUE)
+}
+
+# Convert the list to a raster stack
+raster_stack <- stack(avg_image_list)
+
+# Define the custom color palette
+#palette_colors <- c("#CBC3E3", "cyan", "green", "yellow", "red")
+#custom_palette <- colorRampPalette(palette_colors)(255)
+
+# Plot the entire raster stack
+#plot(raster_stack)
+
+# Plot each layer (month) uniquely
+for (i in seq_along(months)) {
+  # Retrieve the current layer (average raster for the month)
+  current_layer <- raster_stack[[i]]
+  
+  # Define the output file name based on the month index
+  month_index <- formatC(i, width = 2, flag = "0")
+  output_file <- file.path(output_folder, paste0("avg_methane_", month_index, "_2023.png"))
+  
+  # Plot the current layer with the custom color palette
+  png(filename = output_file, width = 800, height = 600)
+  plot(current_layer, main = paste("Average Methane Emission and Permitted CAFOs Centers for", month.name[as.numeric(month_index)], "2023"), col = turbo(256))
+  
+  # Add Ohio state border map
+  maps::map("state", "ohio", add = TRUE, col = "black", lwd = 1)
+  
+  # Add the farm points to the map
+  plot(farm_points_sf, add = TRUE, pch = 6, col = "black", cex = 1)
+  
+  # Close the plotting device
+  dev.off()
+}
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+
+# Load necessary libraries
+library(raster)
+library(tigris)
+library(maps)
+library(ggplot2)
+library(sf)
+library(viridis)
+
+# Define file paths
+image_folder <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine/methane_conus" 
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/m"
+
+# Get a list of state subfolders in the image folder
+state_subfolders <- list.dirs(path = image_folder, recursive = FALSE)
+
+# Define the months
+months <- sprintf("%02d", 1:12)
+
+# Iterate over each state subfolder
+for (state_subfolder in state_subfolders) {
+  # Get the state abbreviation from the subfolder name
+  state_abbr <- basename(state_subfolder)
+  
+  # Load shape data for the current state
+  state_shape <- tigris::counties(state = tools::toTitleCase(state_abbr), cb = TRUE)
+  
+  # Convert the shape data to a SpatialPolygons object if necessary
+  state_shape <- as(state_shape, "Spatial")
+  
+  # Get a list of geotiff files in the state subfolder
+  image_files <- list.files(path = state_subfolder, pattern = "\\.tif$", full.names = TRUE)
+  
+  # Initialize variables to store the minimum and maximum values
+  min_value <- Inf
+  max_value <- -Inf
+  
+  # Initialize an empty list to store the average images
+  avg_image_list <- list()
+  
+  # Iterate over each month
+  for (month in months) {
+    # Filter image files for the current month
+    month_image_files <- image_files[grepl(paste0("2023", month), image_files)]
+    
+    # Initialize an empty raster sum and count
+    raster_sum <- NULL
+    raster_count <- NULL
+    
+    # Iterate over each image file for the current month
+    for (image_file in month_image_files) {
+      # Read the geotiff image
+      image <- raster(image_file)
+      
+      # Check if the image contains data
+      valid_pixel_sum <- cellStats(image, sum, na.rm = TRUE)
+      
+      # If the sum of non-NA values is zero, skip the image
+      if (valid_pixel_sum == 0) {
+        message("Skipping image with no data: ", image_file)
+        next
+      }
+      
+      # Crop the image to the state shape
+      cropped_image <- crop(image, extent(state_shape))
+      masked_image <- mask(cropped_image, state_shape)
+      
+      # Initialize raster sum and count if they are NULL
+      if (is.null(raster_sum)) {
+        raster_sum <- masked_image
+        raster_count <- !is.na(masked_image)
+      } else {
+        # Add the masked image to raster_sum
+        raster_sum <- raster_sum + masked_image
+        raster_count <- raster_count + !is.na(masked_image)
+      }
+    }
+    
+    # Check if raster sum is NULL (no valid images for the month)
+    if (is.null(raster_sum)) {
+      message("No valid images found for month: ", month)
+      next
+    }
+    
+    # Calculate the average image for the current month
+    avg_image <- raster_sum / raster_count
+    avg_image[raster_count == 0] <- NA
+    
+    # Add the average image to the list
+    avg_image_list[[month]] <- avg_image
+    
+    # Update the minimum and maximum values
+    min_value <- min(min_value, minValue(avg_image), na.rm = TRUE)
+    max_value <- max(max_value, maxValue(avg_image), na.rm = TRUE)
+  }
+  
+  # Convert the list to a raster stack
+  raster_stack <- stack(avg_image_list)
+  
+  # Define the output file path for the current state
+  output_file <- file.path(output_folder, paste0(state_abbr, "_raster_stack.tif"))
+  
+  # Write the raster stack to the output file
+  writeRaster(raster_stack, filename = output_file, overwrite = TRUE)
+}
+
+```
+
+
+
+
+```{r}
+
+
+
+# Define file paths
+image_folder <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine/methane_conus"
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/methane_rast"
+
+
+
+# Get a list of state subfolders in the image folder
+state_subfolders <- list.dirs(path = image_folder, recursive = FALSE)
+
+# Define the months
+months <- sprintf("%02d", 1:12)
+
+# Set up parallel processing
+cores <- detectCores()  # Detect the number of CPU cores
+cl <- makeCluster(cores)  # Create a cluster object with the detected cores
+registerDoParallel(cl)  # Register parallel backend
+
+# Load required libraries on each worker
+clusterEvalQ(cl, {
+  library(raster)
+  library(tigris)
+  library(ggplot2)
+  library(sf)
+  library(viridis)
+})
+
+# Iterate over each state subfolder in parallel
+foreach(state_subfolder = state_subfolders, .packages = c("raster", "tigris", "ggplot2", "sf", "viridis")) %dopar% {
+  # Get the state abbreviation from the subfolder name
+  state_abbr <- basename(state_subfolder)
+  
+  # Load shape data for the current state
+  state_shape <- tigris::counties(state = tools::toTitleCase(state_abbr), cb = TRUE)
+  
+  # Convert the shape data to a SpatialPolygons object if necessary
+  state_shape <- as(state_shape, "Spatial")
+  
+  # Get a list of geotiff files in the state subfolder
+  image_files <- list.files(path = state_subfolder, pattern = "\\.tif$", full.names = TRUE)
+  
+  # Initialize variables to store the minimum and maximum values
+  min_value <- Inf
+  max_value <- -Inf
+  
+  # Initialize an empty list to store the average images
+  avg_image_list <- list()
+  
+  # Iterate over each month
+  for (month in months) {
+    # Filter image files for the current month
+    month_image_files <- image_files[grepl(paste0("2023", month), image_files)]
+    
+    # Initialize an empty raster sum and count
+    raster_sum <- NULL
+    raster_count <- NULL
+    
+    # Iterate over each image file for the current month
+    for (image_file in month_image_files) {
+      # Read the geotiff image
+      image <- raster(image_file)
+      
+      # Check if the image contains data
+      valid_pixel_sum <- cellStats(image, sum, na.rm = TRUE)
+      
+      # If the sum of non-NA values is zero, skip the image
+      if (valid_pixel_sum == 0) {
+        message("Skipping image with no data: ", image_file)
+        next
+      }
+      
+      # Crop the image to the state shape
+      cropped_image <- crop(image, extent(state_shape))
+      masked_image <- mask(cropped_image, state_shape)
+      
+      # Initialize raster sum and count if they are NULL
+      if (is.null(raster_sum)) {
+        raster_sum <- masked_image
+        raster_count <- !is.na(masked_image)
+      } else {
+        # Add the masked image to raster_sum
+        raster_sum <- raster_sum + masked_image
+        raster_count <- raster_count + !is.na(masked_image)
+      }
+    }
+    
+    # Check if raster sum is NULL (no valid images for the month)
+    if (is.null(raster_sum)) {
+      message("No valid images found for month: ", month)
+      next
+    }
+    
+    # Calculate the average image for the current month
+    avg_image <- raster_sum / raster_count
+    avg_image[raster_count == 0] <- NA
+    
+    # Add the average image to the list
+    avg_image_list[[month]] <- avg_image
+    
+    # Update the minimum and maximum values
+    min_value <- min(min_value, minValue(avg_image), na.rm = TRUE)
+    max_value <- max(max_value, maxValue(avg_image), na.rm = TRUE)
+  }
+  
+  # Convert the list to a raster stack
+  raster_stack <- stack(avg_image_list)
+  
+  # Define the output file path for the current state
+  output_file <- file.path(output_folder, paste0(state_abbr, "_raster_stack.tif"))
+  
+  # Write the raster stack to the output file
+  writeRaster(raster_stack, filename = output_file, overwrite = TRUE)
+}
+
+# Stop the cluster
+stopCluster(cl)
+
+
+```
+
+
+
+
+```{r}
+
+a <- stack("~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/methane_rast/tx_raster_stack.tif")
+
+plot(a)
+
+
+```
+
+
+
+```{r}
+
+# Load necessary package
+library(raster)
+
+# Define the folder path containing raster stack files
+folder_path <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/methane_rast"
+
+
+
+
+
+# List all raster stack files in the folder
+raster_files <- list.files(folder_path, pattern = "\\.tif$", full.names = TRUE)
+
+# Initialize an empty list to hold raster stacks
+raster_stacks <- list()
+
+# Iterate through each file and load the raster stack
+for (raster_file in raster_files) {
+    # Load the raster stack
+    raster_stack <- stack(raster_file)
+    
+    # Check each layer in the raster stack for a high proportion of NoData values
+    num_layers <- nlayers(raster_stack)
+    valid_layers <- TRUE
+    
+    for (layer_index in seq_len(num_layers)) {
+        layer <- raster_stack[[layer_index]]
+        nodata_value <- NAvalue(layer)
+        # Calculate the proportion of NoData values in the layer
+        prop_nodata <- sum(is.na(getValues(layer))) / ncell(layer)
+        
+        # Skip the layer if it has a high proportion of NoData values
+        if (prop_nodata > 0.5) {  # You can adjust the threshold as needed
+            valid_layers <- FALSE
+            break
+        }
+    }
+    
+    # If the raster stack has valid layers, append it to the list
+    if (valid_layers) {
+        raster_stacks[[length(raster_stacks) + 1]] <- raster_stack
+    }
+}
+
+# Combine the raster stacks using the 'mosaic' function
+# You can choose a suitable function such as 'max' or 'min' to ignore NoData values
+combined_raster_stack <- raster_stacks[[1]]
+for (i in seq_along(raster_stacks)[-1]) {
+    combined_raster_stack <- mosaic(combined_raster_stack, raster_stacks[[i]], fun = "max")
+}
+
+# Define the output file path
+output_file_path <- "path/to/output/combined_raster_stack.tif"
+
+# Save the combined raster stack as a new file
+writeRaster(combined_raster_stack, output_file_path, format = "GTiff")
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+```{r}
+
+# trend
+
+
+# Load necessary libraries
+library(raster)
+library(ggplot2)
+library(reshape2)
+
+# Read the stacked GeoTIFF file
+stacked_tiff <- raster_stack
+
+# Extract monthly data
+monthly_data <- lapply(1:nlayers(stacked_tiff), function(i) {
+  month <- month.abb[i]  # Month abbreviation (Jan, Feb, etc.)
+  data <- getValues(stacked_tiff[[i]])  # Extract data for the month
+  return(data)
+})
+
+# Convert the list to a data frame
+monthly_df <- data.frame(matrix(unlist(monthly_data), nrow = ncell(stacked_tiff), byrow = FALSE))
+names(monthly_df) <- month.abb
+
+# Add a column for the row numbers (assuming your data has spatial information)
+monthly_df$row <- 1:nrow(monthly_df)
+
+# Melt the data frame for ggplot2
+monthly_melted <- melt(monthly_df, id.vars = "row", variable.name = "Month", value.name = "Methane_Emission")
+
+# Plot the trend
+ggplot(monthly_melted, aes(x = factor(row), y = Methane_Emission, group = Month, color = Month)) +
+  geom_line() +
+  labs(x = "Month", y = "Methane Emission", title = "Monthly Methane Emission Trend in Ohio") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+
+source(
+  "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/nsf/ohio/testing/SDLE_theme.R"
+)
+# Load necessary libraries
+library(raster)
+library(ggplot2)
+
+# Read the stacked GeoTIFF file
+stacked_tiff <- raster_stack
+
+# Calculate the mean methane emission for each month
+monthly_means <- lapply(1:nlayers(stacked_tiff), function(i) {
+  month <- month.abb[i]
+  mean_value <- mean(getValues(stacked_tiff[[i]]), na.rm = TRUE)
+  return(data.frame(Month = month, Methane_Emission = mean_value))
+})
+
+# Combine the monthly means into a single data frame
+monthly_means_df <- do.call(rbind, monthly_means) 
+
+# Convert Month to a factor with correct order
+monthly_means_df$Month <- factor(monthly_means_df$Month, levels = month.abb)
+
+# Sort the data frame by Month
+monthly_means_df <- monthly_means_df[order(monthly_means_df$Month), ]
+
+# Plot the trend
+ggplot(monthly_means_df, aes(x = Month, y = Methane_Emission)) +
+  geom_line(color = "blue") +
+  geom_point(color = "blue", size = 2) +
+  labs(x = "Month", y = "Mean Methane Emission", title = "Monthly Mean Methane Emission Trend in Ohio") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+
+
+
+# Convert Month to a factor with correct order
+monthly_means_df$Month <- factor(monthly_means_df$Month, levels = month.abb)
+
+# Sort the data frame by Month
+monthly_means_df <- monthly_means_df[order(monthly_means_df$Month), ]
+
+# Plot the trend using a bar plot
+ggplot(monthly_means_df, aes(x = Month, y = Methane_Emission, fill = Month)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Month", y = "Mean Methane Emission", title = "Monthly Mean Methane Emission Trend in Ohio") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+
+# Create a data frame for box plot
+boxplot_data <- data.frame(month = rep(month.abb, each = ncell(stacked_tiff)),
+                           methane_emission = unlist(monthly_data))
+
+boxplot_data$month <- factor(boxplot_data$month, levels = month.abb)
+
+library(rcartocolor)
+
+nColor <- 12
+
+# Plot the box plot
+t <- ggplot(boxplot_data, aes(x = month, y = methane_emission, fill = month)) +
+   scale_fill_manual(values = carto_pal(nColor, "Safe")) +
+  geom_boxplot() +
+  labs(x = "Month", y = "Methane Average Emission (ppb)", title = "Monthly Average Methane Emission Distribution in Ohio for Year 2023") +
+  SDLE_theme()
+
+ggsave(
+  filename = "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/plots_meth/trends/box.png",
+  plot = t,
+  width = 12,
+  height = 7, 
+  units = "in",
+  dpi = 600
+)
+
+
+
+
+```
+
+
+
+```{r}
+
+
+# seasons...
+
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/plots_meth/season_w"
+
+
+# Load the raster stack for methane emissions in Ohio 2023
+avg_image <- stack("~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/methane_rast/oh_raster_stack.tif")
+
+
+
+raster_stack <- avg_image
+
+min_value <- min(min_value, minValue(avg_image), na.rm = TRUE)
+max_value <- max(max_value, maxValue(avg_image), na.rm = TRUE)
+
+
+casfer_base_folder <-
+  "/mnt/vstor/CSE_MSE_RXF131/staging/casf/result_outputs"
+
+# Load the CAFO data for Ohio
+cafo_data <- read.csv(paste0(casfer_base_folder, "/cafos_ohio.csv"))
+
+farm_points <- wwtp_data
+
+# Convert the farm points to an sf object
+farm_points_sf <- st_as_sf(farm_points, coords = c("Longitude", "Latitude"), crs = 4326)
+
+
+
+# Define the seasons
+seasons <- c("Winter", "Spring", "Summer", "Fall")
+
+# Define the months corresponding to each season
+season_months <- list(
+  Winter = c(12, 1, 2),
+  Spring = 3:5,
+  Summer = 6:8,
+  Fall = 9:11
+)
+
+
+
+# Plot a# Plot a# Plot and save each season uniquely
+for (i in seq_along(seasons)) {
+  # Retrieve the layers for the current season
+  season_layers <- raster_stack[[season_months[[i]]]]
+  
+  # Calculate the average raster for the season
+  avg_season_raster <- calc(season_layers, mean)
+  
+  # Define the output file name based on the season
+  output_file <- file.path(output_folder, paste0("avg_methane_", seasons[i], "_2023.png"))
+  
+  # Create a plot and save it as an image file
+  png(filename = output_file, width = 800, height = 600)
+  
+  # Plot the average season raster with the custom color palette
+  plot(avg_season_raster, main = paste("Average Methane Emission in ppb with WWTP Locations for", seasons[i], "2023"),
+       xlab = "Longitude", ylab = "Latitude", col = viridis::turbo(256),
+       cex.lab = 1.5, # Adjust the size of xlab and ylab
+       cex.main = 1.5, # Adjust the size of main
+       font.main = 2) # Make the title bold
+  
+  # Add Ohio state border map
+  maps::map("state", "ohio", add = TRUE, col = "black", lwd = 1)
+  
+  # Load the cow icon image
+  #cow_icon <- readPNG("~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/methane/meth2/cow3.png")
+  cow_icon <- readPNG((paste0(casfer_base_folder, "/wwtp2.png")))
+  
+  # Get the coordinates of the farm points
+  farm_coords <- st_coordinates(farm_points_sf)
+  
+  # Plot the cow icon at each farm location
+  for (j in 1:nrow(farm_coords)) {
+    rasterImage(cow_icon, farm_coords[j, 1] - 0.06, farm_coords[j, 2] - 0.06,
+                farm_coords[j, 1] + 0.06, farm_coords[j, 2] + 0.06)
+  }
+  
+  # Add a legend for the cow icon
+  legend("bottomright", legend = "-WWTPs-", pch = NA, bty = "n", xpd = TRUE, inset = c(0.05, 0.05))
+  
+  # Calculate the position for the cow icon in the legend
+  legend_width <- strwidth("WWTPs", units = "user")
+  legend_height <- strheight("WWTPs", units = "user")
+  cow_size <- 3 * legend_height
+  
+  # Add the cow icon to the legend
+  rasterImage(cow_icon, xleft = par("usr")[2] - 1.8 * cow_size - legend_width,
+              ybottom = par("usr")[3] + 0.25 * cow_size,
+              xright = par("usr")[2] - 0.8 * cow_size - legend_width,
+              ytop = par("usr")[3] + 1.25 * cow_size)
+  
+  # Close the plotting device
+  dev.off()
+}
+```
+
+```{r}
+
+# Load necessary library
+library(ggplot2)
+
+# Create a data frame with the provided data
+data <- data.frame(
+  Task = c("Sentinel-5P Methane", "NDVI calculation", "Data integration", "Spatiotemporal correlation"),
+  D_HPC = c(15, 5, 22, 24),
+  Traditional = c(11520, 67, 392, 1732)
+)
+
+# Reshape the data for plotting
+data_long <- tidyr::pivot_longer(data, cols = c("D_HPC", "Traditional"), names_to = "Method", values_to = "Time")
+
+# Plot
+ggplot(data_long, aes(y = Task, x = Time, fill = Method)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Time (minutes)", y = NULL, title = "Performance gains achieved through the D/HPC infrastructure for key analysis tasks",
+       fill = "Method") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+
+
+```
+
+
+
+
+```{r}
+
+# precipitation
+
+
+# Load necessary libraries
+library(raster)
+library(tigris)
+library(maps)
+library(ggplot2)
+library(sf)
+library(viridis)
+# Define file paths
+image_folder <- "/mnt/vstor/CSE_MSE_RXF131/staging/casf/Gengine/imerg_hhour/md"
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/precipiation"
+# Load shape data for Ohio
+md_shape <- tigris::counties(state = "Maryland", cb = TRUE)
+# Convert the shape data to a SpatialPolygons object if necessary
+md_shape <- as(md_shape, "Spatial")
+# Get a list of geotiff files in the image folder
+image_files <- list.files(path = image_folder, pattern = "\\.tif$", full.names = TRUE)
+# Define the months
+months <- c("01", "02", "03", "04", "05", "06")
+# Initialize variables to store the minimum and maximum values
+min_value <- Inf
+max_value <- -Inf
+# Initialize an empty list to store the average images
+avg_image_list <- list()
+# Iterate over each month
+for (month in months) {
+  # Filter image files for the current month
+  month_image_files <- image_files[grepl(paste0("2000", month), image_files)]
+  
+  # Initialize an empty raster sum and count
+  raster_sum <- NULL
+  raster_count <- NULL
+  
+  # Iterate over each image file for the current month
+  for (image_file in month_image_files) {
+    # Read the geotiff image
+    image <- raster(image_file)
+    
+    # Check if the image contains data
+    valid_pixel_sum <- cellStats(image, sum, na.rm = TRUE)
+    
+    # If the sum of non-NA values is zero, skip the image
+    if (valid_pixel_sum == 0) {
+      message("Skipping image with no data: ", image_file)
+      next
+    }
+    
+    # Crop the image to the Ohio shape
+    cropped_image <- crop(image, extent(md_shape))
+    masked_image <- mask(cropped_image, md_shape)
+    
+    # Initialize raster sum and count if they are NULL
+    if (is.null(raster_sum)) {
+      raster_sum <- masked_image
+      raster_count <- !is.na(masked_image)
+    } else {
+      # Add the masked image to raster_sum
+      raster_sum <- raster_sum + masked_image
+      raster_count <- raster_count + !is.na(masked_image)
+    }
+  }
+  
+  # Check if raster sum is NULL (no valid images for the month)
+  if (is.null(raster_sum)) {
+    message("No valid images found for month: ", month)
+    next
+  }
+  
+  # Calculate the average image for the current month
+  avg_image <- raster_sum / raster_count
+  avg_image[raster_count == 0] <- NA
+  
+  # Add the average image to the list
+  avg_image_list[[month]] <- avg_image
+  
+  # Update the minimum and maximum values
+  min_value <- min(min_value, minValue(avg_image), na.rm = TRUE)
+  max_value <- max(max_value, maxValue(avg_image), na.rm = TRUE)
+}
+# Convert the list to a raster stack
+raster_stack <- stack(avg_image_list)
+# Define the custom color palette
+#palette_colors <- c("#CBC3E3", "cyan", "green", "yellow", "red")
+#custom_palette <- colorRampPalette(palette_colors)(255)
+# Plot the entire raster stack
+#plot(raster_stack)
+# Plot each layer (month) uniquely
+for (i in seq_along(months)) {
+  # Retrieve the current layer (average raster for the month)
+  current_layer <- raster_stack[[i]]
+  
+  # Define the output file name based on the month index
+  month_index <- formatC(i, width = 2, flag = "0")
+  output_file <- file.path(output_folder, paste0("avg_precip_", month_index, "_2000.png"))
+  
+  # Plot the current layer with the custom color palette
+  png(filename = output_file, width = 800, height = 600)
+  plot(current_layer, main = paste("Average Daily Precipitation", month.name[as.numeric(month_index)], "2000"), col = turbo(256))
+  
+  # Add Ohio state border map
+  maps::map("state", "Maryland", add = TRUE, col = "black", lwd = 1)
+  
+  
+  
+  # Close the plotting device
+  dev.off()
+}
+
+
+```
+
+
+
+
+```{r}
+
+# Script to recursively go through all folders and subfolders...select a particular folder name md for maryland and copy the files
+
+copy_md_tifs <- function(input_dir, output_dir) {
+  # List all files and directories in the input directory
+  files <- list.files(input_dir, full.names = TRUE)
+  
+  # Iterate through each file or directory
+  for (file in files) {
+    if (file.info(file)$isdir) {
+      # If it's a directory, check if it's named "md"
+      if (basename(file) == "md") {
+        # If it's named "md", list all TIFF files within it
+        tifs <- list.files(file, pattern = "\\.tif$", full.names = TRUE, recursive = TRUE)
+        # Copy each TIFF file to the output directory
+        file.copy(tifs, output_dir, overwrite = TRUE)
+      } else {
+        # If it's not named "md", recursively call the function
+        copy_md_tifs(file, output_dir)
+      }
+    }
+  }
+}
+
+# Usage example:
+input_dir <- "/home/oda10/CSE_MSE_RXF131/staging/casf/emt101/GPM/2020"
+output_dir <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/precip"
+copy_md_tifs(input_dir, output_dir)
+
+
+
+
+library(raster)
+library(tigris)
+library(maps)
+library(ggplot2)
+library(sf)
+library(viridis)
+
+# Define file paths
+image_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/precip"
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/precipiation"
+
+# Load shape data for Maryland
+md_shape <- tigris::counties(state = "Maryland", cb = TRUE)
+# Convert the shape data to a SpatialPolygons object if necessary
+md_shape <- as(md_shape, "Spatial")
+
+# Get a list of geotiff files in the image folder
+image_files <- list.files(path = image_folder, pattern = ".tif$", full.names = TRUE)
+
+# Generate a list of all dates in the year 2020
+dates <- seq.Date(from = as.Date("2020-01-01"), to = as.Date("2020-12-31"), by = "day")
+
+# Initialize variables to store the minimum and maximum values
+min_value <- Inf
+max_value <- -Inf
+
+# Initialize an empty list to store the average images
+avg_image_list <- list()
+
+# Iterate over each date
+for (date in dates) {
+  # Format the date as YYYYMMDD
+  date_str <- format(date, "%Y%m%d")
+  
+  # Filter image files for the current date
+  date_image_files <- image_files[grepl(date_str, image_files)]
+  
+  # Initialize an empty raster sum and count
+  raster_sum <- NULL
+  raster_count <- NULL
+  
+  # Iterate over each image file for the current date
+  for (image_file in date_image_files) {
+    # Read the geotiff image
+    image <- raster(image_file)
+    
+    # Check if the image contains data
+    valid_pixel_sum <- cellStats(image, sum, na.rm = TRUE)
+    
+    # If the sum of non-NA values is zero, skip the image
+    if (valid_pixel_sum == 0) {
+      message("Skipping image with no data: ", image_file)
+      next
+    }
+    
+    # Crop the image to the Maryland shape
+    cropped_image <- crop(image, extent(md_shape))
+    masked_image <- mask(cropped_image, md_shape)
+    
+    # Initialize raster sum and count if they are NULL
+    if (is.null(raster_sum)) {
+      raster_sum <- masked_image
+      raster_count <- !is.na(masked_image)
+    } else {
+      # Add the masked image to raster_sum
+      raster_sum <- raster_sum + masked_image
+      raster_count <- raster_count + !is.na(masked_image)
+    }
+  }
+  
+  # Check if raster sum is NULL (no valid images for the date)
+  if (is.null(raster_sum)) {
+    message("No valid images found for date: ", date_str)
+    next
+  }
+  
+  # Calculate the average image for the current date
+  avg_image <- raster_sum / raster_count
+  avg_image[raster_count == 0] <- NA
+  
+  # Add the average image to the list
+  avg_image_list[[date_str]] <- avg_image
+  
+  # Update the minimum and maximum values
+  #min_value <- min(min_value, minValue(avg_image), na.rm = TRUE)
+  #max_value <- max(max_value, maxValue(avg_image), na.rm = TRUE)
+}
+
+
+
+
+plot(raster("~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/precip/20200101000000.HQprecipitation.tif"))
+
+
+
+
+
+
+
+
+
+
+
+# weekly
+
+
+library(raster)
+library(tigris)
+library(maps)
+library(ggplot2)
+library(sf)
+library(viridis)
+
+# Define file paths
+image_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/precip"
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/precipiation"
+
+# Load shape data for Maryland
+md_shape <- tigris::counties(state = "Maryland", cb = TRUE)
+md_shape <- as(md_shape, "Spatial")
+
+# Get a list of geotiff files in the image folder
+image_files <- list.files(path = image_folder, pattern = ".tif$", full.names = TRUE)
+
+# Generate a sequence of weeks in the year 2020
+weeks <- seq(as.Date("2020-01-01"), as.Date("2020-12-31"), by = "week")
+
+# Initialize an empty list to store the average images
+avg_image_list <- list()
+
+# Initialize variables to store the minimum and maximum values
+min_value <- Inf
+max_value <- -Inf
+
+# Iterate over each week
+for (i in seq_along(weeks)) {
+  start_date <- weeks[i]
+  end_date <- if (i == length(weeks)) as.Date("2020-12-31") else weeks[i + 1] - 1
+  
+  week_str <- paste0(format(start_date, "%Y%m%d"), "_", format(end_date, "%Y%m%d"))
+  
+  # Filter image files for the current week
+  week_image_files <- image_files[grepl(paste0("2020", format(start_date, "%m%d")), image_files) |
+                                   grepl(paste0("2020", format(end_date, "%m%d")), image_files)]
+  
+  raster_sum <- NULL
+  raster_count <- NULL
+  
+  # Process each image file for the current week
+  for (image_file in week_image_files) {
+    tryCatch({
+      image <- raster(image_file)
+      
+      # Check if the image contains data
+      valid_pixel_sum <- cellStats(image, sum, na.rm = TRUE)
+      
+      if (valid_pixel_sum > 0) {
+        cropped_image <- crop(image, extent(md_shape))
+        masked_image <- mask(cropped_image, md_shape)
+        
+        if (is.null(raster_sum)) {
+          raster_sum <- masked_image
+          raster_count <- !is.na(masked_image)
+        } else {
+          raster_sum <- raster_sum + masked_image
+          raster_count <- raster_count + !is.na(masked_image)
+        }
+      }
+    }, error = function(e) {
+      message("Error processing image: ", image_file)
+      message("Error message: ", e$message)
+    })
+  }
+  
+  if (!is.null(raster_sum)) {
+    avg_image <- raster_sum / raster_count
+    avg_image[raster_count == 0] <- NA
+    avg_image_list[[week_str]] <- avg_image
+    
+    
+    # Update the minimum and maximum values
+  min_value <- min(min_value, minValue(avg_image), na.rm = TRUE)
+  max_value <- max(max_value, maxValue(avg_image), na.rm = TRUE)
+  } else {
+    message("No valid images found for week: ", week_str)
+  }
+}
+
+
+# Create a raster stack from the averaged images
+avg_image_stack <- stack(avg_image_list)
+
+
+terra::writeRaster(avg_image_stack, "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/precipitation/avg_image_stack.tif", filetype = "GTiff", overwrite = TRUE)
+
+
+# Define the custom color palette
+palette_colors <- c("#CBC3E3", "cyan", "green", "yellow", "red")
+custom_palette <- colorRampPalette(palette_colors)(255) 
+
+
+
+# Set the color range based on the minimum and maximum values
+color_range <- c(min_value, max_value)
+
+
+
+# Create the output folder if it doesn't exist
+if (!dir.exists(output_folder)) {
+  dir.create(output_folder, recursive = TRUE)
+}
+
+# Iterate over each layer in the raster stack
+for (i in 1:nlayers(avg_image_stack)) {
+  # Get the averaged image for the current layer
+  avg_image <- avg_image_stack[[i]]
+  
+  # Get the week string from the layer names
+  week_str <-  sub("^X", "", names(avg_image_stack))[i]
+  
+  # Define the output file name
+  output_file <- file.path(output_folder, paste0("avg_precipitation_", week_str, "_2020.png"))
+  
+  # Plot the averaged image with the custom color palette
+  png(filename = output_file, width = 800, height = 600)
+  plot(avg_image, main = paste("Average Weekly Precipitation in mm/hr for", week_str, " Maryland"),
+       col = custom_palette, zlim = color_range, xlab= "Longitude", ylab= "Latitude")
+  
+  # Add the Maryland state border map
+  maps::map("state", "Maryland", add = TRUE, col = "black", lwd = 1)
+  
+  dev.off()
+}
+
+
+library(magick)
+
+# Set up a directory to save the animation
+dir.create("prec_animation")
+
+# Get the total number of layers in the raster stack
+num_layers <- nlayers(avg_image_stack)
+
+# Create a vector of PNG file names
+png_files <- file.path("~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/precipiation",
+                       paste0("avg_precipitation_", sub("^X", "", names(avg_image_stack)), "_2020.png"))
+
+# Read in the PNG files and add them to a sequence
+prep_seq <- image_read(png_files)
+
+# Set the animation frame rate to 5 frames per second
+prep_anim <- image_animate(prep_seq, fps = 5)
+
+# Save the animation as a GIF file
+image_write(prep_anim, path = "prec_animation/ML_Prec.gif")
+
+
+
+```
+
+
+
+
+```{r}
+
+library(raster)
+library(tigris)
+library(maps)
+library(ggplot2)
+library(sf)
+library(viridis)
+
+# Define file paths
+image_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/precip"
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/precipiation"
+
+# Load shape data for Maryland
+md_shape <- tigris::counties(state = "Maryland", cb = TRUE)
+md_shape <- as(md_shape, "Spatial")
+
+# Get a list of geotiff files in the image folder
+image_files <- list.files(path = image_folder, pattern = ".tif$", full.names = TRUE)
+
+# Initialize variables to store the best day and its count
+best_day <- ""
+max_count <- 0
+
+# Iterate over each day in 2020
+for (day in seq(as.Date("2020-01-01"), as.Date("2020-12-31"), by = "day")) {
+  day_str <- format(day, "%Y%m%d")
+  day_image_files <- image_files[grepl(paste0("^", day_str), basename(image_files))]
+  
+  # Count the number of non-empty geotiffs for the current day
+  non_empty_count <- 0
+  for (image_file in day_image_files) {
+    tryCatch({
+      image <- raster(image_file)
+      valid_pixel_sum <- cellStats(image, sum, na.rm = TRUE)
+      if (valid_pixel_sum > 0) {
+        non_empty_count <- non_empty_count + 1
+      }
+    }, error = function(e) {
+      message("Error processing image: ", image_file)
+      message("Error message: ", e$message)
+    })
+  }
+  
+  # Update the best day if the current day has more non-empty geotiffs
+  if (non_empty_count > max_count) {
+    best_day <- day_str
+    max_count <- non_empty_count
+  }
+}
+
+# Create a raster stack for the best day
+best_day_image_files <- image_files[grepl(paste0("^", best_day), basename(image_files))]
+raster_list <- list()
+
+for (image_file in best_day_image_files) {
+  tryCatch({
+    image <- raster(image_file)
+    valid_pixel_sum <- cellStats(image, sum, na.rm = TRUE)
+    if (valid_pixel_sum > 0) {
+      cropped_image <- crop(image, extent(md_shape))
+      masked_image <- mask(cropped_image, md_shape)
+      raster_list[[basename(image_file)]] <- masked_image
+    }
+  }, error = function(e) {
+    message("Error processing image: ", image_file)
+    message("Error message: ", e$message)
+  })
+}
+
+raster_stack <- stack(raster_list)
+
+
+
+
+
+
+
+library(raster)
+library(tigris)
+library(maps)
+library(ggplot2)
+library(sf)
+library(viridis)
+
+# Define file paths
+image_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/precip"
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/precipiation"
+
+# Load shape data for Maryland
+md_shape <- tigris::counties(state = "Maryland", cb = TRUE)
+md_shape <- as(md_shape, "Spatial")
+
+# Get a list of geotiff files in the image folder
+image_files <- list.files(path = image_folder, pattern = ".tif$", full.names = TRUE)
+
+# Extract the dates from the file names
+dates <- substr(basename(image_files), 1, 8)
+
+# Count the number of non-empty geotiffs for each day
+date_counts <- table(dates)
+
+# Initialize a list to store the non-empty geotiff counts for each day
+non_empty_counts <- list()
+
+min_value <- Inf
+max_value <- Inf
+
+for (day in names(date_counts)) {
+  day_image_files <- image_files[substr(basename(image_files), 1, 8) == day]
+  
+  non_empty_count <- 0
+  for (image_file in day_image_files) {
+    tryCatch({
+      image <- raster(image_file)
+      if (!all(is.na(values(image)))) {
+        non_empty_count <- non_empty_count + 1
+      }
+    }, error = function(e) {
+      message("Error processing image: ", image_file)
+      message("Error message: ", e$message)
+    })
+  }
+  
+  non_empty_counts[[day]] <- non_empty_count
+}
+
+# Find the day with the maximum count of non-empty geotiffs
+best_day <- names(non_empty_counts)[which.max(unlist(non_empty_counts))]
+
+# Filter the image files for the best day
+best_day_image_files <- image_files[substr(basename(image_files), 1, 8) == best_day]
+
+# Create a raster stack for the best day
+raster_list <- list()
+
+for (image_file in best_day_image_files) {
+  tryCatch({
+    image <- raster(image_file)
+    if (!all(is.na(values(image)))) {
+      cropped_image <- crop(image, extent(md_shape))
+      masked_image <- mask(cropped_image, md_shape)
+      raster_list[[basename(image_file)]] <- masked_image
+      # Update the minimum and maximum values
+      min_value <- min(min_value, minValue(masked_image), na.rm = TRUE)
+      max_value <- max(max_value, maxValue(masked_image), na.rm = TRUE)
+    }
+  }, error = function(e) {
+    message("Error processing image: ", image_file)
+    message("Error message: ", e$message)
+  })
+}
+
+raster_stack_d <- stack(raster_list)
+
+plot(raster_stack_d)
+
+```
+
+
+
+
+```{r}
+
+
+
+# Initialize a list to store the sum of cell values for each day
+cell_value_sums <- list()
+
+for (day in names(date_counts)) {
+  day_image_files <- image_files[substr(basename(image_files), 1, 8) == day]
+  
+  non_empty_count <- 0
+  cell_value_sum <- 0
+  for (image_file in day_image_files) {
+    tryCatch({
+      image <- raster(image_file)
+      if (!all(is.na(values(image)))) {
+        non_empty_count <- non_empty_count + 1
+        cell_value_sum <- cell_value_sum + sum(values(image), na.rm = TRUE)
+      }
+    }, error = function(e) {
+      message("Error processing image: ", image_file)
+      message("Error message: ", e$message)
+    })
+  }
+  
+  non_empty_counts[[day]] <- non_empty_count
+  cell_value_sums[[day]] <- cell_value_sum
+}
+
+# Find the days with the maximum count of non-empty geotiffs
+max_non_empty_count <- max(unlist(non_empty_counts))
+best_days <- names(non_empty_counts)[unlist(non_empty_counts) == max_non_empty_count]
+
+# Find the best day among the best days based on the sum of cell values
+best_day <- best_days[which.max(unlist(cell_value_sums[best_days]))]
+
+# Filter the image files for the best day
+best_day_image_files <- image_files[substr(basename(image_files), 1, 8) == best_day]
+
+# Create a raster stack for the best day
+raster_list <- list()
+
+
+min_value <- Inf
+max_value <- Inf
+
+for (image_file in best_day_image_files) {
+  tryCatch({
+    image <- raster(image_file)
+    if (!all(is.na(values(image)))) {
+      cropped_image <- crop(image, extent(md_shape))
+      masked_image <- mask(cropped_image, md_shape)
+      raster_list[[basename(image_file)]] <- masked_image
+      # Update the minimum and maximum values
+    min_value <- min(min_value, minValue(masked_image), na.rm = TRUE)
+    max_value <- max(max_value, maxValue(masked_image), na.rm = TRUE)
+    }
+  }, error = function(e) {
+    message("Error processing image: ", image_file)
+    message("Error message: ", e$message)
+  })
+}
+
+raster_stack_md <- stack(raster_list)
+plot(raster_stack_md)
+
+
+```
+
+
+
+
+
+```{r}
+
+library(raster)
+library(tigris)
+library(maps)
+library(ggplot2)
+library(sf)
+library(viridis)
+
+# Define file paths
+image_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/precip"
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/precipiation"
+
+# Load shape data for Maryland
+md_shape <- tigris::counties(state = "Maryland", cb = TRUE)
+md_shape <- as(md_shape, "Spatial")
+
+# Get a list of geotiff files in the image folder
+image_files <- list.files(path = image_folder, pattern = ".tif$", full.names = TRUE)
+
+# Extract the dates from the file names
+dates <- substr(basename(image_files), 1, 8)
+
+# Count the number of non-empty geotiffs for each day
+date_counts <- table(dates)
+
+# Initialize a list to store the non-empty geotiff counts and cumulative values for each day
+non_empty_counts <- list()
+cumulative_values <- list()
+
+min_value <- Inf
+max_value <- -Inf
+
+for (day in names(date_counts)) {
+  day_image_files <- image_files[substr(basename(image_files), 1, 8) == day]
+  
+  non_empty_count <- 0
+  cumulative_sum <- 0
+  
+  for (image_file in day_image_files) {
+    tryCatch({
+      image <- raster(image_file)
+      if (!all(is.na(values(image)))) {
+        non_empty_count <- non_empty_count + 1
+        cumulative_sum <- cumulative_sum + sum(values(image), na.rm = TRUE)
+      }
+    }, error = function(e) {
+      message("Error processing image: ", image_file)
+      message("Error message: ", e$message)
+    })
+  }
+  
+  non_empty_counts[[day]] <- non_empty_count
+  cumulative_values[[day]] <- cumulative_sum
+}
+
+# Find the maximum non-empty count
+max_non_empty_count <- max(unlist(non_empty_counts))
+
+# Find the days with the maximum non-empty count
+candidate_days <- names(non_empty_counts)[unlist(non_empty_counts) == max_non_empty_count]
+
+# Find the best day based on the highest cumulative value
+best_day <- candidate_days[which.max(unlist(cumulative_values[candidate_days]))]
+
+# Filter the image files for the best day
+best_day_image_files <- image_files[substr(basename(image_files), 1, 8) == best_day]
+
+# Create a raster stack for the best day
+raster_list <- list()
+
+for (image_file in best_day_image_files) {
+  tryCatch({
+    image <- raster(image_file)
+    if (!all(is.na(values(image)))) {
+      cropped_image <- crop(image, extent(md_shape))
+      masked_image <- mask(cropped_image, md_shape)
+      raster_list[[basename(image_file)]] <- masked_image
+      # Update the minimum and maximum values
+      min_value <- min(min_value, minValue(masked_image), na.rm = TRUE)
+      max_value <- max(max_value, maxValue(masked_image), na.rm = TRUE)
+    }
+  }, error = function(e) {
+    message("Error processing image: ", image_file)
+    message("Error message: ", e$message)
+  })
+}
+
+if (length(raster_list) > 0) {
+  raster_stack_d <- stack(raster_list)
+} else {
+  message("No valid rasters to stack for the best day: ", best_day)
+}
+
+# Print the minimum and maximum values
+cat("Minimum value: ", min_value, "\n")
+cat("Maximum value: ", max_value, "\n")
+
+
+
+```
+
+
+
+
+
+```{r}
+# handing -ves
+
+
+library(raster)
+library(tigris)
+library(maps)
+library(ggplot2)
+library(sf)
+library(viridis)
+
+# Define file paths
+image_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/precip"
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/pt"
+
+# Load shape data for Maryland
+md_shape <- tigris::counties(state = "Maryland", cb = TRUE)
+md_shape <- as(md_shape, "Spatial")
+
+# Get a list of geotiff files in the image folder
+image_files <- list.files(path = image_folder, pattern = ".tif$", full.names = TRUE)
+
+# Extract the dates from the file names
+dates <- substr(basename(image_files), 1, 8)
+
+# Count the number of non-empty geotiffs for each day
+date_counts <- table(dates)
+
+# Initialize a list to store the non-empty geotiff counts and cumulative values for each day
+non_empty_counts <- list()
+cumulative_values <- list()
+
+min_value <- Inf
+max_value <- -Inf
+
+for (day in names(date_counts)) {
+  day_image_files <- image_files[substr(basename(image_files), 1, 8) == day]
+  
+  non_empty_count <- 0
+  cumulative_sum <- 0
+  
+  for (image_file in day_image_files) {
+    tryCatch({
+      image <- raster(image_file)
+      vals <- values(image)
+      if (!all(is.na(vals) | vals < 0)) {
+        non_empty_count <- non_empty_count + 1
+        cumulative_sum <- cumulative_sum + sum(vals[vals >= 0], na.rm = TRUE)
+      }
+    }, error = function(e) {
+      message("Error processing image: ", image_file)
+      message("Error message: ", e$message)
+    })
+  }
+  
+  non_empty_counts[[day]] <- non_empty_count
+  cumulative_values[[day]] <- cumulative_sum
+}
+
+# Find the maximum non-empty count
+max_non_empty_count <- max(unlist(non_empty_counts))
+
+# Find the days with the maximum non-empty count
+candidate_days <- names(non_empty_counts)[unlist(non_empty_counts) == max_non_empty_count]
+
+# Find the best day based on the highest cumulative value
+best_day <- candidate_days[which.max(unlist(cumulative_values[candidate_days]))]
+
+# Filter the image files for the best day
+best_day_image_files <- image_files[substr(basename(image_files), 1, 8) == best_day]
+
+# Create a raster stack for the best day
+raster_list <- list()
+
+for (image_file in best_day_image_files) {
+  tryCatch({
+    image <- raster(image_file)
+    vals <- values(image)
+    if (!all(is.na(vals) | vals < 0)) {
+      cropped_image <- crop(image, extent(md_shape))
+      masked_image <- mask(cropped_image, md_shape)
+      raster_list[[basename(image_file)]] <- masked_image
+      # Update the minimum and maximum values
+      min_value <- min(min_value, minValue(masked_image), na.rm = TRUE)
+      max_value <- max(max_value, maxValue(masked_image), na.rm = TRUE)
+    }
+  }, error = function(e) {
+    message("Error processing image: ", image_file)
+    message("Error message: ", e$message)
+  })
+}
+
+if (length(raster_list) > 0) {
+  raster_stack_d <- stack(raster_list)
+} else {
+  message("No valid rasters to stack for the best day: ", best_day)
+}
+
+# Print the minimum and maximum values
+cat("Minimum value: ", min_value, "\n")
+cat("Maximum value: ", max_value, "\n")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Define the custom color palette
+palette_colors <- c("#CBC3E3", "cyan", "green", "yellow", "red")
+custom_palette <- colorRampPalette(palette_colors)(255) 
+
+
+
+# Set the color range based on the minimum and maximum values
+color_range <- c(0, max_value)
+
+
+# Create the output folder if it doesn't exist
+if (!dir.exists(output_folder)) {
+  dir.create(output_folder, recursive = TRUE)
+}
+
+# Iterate over each layer in the raster stack
+for (i in 1:nlayers(raster_stack_d )) {
+  # Get the averaged image for the current layer
+  avg_image <- raster_stack_d [[i]]
+  
+  # Get the week string from the layer names
+  week_str <-  sub("^X(\\d{14}).*", "\\1", names(raster_stack_d))[i]
+  
+  
+  # Define the output file name
+  output_file <- file.path(output_folder, paste0("avg_precipitation_", week_str, "_2020.png"))
+  
+  # Plot the averaged image with the custom color palette
+  png(filename = output_file, width = 800, height = 600)
+  plot(avg_image, main = paste("Half Hourly Precipitation in mm/hr for", week_str, " Maryland"),
+       col = custom_palette, zlim = color_range, xlab= "Longitude", ylab= "Latitude")
+  
+  # Add the Maryland state border map
+  maps::map("state", "Maryland", add = TRUE, col = "black", lwd = 1)
+  
+  dev.off()
+}
+
+
+library(magick)
+
+# Set up a directory to save the animation
+dir.create("prec_animation")
+
+# Get the total number of layers in the raster stack
+num_layers <- nlayers(raster_stack_d)
+
+# Create a vector of PNG file names
+png_files <- file.path("~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/pp",
+                       paste0("avg_precipitation_", sub("^X(\\d{14}).*", "\\1", names(raster_stack_d)), "_2020.png"))
+
+# Read in the PNG files and add them to a sequence
+prep_seq <- image_read(png_files)
+
+# Set the animation frame rate to 5 frames per second
+prep_anim <- image_animate(prep_seq, fps = 5)
+
+# Save the animation as a GIF file
+image_write(prep_anim, path = "prec_animation/MaryL_Prec2.gif")
+
+```
+
+
+
+
+```{r}
+
+
+# for tn 2001
+
+
+library(raster)
+library(tigris)
+library(maps)
+library(ggplot2)
+library(sf)
+library(viridis)
+
+# Define file paths
+image_folder <- "/home/oda10/CSE_MSE_RXF131/staging/casf/emt101/GPM/2021/July-August/All/tn"
+output_folder <- "~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/pt2"
+
+# Load shape data for Maryland
+md_shape <- tigris::counties(state = "Tennessee", cb = TRUE)
+md_shape <- as(md_shape, "Spatial")
+
+# Get a list of geotiff files in the image folder
+image_files <- list.files(path = image_folder, pattern = ".tif$", full.names = TRUE)
+
+# Extract the dates from the file names
+dates <- substr(basename(image_files), 1, 8)
+
+# Count the number of non-empty geotiffs for each day
+date_counts <- table(dates)
+
+# Initialize a list to store the non-empty geotiff counts and cumulative values for each day
+non_empty_counts <- list()
+cumulative_values <- list()
+
+min_value <- Inf
+max_value <- -Inf
+
+for (day in names(date_counts)) {
+  day_image_files <- image_files[substr(basename(image_files), 1, 8) == day]
+  
+  non_empty_count <- 0
+  cumulative_sum <- 0
+  
+  for (image_file in day_image_files) {
+    tryCatch({
+      image <- raster(image_file)
+      vals <- values(image)
+      if (!all(is.na(vals) | vals < 0)) {
+        non_empty_count <- non_empty_count + 1
+        cumulative_sum <- cumulative_sum + sum(vals[vals >= 0], na.rm = TRUE)
+      }
+    }, error = function(e) {
+      message("Error processing image: ", image_file)
+      message("Error message: ", e$message)
+    })
+  }
+  
+  non_empty_counts[[day]] <- non_empty_count
+  cumulative_values[[day]] <- cumulative_sum
+}
+
+# Find the maximum non-empty count
+max_non_empty_count <- max(unlist(non_empty_counts))
+
+# Find the days with the maximum non-empty count
+candidate_days <- names(non_empty_counts)[unlist(non_empty_counts) == max_non_empty_count]
+
+# Find the best day based on the highest cumulative value
+best_day <- candidate_days[which.max(unlist(cumulative_values[candidate_days]))]
+
+
+best_day <- "20210821"
+
+
+
+# Filter the image files for the best day
+best_day_image_files <- image_files[substr(basename(image_files), 1, 8) == best_day]
+
+# Create a raster stack for the best day
+raster_list <- list()
+
+
+
+for (image_file in best_day_image_files) {
+  tryCatch({
+    image <- raster(image_file)
+    vals <- values(image)
+    if (!all(is.na(vals) | vals < 0)) {
+      cropped_image <- crop(image, extent(md_shape))
+      masked_image <- mask(cropped_image, md_shape)
+      raster_list[[basename(image_file)]] <- masked_image
+      # Update the minimum and maximum values
+      min_value <- min(min_value, minValue(masked_image), na.rm = TRUE)
+      max_value <- max(max_value, maxValue(masked_image), na.rm = TRUE)
+    }
+  }, error = function(e) {
+    message("Error processing image: ", image_file)
+    message("Error message: ", e$message)
+  })
+}
+
+if (length(raster_list) > 0) {
+  raster_stack_d <- stack(raster_list)
+} else {
+  message("No valid rasters to stack for the best day: ", best_day)
+}
+
+# Print the minimum and maximum values
+cat("Minimum value: ", min_value, "\n")
+cat("Maximum value: ", max_value, "\n")
+
+plot(raster_stack_d)
+
+
+
+
+
+# Def# Def# Define the custom color palette
+palette_colors <- c("#CBC3E3", "cyan", "green", "yellow", "red")
+custom_palette <- colorRampPalette(palette_colors)(255) 
+
+# Define the custom color palette using viridis
+custom_palette <- viridis(255)
+
+# Set the color range based on the minimum and maximum values
+color_range <- c(0, max_value)
+
+
+
+# Create the output folder if it doesn't exist
+if (!dir.exists(output_folder)) {
+  dir.create(output_folder, recursive = TRUE)
+}
+
+# Iterate over each layer in the raster stack
+for (i in 1:nlayers(raster_stack_d )) {
+  # Get the averaged image for the current layer
+  avg_image <- raster_stack_d [[i]]
+  
+  # Get the week string from the layer names
+  week_str <-  sub("^X(\\d{14}).*", "\\1", names(raster_stack_d))[i]
+  
+  
+  # Define the output file name
+  output_file <- file.path(output_folder, paste0("avg_precipitation_", week_str, "_2021.png"))
+  
+  # Plot the averaged image with the custom color palette
+  png(filename = output_file, width = 800, height = 600)
+  plot(avg_image, main = paste("Half Hourly Precipitation in mm/hr for", week_str, " Tennessee"),
+       col = custom_palette, zlim = color_range, xlab= "Longitude", ylab= "Latitude")
+  
+  # Add the Maryland state border map
+  maps::map("state", "Tennessee", add = TRUE, col = "black", lwd = 1)
+  
+  dev.off()
+}
+
+
+library(magick)
+
+# Set up a directory to save the animation
+dir.create("prec_animation")
+
+# Get the total number of layers in the raster stack
+num_layers <- nlayers(raster_stack_d)
+
+# Create a vector of PNG file names
+png_files <- file.path("~/CSE_MSE_RXF131/cradle-members/sdle/oda10/Git/23s-dsci353-453-oda10/pt2",
+                       paste0("avg_precipitation_", sub("^X(\\d{14}).*", "\\1", names(raster_stack_d)), "_2021.png"))
+
+# Read in the PNG files and add them to a sequence
+prep_seq <- image_read(png_files)
+
+# Set the animation frame rate to 5 frames per second
+prep_anim <- image_animate(prep_seq, fps = 5)
+
+# Save the animation as a GIF file
+image_write(prep_anim, path = "prec_animation/tn_Prec3.gif")
+```
+
+
+```{r}
+
+library(raster)
+library(parallel)
+library(lubridate)
+
+setup_logger <- function(log_file) {
+  file.create(log_file)
+  function(message, level = "INFO") {
+    timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+    log_message <- sprintf("%s - %s - %s\n", timestamp, level, message)
+    cat(log_message, file = log_file, append = TRUE)
+  }
+}
+
+average_tifs <- function(tif_files, logger) {
+  if (length(tif_files) == 0) {
+    logger("No TIF files found", "WARNING")
+    return(NULL)
+  }
+  
+  raster_list <- lapply(tif_files, raster)
+  raster_stack <- stack(raster_list)
+  
+  valid_pixels <- sum(!is.na(raster_stack))
+  if (all(valid_pixels == 0)) {
+    logger("No valid pixels found. Returning invalid average.", "WARNING")
+    return(NULL)
+  }
+  
+  avg_raster <- mean(raster_stack, na.rm = TRUE)
+  return(list(avg_raster = avg_raster, valid_pixels = sum(valid_pixels)))
+}
+
+process_date_folder <- function(input_folder, date_folder, output_folder, logger) {
+  input_date_path <- file.path(input_folder, date_folder)
+  output_date_path <- file.path(output_folder, date_folder)
+  dir.create(output_date_path, showWarnings = FALSE, recursive = TRUE)
+  
+  tif_files <- list.files(input_date_path, pattern = "\\.tif$", full.names = TRUE)
+  
+  if (length(tif_files) > 0) {
+    result <- average_tifs(tif_files, logger)
+    
+    if (!is.null(result)) {
+      output_file <- file.path(output_date_path, paste0("averaged_", date_folder, ".tif"))
+      writeRaster(result$avg_raster, filename = output_file, overwrite = TRUE)
+      logger(sprintf("Processed %s in %s. Averaged %d TIFs. Valid pixels: %d", 
+                     date_folder, input_folder, length(tif_files), result$valid_pixels))
+    } else {
+      logger(sprintf("No valid data for %s in %s. Skipping output and marking invalid.", 
+                     date_folder, input_folder), "WARNING")
+    }
+  } else {
+    logger(sprintf("No TIFs found for %s in %s", date_folder, input_folder), "WARNING")
+  }
+}
+
+process_state_or_county <- function(input_folder, output_folder, logger) {
+  date_folders <- list.dirs(input_folder, full.names = FALSE, recursive = FALSE)
+  date_folders <- date_folders[grepl("^\\d{4}-\\d{2}-\\d{2}$", date_folders)]
+  
+  mclapply(date_folders, function(date_folder) {
+    process_date_folder(input_folder, date_folder, output_folder, logger)
+  }, mc.cores = parallel::detectCores())
+}
+
+main <- function() {
+  input_base_dir <- "/mnt/vstor/CSE_MSE_RXF131/staging/casf/Gengine/new_methane_2023"
+  output_base_dir <- "/mnt/vstor/CSE_MSE_RXF131/staging/casf/Gengine/averaged_methane_2023"
+  log_dir <- file.path(output_base_dir, "logs")
+  
+  dir.create(output_base_dir, showWarnings = FALSE, recursive = TRUE)
+  dir.create(log_dir, showWarnings = FALSE, recursive = TRUE)
+  
+  state_folders <- list.dirs(input_base_dir, full.names = FALSE, recursive = FALSE)
+  
+  for (state_folder in state_folders) {
+    input_state_path <- file.path(input_base_dir, state_folder)
+    output_state_path <- file.path(output_base_dir, state_folder)
+    
+    if (dir.exists(input_state_path)) {
+      dir.create(output_state_path, showWarnings = FALSE, recursive = TRUE)
+      
+      log_file <- file.path(log_dir, paste0(state_folder, "_processing.log"))
+      logger <- setup_logger(log_file)
+      
+      logger(sprintf("Starting processing for %s", state_folder))
+      
+      input_counties_path <- file.path(input_state_path, "counties")
+      if (dir.exists(input_counties_path)) {
+        output_counties_path <- file.path(output_state_path, "counties")
+        dir.create(output_counties_path, showWarnings = FALSE, recursive = TRUE)
+        
+        county_folders <- list.dirs(input_counties_path, full.names = FALSE, recursive = FALSE)
+        
+        for (county_folder in county_folders) {
+          input_county_path <- file.path(input_counties_path, county_folder)
+          output_county_path <- file.path(output_counties_path, county_folder)
+          
+          if (dir.exists(input_county_path)) {
+            dir.create(output_county_path, showWarnings = FALSE, recursive = TRUE)
+            process_state_or_county(input_county_path, output_county_path, logger)
+          }
+        }
+      } else {
+        process_state_or_county(input_state_path, output_state_path, logger)
+      }
+      
+      logger(sprintf("Completed processing for %s", state_folder))
+    }
+  }
+}
+
+main()
+
+
+```
+
+

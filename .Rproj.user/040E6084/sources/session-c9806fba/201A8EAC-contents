@@ -1,0 +1,428 @@
+---
+title: "Vegetation Indices and Analysis"
+author: "GeoSpatialSuite Development Team"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vegetation Indices and Analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.height = 6,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+# Vegetation Indices and Analysis
+
+GeoSpatialSuite provides comprehensive vegetation analysis capabilities with **40+ vegetation indices**, automatic band detection, and specialized crop analysis workflows.
+
+## Loading the Package
+
+```{r}
+library(geospatialsuite)
+```
+
+## Available Vegetation Indices
+
+### Complete Index Database
+
+```{r}
+# View all available indices
+all_indices <- list_vegetation_indices(detailed = TRUE)
+print(head(all_indices, 10))
+```
+
+### Index Categories
+
+```{r}
+# Basic vegetation indices
+basic_indices <- list_vegetation_indices(category = "basic")
+print(basic_indices$Index)
+
+# Stress detection indices  
+stress_indices <- list_vegetation_indices(category = "stress")
+print(stress_indices$Index)
+
+# Water/moisture indices
+water_indices <- list_vegetation_indices(application = "water")
+print(water_indices$Index)
+```
+
+## Basic Vegetation Index Calculation
+
+### Single Index Calculation
+
+```{r eval=FALSE}
+# Create sample data for demonstration
+red_band <- terra::rast(nrows = 100, ncols = 100, xmin = 0, xmax = 10, ymin = 0, ymax = 10)
+terra::values(red_band) <- runif(10000, 0.1, 0.3)
+
+nir_band <- terra::rast(nrows = 100, ncols = 100, xmin = 0, xmax = 10, ymin = 0, ymax = 10)
+terra::values(nir_band) <- runif(10000, 0.4, 0.8)
+
+# Calculate NDVI
+ndvi <- calculate_vegetation_index(
+  red = red_band,
+  nir = nir_band,
+  index_type = "NDVI"
+)
+
+# Calculate EVI (requires blue band)
+blue_band <- terra::rast(nrows = 100, ncols = 100, xmin = 0, xmax = 10, ymin = 0, ymax = 10)
+terra::values(blue_band) <- runif(10000, 0.05, 0.15)
+
+evi <- calculate_vegetation_index(
+  red = red_band,
+  nir = nir_band,
+  blue = blue_band,
+  index_type = "EVI"
+)
+```
+
+### Multiple Indices at Once
+
+```{r eval=FALSE}
+# Calculate multiple indices efficiently
+multiple_indices <- calculate_multiple_indices(
+  red = red_band,
+  nir = nir_band,
+  blue = blue_band,
+  indices = c("NDVI", "EVI", "SAVI", "GNDVI", "ARVI"),
+  output_stack = TRUE
+)
+
+print(names(multiple_indices))
+```
+
+## Enhanced NDVI Analysis
+
+### NDVI with Quality Filtering
+
+```{r eval=FALSE}
+# Enhanced NDVI with temporal smoothing and quality control
+enhanced_ndvi <- calculate_ndvi_enhanced(
+  red_data = "path/to/red_bands/",
+  nir_data = "path/to/nir_bands/",
+  quality_filter = TRUE,
+  temporal_smoothing = TRUE,
+  match_by_date = TRUE,
+  clamp_range = c(-0.2, 1.0)
+)
+```
+
+## Auto-Detection from Multi-band Rasters
+
+### Landsat/Sentinel Band Detection
+
+```{r eval=FALSE}
+# Load multi-band satellite imagery
+landsat_stack <- terra::rast("landsat8_scene.tif")
+
+# Auto-detect bands and calculate indices
+auto_indices <- calculate_multiple_indices(
+  spectral_data = landsat_stack,
+  indices = c("NDVI", "EVI", "SAVI", "NDWI", "NBR"),
+  auto_detect_bands = TRUE,
+  output_stack = TRUE
+)
+
+# Custom band mapping
+sentinel_indices <- calculate_multiple_indices(
+  spectral_data = sentinel2_stack,
+  band_names = c("B4", "B3", "B2", "B8", "B11", "B12"),  # R, G, B, NIR, SWIR1, SWIR2
+  indices = c("NDVI", "EVI", "NDWI", "MNDWI"),
+  output_stack = TRUE
+)
+```
+
+## Crop-Specific Analysis
+
+### Comprehensive Crop Vegetation Analysis
+
+```{r eval=FALSE}
+# Analyze corn vegetation with stress detection
+corn_analysis <- analyze_crop_vegetation(
+  spectral_data = "path/to/satellite_data/",
+  crop_type = "corn",
+  analysis_type = "comprehensive",
+  growth_stage = "mid",
+  cdl_mask = corn_mask,
+  output_folder = "corn_analysis/"
+)
+
+# Access results
+print(names(corn_analysis))
+# $vegetation_indices - calculated indices
+# $analysis_results - stress/growth/yield analysis  
+# $metadata - analysis parameters
+```
+
+### Crop-Specific Index Selection
+
+```{r eval=FALSE}
+# Indices automatically selected based on crop type
+
+# Corn analysis (emphasizes chlorophyll and stress)
+corn_indices <- analyze_crop_vegetation(
+  spectral_data = landsat_data,
+  crop_type = "corn",
+  analysis_type = "stress"
+)
+# Auto-selected: NDVI, EVI, GNDVI, NDRE, MTCI, CCI
+
+# Soybean analysis (emphasizes nitrogen and moisture)
+soybean_indices <- analyze_crop_vegetation(
+  spectral_data = sentinel_data, 
+  crop_type = "soybeans",
+  analysis_type = "comprehensive"
+)
+# Auto-selected: NDVI, EVI, SAVI, GNDVI, PRI, SIPI
+
+# Wheat analysis (emphasizes senescence detection)
+wheat_indices <- analyze_crop_vegetation(
+  spectral_data = satellite_data,
+  crop_type = "wheat",
+  analysis_type = "yield"
+)
+# Auto-selected: NDVI, EVI, NDRE, PSRI, CRI1, MTCI
+```
+
+## Advanced Vegetation Analysis
+
+### Stress Detection
+
+```{r eval=FALSE}
+# Advanced stress detection workflow
+stress_analysis <- analyze_crop_vegetation(
+  spectral_data = hyperspectral_data,
+  crop_type = "corn",
+  analysis_type = "stress",
+  growth_stage = "reproductive"
+)
+
+# Extract stress results
+stress_results <- stress_analysis$analysis_results$stress_analysis
+print(stress_results$PRI)  # Photochemical Reflectance Index results
+print(stress_results$SIPI) # Structure Insensitive Pigment Index results
+```
+
+### Growth Stage Analysis
+
+```{r eval=FALSE}
+# Analyze vegetation growth patterns
+growth_analysis <- analyze_crop_vegetation(
+  spectral_data = time_series_data,
+  crop_type = "soybeans", 
+  analysis_type = "growth",
+  growth_stage = "early"
+)
+
+# View growth metrics
+growth_metrics <- growth_analysis$analysis_results$growth_analysis
+print(growth_metrics$predicted_growth_stage)
+print(growth_metrics$NDVI$percentiles)
+```
+
+### Yield Prediction Support
+
+```{r eval=FALSE}
+# Yield prediction analysis
+yield_analysis <- analyze_crop_vegetation(
+  spectral_data = mature_crop_data,
+  crop_type = "corn",
+  analysis_type = "yield"
+)
+
+# Extract yield indicators
+yield_indicators <- yield_analysis$analysis_results$yield_analysis
+print(yield_indicators$composite_yield_index)
+print(yield_indicators$yield_potential_class)
+```
+
+## Specialized Indices
+
+### Red-Edge Indices (Sentinel-2)
+
+```{r eval=FALSE}
+# Red-edge specific indices for precision agriculture
+red_edge_indices <- calculate_multiple_indices(
+  spectral_data = sentinel2_data,
+  indices = c("NDRE", "MTCI", "IRECI", "S2REP", "PSRI"),
+  auto_detect_bands = TRUE,
+  output_stack = TRUE
+)
+```
+
+### Chlorophyll and Carotenoid Indices
+
+```{r eval=FALSE}
+# Pigment-specific indices
+pigment_indices <- calculate_multiple_indices(
+  red = red_band,
+  nir = nir_band,
+  green = green_band,
+  red_edge = red_edge_band,
+  indices = c("CRI1", "CRI2", "ARI1", "ARI2", "CCI", "SIPI"),
+  output_stack = TRUE
+)
+```
+
+### Water and Moisture Indices
+
+```{r eval=FALSE}
+# Water stress and moisture indices
+water_indices <- calculate_multiple_indices(
+  green = green_band,
+  nir = nir_band,
+  swir1 = swir1_band,
+  indices = c("NDWI", "MNDWI", "NDMI", "MSI", "NDII"),
+  output_stack = TRUE
+)
+```
+
+## Validation and Quality Control
+
+### Index Validation
+
+```{r eval=FALSE}
+# Validate indices against reference data
+validation_results <- analyze_crop_vegetation(
+  spectral_data = field_data,
+  crop_type = "corn",
+  reference_data = ground_truth_data,
+  analysis_type = "comprehensive"
+)
+
+# Access validation results
+validation_stats <- validation_results$analysis_results$validation
+print(validation_stats$NDVI$correlation)
+print(validation_stats$EVI$rmse)
+```
+
+### Quality Filtering
+
+```{r eval=FALSE}
+# Apply quality filters to remove outliers
+quality_filtered <- calculate_vegetation_index(
+  red = red_band,
+  nir = nir_band,
+  index_type = "NDVI",
+  mask_invalid = TRUE,
+  clamp_range = c(-0.2, 1.0)
+)
+```
+
+## Integration with Other Analyses
+
+### Combine with Environmental Data
+
+```{r eval=FALSE}
+# Integrate vegetation indices with environmental variables
+comprehensive_data <- integrate_multiple_datasets(
+  vector_data = field_sites,
+  raster_datasets = list(
+    vegetation = multiple_indices,
+    soil_nitrogen = "soil_n.tif",
+    precipitation = "precip.tif",
+    temperature = "temp.tif"
+  ),
+  extraction_method = "buffer",
+  buffer_size = 500
+)
+```
+
+### Temporal Analysis
+
+```{r eval=FALSE}
+# Analyze vegetation trends over time
+temporal_vegetation <- analyze_temporal_changes(
+  data_list = list(ndvi_2020, ndvi_2021, ndvi_2022, ndvi_2023),
+  dates = c("2020", "2021", "2022", "2023"),
+  analysis_type = "trend"
+)
+```
+
+## Best Practices
+
+### 1. Index Selection Guidelines
+
+```{r eval=FALSE}
+# For general vegetation monitoring
+general_indices <- c("NDVI", "EVI", "SAVI")
+
+# For stress detection
+stress_indices <- c("PRI", "SIPI", "PSRI", "NDNI", "CCI")
+
+# For chlorophyll assessment
+chlorophyll_indices <- c("GNDVI", "NDRE", "MTCI", "CRI1")
+
+# For water stress
+water_stress_indices <- c("NDWI", "MNDWI", "NDMI", "MSI")
+```
+
+### 2. Quality Control
+
+```{r eval=FALSE}
+# Always apply reasonable ranges
+quality_indices <- calculate_multiple_indices(
+  spectral_data = satellite_data,
+  indices = c("NDVI", "EVI", "SAVI"),
+  mask_invalid = TRUE,
+  clamp_range = list(
+    NDVI = c(-0.2, 1.0),
+    EVI = c(-1.0, 3.0),
+    SAVI = c(-1.0, 1.5)
+  )
+)
+```
+
+### 3. Performance Optimization
+
+```{r eval=FALSE}
+# Use parallel processing for multiple indices
+fast_calculation <- calculate_multiple_indices(
+  spectral_data = large_dataset,
+  indices = c("NDVI", "EVI", "SAVI", "PRI", "SIPI", "NDRE"),
+  parallel = TRUE,
+  output_stack = TRUE
+)
+```
+
+## Troubleshooting
+
+### Common Issues and Solutions
+
+```{r eval=FALSE}
+# Issue: Band detection fails
+# Solution: Provide custom band names
+custom_indices <- calculate_multiple_indices(
+  spectral_data = custom_satellite,
+  band_names = c("band1", "band2", "band3", "band4"),  # R, G, B, NIR
+  indices = c("NDVI", "EVI"),
+  auto_detect_bands = FALSE
+)
+
+# Issue: Missing required bands
+# Solution: Check required bands for each index
+index_info <- list_vegetation_indices(detailed = TRUE)
+print(index_info[index_info$Index == "EVI", "Required_Bands"])
+
+# Issue: Invalid values
+# Solution: Apply quality control
+clean_indices <- calculate_vegetation_index(
+  red = red_band,
+  nir = nir_band,
+  index_type = "NDVI",
+  mask_invalid = TRUE,
+  scale_factor = 0.0001  # If using scaled satellite data
+)
+```
+
+The vegetation analysis capabilities in GeoSpatialSuite provide a complete toolkit for agricultural monitoring, environmental assessment, and remote sensing applications with robust error handling and validation throughout.

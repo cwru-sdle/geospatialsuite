@@ -1,0 +1,330 @@
+---
+title: "Getting Started with GeoSpatialSuite"
+author: "GeoSpatialSuite Development Team"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with GeoSpatialSuite}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.height = 6,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+# Introduction to GeoSpatialSuite
+
+GeoSpatialSuite is a comprehensive R package for geospatial analysis that provides universal functions for working with spatial data. The package is designed to be **reliable**, **universal**, and **easy to use**.
+
+## Key Features
+
+- **60+ vegetation indices** with automatic band detection
+- **Universal spatial mapping** that works with any data type
+- **Reliable terra-based visualization** without complex dependencies
+- **Universal spatial join** for any vector-raster combination
+- **Agricultural applications** including CDL crop analysis
+- **Water quality assessment** with threshold analysis
+- **Robust error handling** throughout all functions
+
+## Installation
+
+```{r eval=FALSE}
+
+# install locally
+devtools::install()
+
+# install from CRAN
+
+install.packages("geospatialsuite")
+
+# Load the package
+library(geospatialsuite)
+```
+
+```{r}
+library(geospatialsuite)
+```
+
+## Package Testing
+
+Before we start, let's test that everything is working correctly:
+
+```{r eval=FALSE}
+# Test all package functions
+test_results <- test_geospatialsuite_package(verbose = TRUE)
+
+# View results
+print(test_results$summary)
+```
+
+## Quick Start: One-Line Mapping
+
+The easiest way to get started is with the `quick_map()` function:
+
+```{r eval=FALSE}
+# One-line mapping - auto-detects everything!
+quick_map("your_data.shp")
+quick_map(your_raster)
+quick_map(your_points_data, interactive = TRUE)
+```
+
+## Basic Workflow Examples
+
+### 1. Creating Sample Data
+
+Let's create some sample data to demonstrate the functions:
+
+```{r}
+# Create sample raster data
+set.seed(123)
+sample_raster <- terra::rast(nrows = 50, ncols = 50, 
+                            xmin = -84, xmax = -82, 
+                            ymin = 39, ymax = 41)
+# Simulate NDVI values
+terra::values(sample_raster) <- runif(2500, 0.2, 0.8)
+names(sample_raster) <- "NDVI"
+
+# Create sample point data
+sample_points <- data.frame(
+  id = 1:20,
+  lon = runif(20, -84, -82),
+  lat = runif(20, 39, 41),
+  measurement = runif(20, 10, 100)
+)
+
+print("Sample data created successfully!")
+```
+
+### 2. Universal Spatial Mapping
+
+```{r eval=FALSE}
+# Quick raster visualization
+plot_raster_fast(sample_raster, title = "Sample NDVI Data", color_scheme = "ndvi")
+
+# Create professional spatial map
+create_spatial_map(sample_points, 
+                  fill_variable = "measurement",
+                  region_boundary = c(-84, 39, -82, 41),
+                  color_scheme = "viridis",
+                  title = "Sample Measurements")
+```
+
+### 3. Universal Spatial Join
+
+The spatial join function works with ANY vector and raster combination:
+
+```{r eval=FALSE}
+# Extract raster values to points
+points_with_values <- spatial_join_universal(
+  vector_data = sample_points,
+  raster_data = sample_raster,
+  method = "simple",
+  verbose = TRUE
+)
+
+# View results
+head(points_with_values)
+```
+
+### 4. Vegetation Index Calculation
+
+GeoSpatialSuite includes 60+ vegetation indices:
+
+```{r eval=FALSE}
+# List available vegetation indices
+available_indices <- list_vegetation_indices()
+print(head(available_indices))
+
+# Create sample spectral bands
+red_band <- sample_raster * 0.3  # Simulate red reflectance
+nir_band <- sample_raster * 0.7  # Simulate NIR reflectance
+
+# Calculate NDVI
+ndvi_result <- calculate_vegetation_index(
+  red = red_band, 
+  nir = nir_band, 
+  index_type = "NDVI"
+)
+
+# Calculate multiple indices at once
+multi_indices <- calculate_multiple_indices(
+  red = red_band,
+  nir = nir_band,
+  indices = c("NDVI", "DVI", "RVI"),
+  output_stack = TRUE
+)
+```
+
+## Key Package Principles
+
+### 1. Universal Functions
+All functions work with any geographic region and data type:
+
+```{r eval=FALSE}
+# Works with any region
+ohio_boundary <- get_region_boundary("Ohio")
+nigeria_boundary <- get_region_boundary("Nigeria")
+custom_boundary <- get_region_boundary(c(-84, 39, -82, 41))
+```
+
+### 2. Robust Error Handling
+All functions include comprehensive error checking:
+
+```{r eval=FALSE}
+# Functions validate inputs and provide helpful error messages
+try({
+  result <- spatial_join_universal(
+    vector_data = "nonexistent_file.shp",  # This will fail gracefully
+    raster_data = sample_raster
+  )
+})
+```
+
+### 3. Reliable Visualization
+Uses standard terra plotting for maximum reliability:
+
+```{r eval=FALSE}
+# Always works - no complex dependencies
+plot_raster_fast(sample_raster, "Reliable Visualization")
+
+# RGB composites
+plot_rgb_raster(multi_band_raster, r = 3, g = 2, b = 1, 
+               title = "RGB Composite")
+```
+
+## Working with Different Data Types
+
+### Vector Data
+```{r eval=FALSE}
+# CSV with coordinates
+csv_data <- process_vector_data("sites.csv")
+
+# Shapefiles
+shp_data <- process_vector_data("boundaries.shp")
+
+# Data frames
+df_data <- process_vector_data(sample_points)
+```
+
+### Raster Data
+```{r eval=FALSE}
+# Single files
+raster1 <- load_raster_data("ndvi.tif")
+
+# Directories
+raster_list <- load_raster_data("/path/to/raster/directory/")
+
+# Multiple files
+raster_list <- load_raster_data(c("file1.tif", "file2.tif"))
+```
+
+## Agricultural Applications
+
+### Crop Analysis
+```{r eval=FALSE}
+# Get crop codes
+corn_codes <- get_comprehensive_cdl_codes("corn")
+grain_codes <- get_comprehensive_cdl_codes("grains")
+
+# Create crop masks
+corn_mask <- create_crop_mask("cdl_2023.tif", "corn", "Iowa")
+
+# Analyze crop vegetation
+crop_analysis <- analyze_crop_vegetation(
+  spectral_data = satellite_data,
+  crop_type = "corn",
+  analysis_type = "comprehensive"
+)
+```
+
+### Enhanced NDVI Analysis
+```{r eval=FALSE}
+# Enhanced NDVI with quality filtering
+enhanced_ndvi <- calculate_ndvi_enhanced(
+  red_data = red_files,
+  nir_data = nir_files,
+  quality_filter = TRUE,
+  temporal_smoothing = TRUE
+)
+```
+
+## Comprehensive Workflows
+
+For complex analyses, use the workflow system:
+
+```{r eval=FALSE}
+# Configure comprehensive workflow
+workflow_config <- list(
+  analysis_type = "ndvi_crop_analysis",
+  input_data = list(red = red_raster, nir = nir_raster),
+  region_boundary = "Ohio",
+  output_folder = "results/"
+)
+
+# Run workflow
+results <- run_comprehensive_geospatial_workflow(workflow_config)
+```
+
+## Interactive Features
+
+```{r eval=FALSE}
+# Interactive maps (requires leaflet)
+if (requireNamespace("leaflet", quietly = TRUE)) {
+  interactive_map <- create_interactive_map(
+    spatial_data = sample_points,
+    fill_variable = "measurement",
+    basemap = "terrain"
+  )
+}
+```
+
+## Getting Help
+
+```{r eval=FALSE}
+# Package documentation
+help(package = "geospatialsuite")
+
+# Function help
+?spatial_join_universal
+?calculate_vegetation_index
+
+# List available functions
+ls("package:geospatialsuite")
+
+# Test package functionality
+test_geospatialsuite_package()
+```
+
+## Next Steps
+
+Now that you've learned the basics, explore these specialized vignettes:
+
+- **Vegetation Analysis**: Learn about 60+ vegetation indices
+- **Spatial Analysis**: Advanced spatial operations and joins  
+- **Agricultural Applications**: CDL analysis and crop monitoring
+- **Visualization**: Professional mapping and plotting
+- **Water Quality**: Environmental monitoring applications
+
+## Summary
+
+GeoSpatialSuite provides:
+
+1. **Universal functions** that work with any spatial data
+2. **Reliable visualization** using terra plotting
+3. **Comprehensive analysis** tools for agriculture and environment
+4. **Robust error handling** for production use
+5. **Simple workflows** for complex analyses
+
+The package is designed to be your go-to tool for geospatial analysis in R!
+
+## Acknowledgments
+
+This work was developed by the GeoSpatialSuite team with contributions from:
+Olatunde D. Akanbi, Vibha Mandayam, Yinghui Wu, Jeffrey Yarus, Erika I. Barcelos, and Roger H. French.

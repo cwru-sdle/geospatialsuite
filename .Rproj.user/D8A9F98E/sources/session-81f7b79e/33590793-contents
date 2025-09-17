@@ -1,0 +1,820 @@
+---
+title: "Agricultural Applications and CDL Analysis"
+author: "GeoSpatialSuite Development Team"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Agricultural Applications and CDL Analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 10,
+  fig.height = 7,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+# Agricultural Applications
+
+GeoSpatialSuite provides comprehensive tools for agricultural analysis, including **USDA Cropland Data Layer (CDL) analysis**, **crop-specific vegetation monitoring**, **precision agriculture applications**, and **yield assessment support**.
+
+```{r}
+library(geospatialsuite)
+```
+
+## USDA Cropland Data Layer (CDL) Analysis
+
+The CDL is a crucial dataset for agricultural analysis. GeoSpatialSuite provides comprehensive tools for working with CDL data.
+
+### Understanding CDL Codes
+
+```{r}
+# Explore available crop codes
+get_comprehensive_cdl_codes("help")
+
+# Get codes for specific crops
+corn_code <- get_comprehensive_cdl_codes("corn")
+soybean_code <- get_comprehensive_cdl_codes("soybeans")
+wheat_codes <- get_comprehensive_cdl_codes("wheat")  # Multiple wheat types
+
+cat("Corn CDL code:", corn_code, "\n")
+cat("Soybean CDL code:", soybean_code, "\n")
+cat("Wheat CDL codes:", paste(wheat_codes, collapse = ", "), "\n")
+
+# Get codes for crop categories
+grain_codes <- get_comprehensive_cdl_codes("grains")
+oilseed_codes <- get_comprehensive_cdl_codes("oilseeds")
+fruit_codes <- get_comprehensive_cdl_codes("fruits")
+
+cat("\nGrain crop codes:", paste(grain_codes, collapse = ", "), "\n")
+cat("Oilseed crop codes:", paste(oilseed_codes, collapse = ", "), "\n")
+cat("Fruit crop codes (first 10):", paste(fruit_codes[1:10], collapse = ", "), "\n")
+```
+
+### Creating Sample CDL Data
+
+Since we can't include actual CDL files, let's create realistic sample data:
+
+```{r}
+# Create sample CDL-like data for demonstration
+set.seed(456)
+cdl_raster <- terra::rast(nrows = 200, ncols = 200, 
+                         xmin = -84, xmax = -82, ymin = 39, ymax = 41)
+
+# Create realistic crop distribution
+# Simulate typical Midwest agriculture pattern
+crop_probabilities <- c(
+  1,    # Corn (40%)
+  5,    # Soybeans (35%)
+  24,   # Winter wheat (10%)
+  36,   # Alfalfa (5%)
+  176,  # Grassland/Pasture (8%)
+  121   # Developed (2%)
+)
+
+prob_weights <- c(0.40, 0.35, 0.10, 0.05, 0.08, 0.02)
+
+# Generate crop pattern with spatial clustering
+terra::values(cdl_raster) <- sample(crop_probabilities, 40000, 
+                                   replace = TRUE, prob = prob_weights)
+
+# Add some spatial autocorrelation (crops tend to cluster)
+cdl_raster <- terra::focal(cdl_raster, w = matrix(1/9, 3, 3), fun = "modal")
+names(cdl_raster) <- "CDL_2023"
+
+print("Created sample CDL data with realistic crop distribution")
+
+# Check the distribution
+freq_table <- terra::freq(cdl_raster)
+print("Crop distribution in sample data:")
+print(freq_table)
+```
+
+## Basic CDL Analysis
+
+### 1. Creating Crop Masks
+
+```{r eval=FALSE}
+# Create binary mask for corn
+corn_mask <- create_crop_mask(
+  cdl_data = cdl_raster,
+  crop_codes = "corn",
+  mask_type = "binary"
+)
+
+# Create mask preserving original codes for grains
+grain_mask <- create_crop_mask(
+  cdl_data = cdl_raster,
+  crop_codes = "grains",
+  mask_type = "preserve"
+)
+
+# Visualize corn distribution
+plot_raster_fast(corn_mask, "Corn Distribution (Binary Mask)", 
+                color_scheme = "categorical")
+```
+
+### 2. Dynamic Crop Analysis
+
+```{r eval=FALSE}
+# Analyze corn area
+corn_analysis <- analyze_cdl_crops_dynamic(
+  cdl_data = cdl_raster,
+  crop_selection = "corn",
+  analysis_type = "area",
+  year = 2023
+)
+
+print("Corn Area Analysis:")
+print(paste("Total corn area:", round(corn_analysis$total_area_ha, 1), "hectares"))
+
+# Analyze multiple crops
+grain_analysis <- analyze_cdl_crops_dynamic(
+  cdl_data = cdl_raster,
+  crop_selection = "grains",
+  analysis_type = "area"
+)
+
+print("Grain Crops Analysis:")
+print(paste("Total grain area:", round(grain_analysis$total_area_ha, 1), "hectares"))
+
+# Create classification map
+crop_classification <- analyze_cdl_crops_dynamic(
+  cdl_data = cdl_raster,
+  crop_selection = c("corn", "soybeans", "wheat"),
+  analysis_type = "classify"
+)
+
+# Visualize classification
+plot_raster_fast(crop_classification, "Major Crop Classification")
+```
+
+### 3. Advanced CDL Mapping
+
+```{r eval=FALSE}
+# Create comprehensive crop distribution map
+crop_map <- create_crop_map(
+  cdl_data = cdl_raster,
+  crop_selection = c("corn", "soybeans", "wheat"),
+  style = "categorical",
+  show_statistics = TRUE,
+  title = "Major Crop Distribution - Sample Area 2023"
+)
+
+# Create crop diversity map
+diversity_map <- create_crop_map(
+  cdl_data = cdl_raster,
+  crop_selection = "grains",
+  style = "diversity",
+  title = "Crop Diversity Index"
+)
+```
+
+## Precision Agriculture Applications
+
+### 1. Crop-Specific Vegetation Analysis
+
+```{r eval=FALSE}
+# Create sample spectral data for agricultural analysis
+agricultural_spectral <- terra::rast(nrows = 100, ncols = 100, nlyr = 4,
+                                    xmin = -84, xmax = -82, ymin = 39, ymax = 41)
+
+# Simulate Landsat-like bands with agricultural characteristics
+terra::values(agricultural_spectral) <- matrix(c(
+  runif(10000, 0.03, 0.08),  # Red
+  runif(10000, 0.05, 0.15),  # Green  
+  runif(10000, 0.02, 0.06),  # Blue
+  runif(10000, 0.4, 0.8)     # NIR
+), ncol = 4)
+
+names(agricultural_spectral) <- c("red", "green", "blue", "nir")
+
+# Comprehensive corn vegetation analysis
+corn_vegetation_analysis <- analyze_crop_vegetation(
+  spectral_data = agricultural_spectral,
+  crop_type = "corn",
+  analysis_type = "comprehensive",
+  growth_stage = "mid",
+  verbose = TRUE
+)
+
+print("Corn Vegetation Analysis Results:")
+print(names(corn_vegetation_analysis))
+print(corn_vegetation_analysis$metadata)
+
+# Stress detection in soybeans
+soybean_stress_analysis <- analyze_crop_vegetation(
+  spectral_data = agricultural_spectral,
+  crop_type = "soybeans",
+  analysis_type = "stress",
+  growth_stage = "reproductive",
+  verbose = TRUE
+)
+
+print("Soybean Stress Analysis:")
+if (!is.null(soybean_stress_analysis$analysis_results$stress_analysis)) {
+  print(names(soybean_stress_analysis$analysis_results$stress_analysis))
+}
+```
+
+### 2. Enhanced NDVI for Agriculture
+
+```{r eval=FALSE}
+# Extract red and NIR bands for enhanced NDVI analysis
+red_band <- agricultural_spectral[["red"]]
+nir_band <- agricultural_spectral[["nir"]]
+
+# Enhanced NDVI with agricultural-specific processing
+agricultural_ndvi <- calculate_ndvi_enhanced(
+  red_data = red_band,
+  nir_data = nir_band,
+  quality_filter = TRUE,
+  clamp_range = c(-0.1, 1.0),
+  verbose = TRUE
+)
+
+# Create agricultural NDVI map with classification
+agricultural_ndvi_map <- create_ndvi_map(
+  ndvi_data = agricultural_ndvi,
+  ndvi_classes = "standard",
+  title = "Agricultural NDVI with Growth Stage Classification"
+)
+
+# Calculate agricultural-specific statistics
+ndvi_values <- terra::values(agricultural_ndvi, mat = FALSE)
+ndvi_values <- ndvi_values[!is.na(ndvi_values)]
+
+cat("Agricultural NDVI Statistics:\n")
+cat("Mean NDVI:", round(mean(ndvi_values), 3), "\n")
+cat("NDVI Range:", round(range(ndvi_values), 3), "\n")
+cat("Coefficient of Variation:", round(sd(ndvi_values)/mean(ndvi_values), 3), "\n")
+
+# Classify by agricultural vigor
+vigor_classes <- cut(ndvi_values, 
+                    breaks = c(-1, 0.3, 0.5, 0.7, 1.0),
+                    labels = c("Bare/Stressed", "Low Vigor", "Moderate Vigor", "High Vigor"))
+print(table(vigor_classes))
+```
+
+### 3. Multi-Scale Agricultural Analysis
+
+```{r eval=FALSE}
+# Create sample field locations
+field_centers <- data.frame(
+  field_id = paste0("Field_", 1:15),
+  lon = runif(15, -83.8, -82.2),
+  lat = runif(15, 39.2, 40.8),
+  crop_type = sample(c("corn", "soybeans", "wheat"), 15, replace = TRUE),
+  planting_date = sample(seq(as.Date("2023-04-01"), as.Date("2023-05-31"), by = "day"), 15),
+  expected_yield = runif(15, 80, 180)
+)
+
+# Multi-scale vegetation analysis for fields
+multi_scale_analysis <- extract_to_points_advanced(
+  points_data = field_centers,
+  raster_data = agricultural_ndvi,
+  sampling_strategy = "multi_scale",
+  buffer_sizes = c(50, 100, 250, 500, 1000),  # Different management scales
+  summary_functions = list(
+    mean = function(x) mean(x, na.rm = TRUE),
+    cv = function(x) sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE),
+    p90 = function(x) quantile(x, 0.9, na.rm = TRUE),
+    vigor_score = function(x) sum(x > 0.6, na.rm = TRUE) / length(x[!is.na(x)])
+  ),
+  verbose = TRUE
+)
+
+# Analyze scale-dependent patterns
+scale_columns <- grep("buffer_", names(multi_scale_analysis), value = TRUE)
+print("Multi-scale analysis columns:")
+print(scale_columns[1:8])  # Show first 8 columns
+
+# Compare variability across scales
+for (size in c(50, 100, 250, 500, 1000)) {
+  mean_col <- paste0("buffer_", size, "_mean")
+  cv_col <- paste0("buffer_", size, "_cv")
+  
+  if (all(c(mean_col, cv_col) %in% names(multi_scale_analysis))) {
+    cat("Scale", size, "m - Mean NDVI:", 
+        round(mean(multi_scale_analysis[[mean_col]], na.rm = TRUE), 3),
+        ", Mean CV:", 
+        round(mean(multi_scale_analysis[[cv_col]], na.rm = TRUE), 3), "\n")
+  }
+}
+```
+
+## Integrated Agricultural Workflows
+
+### 1. Comprehensive Crop Analysis Workflow
+
+```{r eval=FALSE}
+# Configure comprehensive agricultural workflow
+agricultural_workflow_config <- list(
+  analysis_type = "ndvi_crop_analysis",
+  input_data = list(
+    red = red_band,
+    nir = nir_band,
+    cdl = cdl_raster
+  ),
+  region_boundary = c(-84, 39, -82, 41),
+  crop_codes = get_comprehensive_cdl_codes("corn"),
+  indices = c("NDVI", "EVI", "SAVI", "GNDVI"),
+  output_folder = tempdir()
+)
+
+# Run comprehensive agricultural workflow
+agricultural_results <- run_comprehensive_geospatial_workflow(agricultural_workflow_config)
+
+print("Agricultural Workflow Results:")
+print(names(agricultural_results$results))
+```
+
+### 2. Integration with Environmental Data
+
+```{r eval=FALSE}
+# Create sample environmental data layers
+soil_ph <- terra::rast(agricultural_spectral[[1]])
+terra::values(soil_ph) <- runif(10000, 5.5, 7.5)
+names(soil_ph) <- "soil_ph"
+
+soil_organic_matter <- terra::rast(agricultural_spectral[[1]])
+terra::values(soil_organic_matter) <- runif(10000, 2, 8)
+names(soil_organic_matter) <- "soil_om"
+
+precipitation <- terra::rast(agricultural_spectral[[1]])
+terra::values(precipitation) <- runif(10000, 600, 1200)
+names(precipitation) <- "annual_precip"
+
+# Comprehensive agricultural-environmental integration
+agricultural_environmental_integration <- integrate_multiple_datasets(
+  vector_data = field_centers,
+  raster_datasets = list(
+    vegetation = agricultural_ndvi,
+    soil_ph = soil_ph,
+    soil_organic_matter = soil_organic_matter,
+    precipitation = precipitation,
+    crop_type = cdl_raster
+  ),
+  analysis_functions = list(
+    mean = function(x) mean(x, na.rm = TRUE),
+    median = function(x) median(x, na.rm = TRUE),
+    cv = function(x) sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE)
+  ),
+  extraction_method = "buffer",
+  buffer_size = 250,
+  verbose = TRUE
+)
+
+print("Integrated agricultural-environmental dataset:")
+ag_env_cols <- c("field_id", "crop_type", "vegetation_mean", "soil_ph_mean", 
+                "soil_organic_matter_mean", "precipitation_mean")
+head(agricultural_environmental_integration[, ag_env_cols])
+```
+
+## Yield Prediction Support
+
+### 1. Vegetation-Yield Relationships
+
+```{r eval=FALSE}
+# Analyze relationships between vegetation indices and yield potential
+yield_analysis_data <- agricultural_environmental_integration
+
+# Create yield prediction model inputs
+model_data <- data.frame(
+  field_id = yield_analysis_data$field_id,
+  actual_yield = field_centers$expected_yield[match(yield_analysis_data$field_id, field_centers$field_id)],
+  ndvi_mean = yield_analysis_data$vegetation_mean,
+  ndvi_cv = yield_analysis_data$vegetation_cv,
+  soil_ph = yield_analysis_data$soil_ph_mean,
+  soil_om = yield_analysis_data$soil_organic_matter_mean,
+  precipitation = yield_analysis_data$precipitation_mean
+)
+
+# Simple yield prediction model
+yield_model <- lm(actual_yield ~ ndvi_mean + ndvi_cv + soil_ph + soil_om + precipitation, 
+                 data = model_data)
+
+print("Yield Prediction Model Summary:")
+print(summary(yield_model))
+
+# Predict yields
+model_data$predicted_yield <- predict(yield_model, model_data)
+model_data$yield_difference <- model_data$predicted_yield - model_data$actual_yield
+
+cat("\nYield Prediction Accuracy:\n")
+cat("R-squared:", round(summary(yield_model)$r.squared, 3), "\n")
+cat("RMSE:", round(sqrt(mean(model_data$yield_difference^2)), 2), "bushels/acre\n")
+cat("Mean Absolute Error:", round(mean(abs(model_data$yield_difference)), 2), "bushels/acre\n")
+```
+
+### 2. Growth Stage Monitoring
+
+```{r eval=FALSE}
+# Simulate temporal NDVI data for growth stage monitoring
+growth_stages <- c("emergence", "vegetative", "reproductive", "maturity")
+days_after_planting <- c(21, 60, 90, 120)
+
+# Create temporal NDVI profiles
+temporal_ndvi_profiles <- list()
+
+for (i in 1:length(growth_stages)) {
+  stage <- growth_stages[i]
+  day <- days_after_planting[i]
+  
+  # Simulate NDVI values typical for each growth stage
+  stage_ndvi <- switch(stage,
+    "emergence" = agricultural_ndvi * 0.3,
+    "vegetative" = agricultural_ndvi * 0.7,
+    "reproductive" = agricultural_ndvi * 1.0,
+    "maturity" = agricultural_ndvi * 0.6
+  )
+  
+  names(stage_ndvi) <- paste0("NDVI_", stage, "_day", day)
+  temporal_ndvi_profiles[[stage]] <- stage_ndvi
+}
+
+# Analyze temporal patterns
+temporal_stack <- terra::rast(temporal_ndvi_profiles)
+
+# Extract temporal profiles for field locations
+temporal_field_data <- spatial_join_universal(
+  vector_data = field_centers,
+  raster_data = temporal_stack,
+  method = "buffer",
+  buffer_size = 200,
+  summary_function = "mean"
+)
+
+# Create growth curves
+temporal_cols <- grep("NDVI_", names(temporal_field_data), value = TRUE)
+field_profiles <- temporal_field_data[, c("field_id", "crop_type", temporal_cols)]
+
+print("Growth stage monitoring data:")
+head(field_profiles)
+
+# Calculate growth rates
+field_profiles$vegetative_growth_rate <- 
+  (field_profiles$NDVI_vegetative_day60 - field_profiles$NDVI_emergence_day21) / 39
+
+field_profiles$senescence_rate <- 
+  (field_profiles$NDVI_reproductive_day90 - field_profiles$NDVI_maturity_day120) / 30
+
+cat("\nGrowth Rate Analysis:\n")
+cat("Mean vegetative growth rate:", 
+    round(mean(field_profiles$vegetative_growth_rate, na.rm = TRUE), 4), "NDVI/day\n")
+cat("Mean senescence rate:", 
+    round(mean(field_profiles$senescence_rate, na.rm = TRUE), 4), "NDVI/day\n")
+```
+
+## Water Quality and Agricultural Impact
+
+### 1. Agricultural Water Quality Analysis
+
+```{r eval=FALSE}
+# Create sample water quality monitoring stations
+water_stations <- data.frame(
+  station_id = paste0("WQ_", 1:12),
+  lon = runif(12, -83.8, -82.2),
+  lat = runif(12, 39.2, 40.8),
+  nitrate_mg_l = runif(12, 0.5, 8.5),
+  phosphorus_mg_l = runif(12, 0.1, 1.2),
+  turbidity_ntu = runif(12, 2, 25),
+  sampling_date = sample(seq(as.Date("2023-05-01"), as.Date("2023-09-01"), by = "day"), 12)
+)
+
+# Analyze water quality in agricultural context
+agricultural_water_analysis <- analyze_water_quality_comprehensive(
+  water_data = water_stations,
+  variable = "nitrate_mg_l",
+  region_boundary = c(-84, 39, -82, 41),
+  thresholds = list(
+    "Low" = c(0, 2),
+    "Moderate" = c(2, 5),
+    "High" = c(5, 8),
+    "Excessive" = c(8, Inf)
+  )
+)
+
+print("Agricultural Water Quality Analysis:")
+print(agricultural_water_analysis$statistics)
+
+# Relate water quality to surrounding agriculture
+water_with_ag_context <- spatial_join_universal(
+  vector_data = water_stations,
+  raster_data = list(
+    crop_density = corn_mask,
+    vegetation_vigor = agricultural_ndvi,
+    soil_om = soil_organic_matter
+  ),
+  method = "buffer",
+  buffer_size = 1000,  # 1km buffer around stations
+  summary_function = "mean"
+)
+
+# Analyze relationships
+ag_water_relationships <- cor(water_with_ag_context[, c("nitrate_mg_l", "phosphorus_mg_l", 
+                                                       "crop_density", "vegetation_vigor", "soil_om")], 
+                             use = "complete.obs")
+
+print("Agricultural-Water Quality Correlations:")
+print(round(ag_water_relationships, 3))
+```
+
+## Advanced Agricultural Applications
+
+### 1. Precision Agriculture Zones
+
+```{r eval=FALSE}
+# Create management zones based on multiple variables
+management_zone_data <- agricultural_environmental_integration
+
+# Standardize variables for clustering
+standardize_vars <- c("vegetation_mean", "vegetation_cv", "soil_ph_mean", 
+                     "soil_organic_matter_mean", "precipitation_mean")
+
+for (var in standardize_vars) {
+  management_zone_data[[paste0(var, "_std")]] <- 
+    scale(management_zone_data[[var]])[, 1]
+}
+
+# Simple clustering for management zones (normally would use more sophisticated methods)
+std_vars <- paste0(standardize_vars, "_std")
+cluster_data <- management_zone_data[, std_vars]
+cluster_data <- cluster_data[complete.cases(cluster_data), ]
+
+if (nrow(cluster_data) > 3) {
+  # Perform clustering
+  set.seed(789)
+  zones <- kmeans(cluster_data, centers = 3, nstart = 20)
+  
+  management_zone_data$management_zone <- NA
+  management_zone_data$management_zone[complete.cases(cluster_data)] <- zones$cluster
+  
+  # Characterize management zones
+  zone_summary <- aggregate(management_zone_data[, standardize_vars], 
+                           by = list(Zone = management_zone_data$management_zone), 
+                           FUN = mean, na.rm = TRUE)
+  
+  print("Management Zone Characteristics:")
+  print(zone_summary)
+  
+  # Zone recommendations
+  zone_names <- c("High Input", "Moderate Management", "Conservation")
+  management_zone_data$zone_name <- zone_names[management_zone_data$management_zone]
+  
+  print("Management Zone Distribution:")
+  print(table(management_zone_data$zone_name, useNA = "ifany"))
+}
+```
+
+### 2. Crop Rotation Analysis
+
+```{r eval=FALSE}
+# Simulate multi-year crop rotation data
+simulate_rotation <- function(base_raster, years = 3) {
+  rotation_data <- list()
+  
+  # Common Midwest rotation: Corn-Soybean-Corn
+  for (year in 1:years) {
+    year_raster <- base_raster
+    
+    if (year == 1) {
+      # Year 1: Base crop distribution
+      rotation_data[[paste0("crops_", 2021 + year)]] <- year_raster
+    } else if (year == 2) {
+      # Year 2: Rotate corn to soybean, soybean to corn
+      terra::values(year_raster)[terra::values(year_raster) == 1] <- 99  # Temp code
+      terra::values(year_raster)[terra::values(year_raster) == 5] <- 1   # Soy to corn
+      terra::values(year_raster)[terra::values(year_raster) == 99] <- 5  # Corn to soy
+      rotation_data[[paste0("crops_", 2021 + year)]] <- year_raster
+    } else {
+      # Year 3: Another rotation
+      terra::values(year_raster)[terra::values(year_raster) == 1] <- 99  # Temp code
+      terra::values(year_raster)[terra::values(year_raster) == 5] <- 1   # Soy to corn
+      terra::values(year_raster)[terra::values(year_raster) == 99] <- 5  # Corn to soy
+      rotation_data[[paste0("crops_", 2021 + year)]] <- year_raster
+    }
+  }
+  
+  return(rotation_data)
+}
+
+# Create rotation data
+rotation_maps <- simulate_rotation(cdl_raster, years = 3)
+
+# Analyze rotation patterns
+rotation_analysis <- analyze_temporal_changes(
+  data_list = rotation_maps,
+  dates = c("2022", "2023", "2024"),
+  analysis_type = "change_detection"
+)
+
+print("Crop Rotation Analysis Results:")
+print(names(rotation_analysis$change_rasters))
+
+# Identify stable vs. rotating fields
+stable_fields <- rotation_analysis$change_rasters$overall_change == 0
+rotating_fields <- abs(rotation_analysis$change_rasters$overall_change) > 0
+
+cat("Field rotation summary:\n")
+cat("Stable fields:", sum(terra::values(stable_fields), na.rm = TRUE), "pixels\n")
+cat("Rotating fields:", sum(terra::values(rotating_fields), na.rm = TRUE), "pixels\n")
+```
+
+### 3. Integrated Pest and Disease Risk Assessment
+
+```{r eval=FALSE}
+# Create risk assessment based on environmental conditions
+pest_risk_assessment <- function(ndvi_data, temp_proxy, moisture_proxy, crop_mask) {
+  # Simplified pest risk model based on:
+  # - Vegetation stress (low NDVI)
+  # - Temperature conditions
+  # - Moisture conditions
+  # - Crop susceptibility
+  
+  # Stress factor (inverse NDVI)
+  stress_factor <- 1 - ndvi_data
+  
+  # Normalize all factors to 0-1 scale
+  temp_factor <- (temp_proxy - terra::global(temp_proxy, "min", na.rm = TRUE)[[1]]) / 
+                 (terra::global(temp_proxy, "max", na.rm = TRUE)[[1]] - terra::global(temp_proxy, "min", na.rm = TRUE)[[1]])
+  
+  moisture_factor <- (moisture_proxy - terra::global(moisture_proxy, "min", na.rm = TRUE)[[1]]) / 
+                     (terra::global(moisture_proxy, "max", na.rm = TRUE)[[1]] - terra::global(moisture_proxy, "min", na.rm = TRUE)[[1]])
+  
+  # Combined risk score
+  risk_score <- (stress_factor * 0.4 + temp_factor * 0.3 + moisture_factor * 0.3) * crop_mask
+  
+  return(risk_score)
+}
+
+# Calculate pest risk using available data
+pest_risk <- pest_risk_assessment(
+  ndvi_data = agricultural_ndvi,
+  temp_proxy = soil_ph,  # Using soil pH as temperature proxy for demo
+  moisture_proxy = precipitation,
+  crop_mask = corn_mask
+)
+
+names(pest_risk) <- "pest_risk_score"
+
+# Classify risk levels
+risk_values <- terra::values(pest_risk, mat = FALSE)
+risk_values <- risk_values[!is.na(risk_values) & risk_values > 0]
+
+risk_breaks <- quantile(risk_values, c(0, 0.25, 0.5, 0.75, 1.0))
+risk_classified <- terra::classify(pest_risk, 
+                                  cbind(risk_breaks[-length(risk_breaks)], 
+                                        risk_breaks[-1], 
+                                        1:4))
+
+names(risk_classified) <- "risk_class"
+
+# Visualize risk assessment
+plot_raster_fast(risk_classified, "Pest Risk Assessment - Classified", 
+                color_scheme = "categorical")
+
+# Risk statistics
+cat("Pest Risk Assessment Summary:\n")
+cat("Low Risk (Class 1):", sum(terra::values(risk_classified) == 1, na.rm = TRUE), "pixels\n")
+cat("Moderate Risk (Class 2):", sum(terra::values(risk_classified) == 2, na.rm = TRUE), "pixels\n")
+cat("High Risk (Class 3):", sum(terra::values(risk_classified) == 3, na.rm = TRUE), "pixels\n")
+cat("Very High Risk (Class 4):", sum(terra::values(risk_classified) == 4, na.rm = TRUE), "pixels\n")
+```
+
+## Best Practices for Agricultural Analysis
+
+### 1. Data Quality Considerations
+
+```{r eval=FALSE}
+# Agricultural data quality checklist
+agricultural_qa_checklist <- function() {
+  cat("Agricultural Data Quality Checklist:\n\n")
+  
+  cat("1. CDL Data:\n")
+  cat("   - Use appropriate year for analysis\n")
+  cat("   - Check for classification accuracy in study area\n")
+  cat("   - Validate crop codes against ground truth\n\n")
+  
+  cat("2. Satellite Data:\n")
+  cat("   - Remove cloud-contaminated pixels\n")
+  cat("   - Apply atmospheric correction\n")
+  cat("   - Consider phenological timing\n\n")
+  
+  cat("3. Field Data:\n")
+  cat("   - GPS accuracy for precise location\n")
+  cat("   - Representative sampling within fields\n")
+  cat("   - Consistent measurement protocols\n\n")
+  
+  cat("4. Temporal Considerations:\n")
+  cat("   - Match satellite and field data timing\n")
+  cat("   - Account for crop growth stages\n")
+  cat("   - Consider weather events\n")
+}
+
+agricultural_qa_checklist()
+```
+
+### 2. Scale Considerations
+
+```{r eval=FALSE}
+# Scale-appropriate analysis guidelines
+scale_guidelines <- function() {
+  cat("Scale-Appropriate Analysis Guidelines:\n\n")
+  
+  cat("Field Level (1-100 ha):\n")
+  cat("   - Use high-resolution imagery (≤10m)\n")
+  cat("   - Buffer size: 30-100m\n")
+  cat("   - Focus on within-field variability\n\n")
+  
+  cat("Farm Level (100-1000 ha):\n")
+  cat("   - Landsat resolution acceptable (30m)\n")
+  cat("   - Buffer size: 100-500m\n")
+  cat("   - Management zone delineation\n\n")
+  
+  cat("Regional Level (>1000 ha):\n")
+  cat("   - Moderate resolution (30-250m)\n")
+  cat("   - Buffer size: 500-2000m\n")
+  cat("   - Landscape-level patterns\n")
+}
+
+scale_guidelines()
+```
+
+### 3. Seasonal Timing Recommendations
+
+```{r eval=FALSE}
+# Crop-specific timing recommendations
+timing_recommendations <- function() {
+  cat("Optimal Satellite Data Timing by Crop:\n\n")
+  
+  cat("Corn:\n")
+  cat("   - V6-V8 (knee-high): Early stress detection\n")
+  cat("   - VT-R1 (tasseling): Maximum biomass assessment\n")
+  cat("   - R3-R4 (milk stage): Yield potential evaluation\n\n")
+  
+  cat("Soybeans:\n")
+  cat("   - V4-V6: Early growth assessment\n")
+  cat("   - R1-R3 (flowering): Critical growth period\n")
+  cat("   - R5-R6 (pod fill): Yield determination\n\n")
+  
+  cat("Wheat:\n")
+  cat("   - Tillering (spring): Stand assessment\n")
+  cat("   - Heading: Biomass evaluation\n")
+  cat("   - Grain fill: Final yield assessment\n")
+}
+
+timing_recommendations()
+```
+
+## Summary
+
+GeoSpatialSuite's agricultural applications provide:
+
+### **CDL Analysis Capabilities:**
+- **Comprehensive crop codes** for all USDA CDL categories
+- **Dynamic crop analysis** with area calculations
+- **Flexible crop masking** and classification
+- **Multi-year rotation analysis**
+- **Crop diversity mapping**
+
+### **Precision Agriculture Tools:**
+- **Crop-specific vegetation analysis** with stress detection
+- **Enhanced NDVI** with agricultural processing
+- **Multi-scale field analysis** (50m to 2km scales)
+- **Management zone delineation**
+- **Yield prediction support**
+
+### **Integrated Workflows:**
+- **Environmental integration** (soil, weather, topography)
+- **Water quality assessment** in agricultural context
+- **Temporal growth monitoring**
+- **Risk assessment** for pests and diseases
+- **Comprehensive reporting** and visualization
+
+### **Key Advantages:**
+1. **Works with any agricultural region** - not limited to specific areas
+2. **Handles all crop types** - from row crops to specialty crops
+3. **Multi-scale analysis** - field to regional levels
+4. **Temporal integration** - supports time series analysis
+5. **Robust error handling** - reliable for operational use
+6. **Comprehensive documentation** - easy to implement
+
+### **Applications:**
+- Precision agriculture and variable rate applications
+- Crop yield prediction and forecasting
+- Agricultural sustainability assessment
+- Environmental impact monitoring
+- Policy and regulatory compliance
+- Research and development support
+
+The agricultural tools in GeoSpatialSuite provide everything needed for professional agricultural analysis and precision farming applications!
+
+```{r}
+sessionInfo()
+```

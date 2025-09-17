@@ -1,0 +1,26 @@
+{
+    "id": "32F8C933",
+    "path": "~/CSE_MSE_RXF131/staging/casf/EE/geospatialsuite-r/packages/geospatialsuite/R/00-package-info.R",
+    "project_path": "R/00-package-info.R",
+    "type": "r_source",
+    "hash": "2987695467",
+    "contents": "",
+    "dirty": false,
+    "created": 1753205002977.0,
+    "source_on_save": false,
+    "relative_order": 8,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "36,45",
+        "scrollLine": "26"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1753209225,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1753209225088,
+    "read_only": false,
+    "read_only_alternatives": []
+}

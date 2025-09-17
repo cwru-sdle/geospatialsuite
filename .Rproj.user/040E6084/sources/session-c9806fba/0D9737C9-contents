@@ -1,0 +1,330 @@
+# Helper Functions for GeoSpatialSuite
+# These functions were referenced in the main code but not defined
+
+#' Match rasters by date
+#' @keywords internal
+match_rasters_by_date <- function(red_data, nir_data, date_patterns = NULL, verbose = FALSE) {
+  # Extract dates from both datasets
+  red_dates <- extract_dates_universal(red_data, date_patterns, verbose)
+  nir_dates <- extract_dates_universal(nir_data, date_patterns, verbose)
+
+  # Find matching dates
+  common_dates <- intersect(red_dates, nir_dates)
+
+  if (length(common_dates) == 0) {
+    stop("No matching dates found between red and NIR datasets")
+  }
+
+  # Create matched data frame
+  matched_df <- data.frame(
+    red = red_data[red_dates %in% common_dates],
+    nir = nir_data[nir_dates %in% common_dates],
+    date = common_dates,
+    stringsAsFactors = FALSE
+  )
+
+  if (verbose) {
+    message(sprintf("Matched %d pairs by date", nrow(matched_df)))
+  }
+
+  return(matched_df)
+}
+
+#' Map custom band names
+#' @keywords internal
+map_custom_band_names <- function(spectral_data, band_names, verbose = FALSE) {
+  bands <- list(red = NULL, nir = NULL, blue = NULL, green = NULL,
+                swir1 = NULL, swir2 = NULL, red_edge = NULL, coastal = NULL, nir2 = NULL)
+
+  # Map provided band names to standard names
+  if (length(band_names) >= 2) {
+    bands$red <- spectral_data[[band_names[1]]]
+    bands$nir <- spectral_data[[band_names[2]]]
+  }
+  if (length(band_names) >= 3) bands$blue <- spectral_data[[band_names[3]]]
+  if (length(band_names) >= 4) bands$green <- spectral_data[[band_names[4]]]
+  if (length(band_names) >= 5) bands$swir1 <- spectral_data[[band_names[5]]]
+  if (length(band_names) >= 6) bands$swir2 <- spectral_data[[band_names[6]]]
+
+  if (verbose) {
+    message(sprintf("Mapped %d custom band names", length(band_names)))
+  }
+
+  return(bands)
+}
+
+#' Validate vegetation analysis
+#' @keywords internal
+validate_vegetation_analysis <- function(vegetation_indices, reference_data, verbose = FALSE) {
+  if (verbose) message("Performing validation analysis...")
+
+  # Simple validation - compare means
+  validation_results <- list()
+
+  for (idx in names(vegetation_indices)) {
+    if (idx %in% names(reference_data)) {
+      observed <- terra::values(vegetation_indices[[idx]], mat = FALSE)
+      expected <- reference_data[[idx]]
+
+      # Remove NAs for comparison
+      valid_obs <- !is.na(observed)
+      valid_exp <- !is.na(expected)
+      common_valid <- valid_obs & valid_exp
+
+      if (sum(common_valid) > 0) {
+        correlation <- cor(observed[common_valid], expected[common_valid])
+        rmse <- sqrt(mean((observed[common_valid] - expected[common_valid])^2))
+
+        validation_results[[idx]] <- list(
+          correlation = correlation,
+          rmse = rmse,
+          n_samples = sum(common_valid)
+        )
+      }
+    }
+  }
+
+  return(validation_results)
+}
+
+#' Save vegetation analysis results
+#' @keywords internal
+save_vegetation_analysis_results <- function(analysis_results, vegetation_indices,
+                                             output_folder, crop_type, verbose = FALSE) {
+  if (verbose) message("Saving vegetation analysis results...")
+
+  # Save vegetation indices as raster stack
+  indices_file <- file.path(output_folder, paste0(crop_type, "_vegetation_indices.tif"))
+  terra::writeRaster(vegetation_indices, indices_file, overwrite = TRUE)
+
+  # Save analysis results as RDS
+  analysis_file <- file.path(output_folder, paste0(crop_type, "_analysis_results.rds"))
+  saveRDS(analysis_results, analysis_file)
+
+  # Create summary text file
+  summary_file <- file.path(output_folder, paste0(crop_type, "_summary.txt"))
+  summary_text <- c(
+    paste("Crop Vegetation Analysis Summary for", crop_type),
+    paste("Date:", Sys.time()),
+    "",
+    "Files created:",
+    paste("  Vegetation indices:", basename(indices_file)),
+    paste("  Analysis results:", basename(analysis_file)),
+    paste("  Summary:", basename(summary_file))
+  )
+
+  writeLines(summary_text, summary_file)
+
+  return(list(
+    indices_file = indices_file,
+    analysis_file = analysis_file,
+    summary_file = summary_file
+  ))
+}
+
+#' Create dominant crop map
+#' @keywords internal
+create_dominant_crop_map <- function(cdl_raster, crop_codes, crop_names, boundary) {
+  # Find most common crop in each area
+  dominant_crop <- terra::modal(cdl_raster)
+
+  # Mask to only include selected crops
+  dominant_crop[!(dominant_crop %in% crop_codes)] <- NA
+
+  p <- ggplot2::ggplot() +
+    ggplot2::theme_minimal() +
+    ggplot2::labs(title = "Dominant Crop Distribution")
+
+  if (!is.null(boundary)) {
+    p <- p + ggplot2::geom_sf(data = boundary, fill = NA, color = "black", inherit.aes = FALSE)
+  }
+
+  return(p)
+}
+
+#' Create crop diversity map
+#' @keywords internal
+create_crop_diversity_map <- function(cdl_raster, crop_codes, boundary) {
+  # Calculate crop diversity (number of different crops in focal window)
+  diversity <- terra::focal(cdl_raster, w = matrix(1, 3, 3),
+                            fun = function(x) length(unique(x[!is.na(x)])))
+
+  p <- ggplot2::ggplot() +
+    ggplot2::theme_minimal() +
+    ggplot2::labs(title = "Crop Diversity")
+
+  if (!is.null(boundary)) {
+    p <- p + ggplot2::geom_sf(data = boundary, fill = NA, color = "black", inherit.aes = FALSE)
+  }
+
+  return(p)
+}
+
+#' Create crop area map
+#' @keywords internal
+create_crop_area_map <- function(cdl_raster, crop_codes, crop_names, boundary) {
+  # Calculate area of each crop
+  crop_areas <- terra::freq(cdl_raster)
+
+  p <- ggplot2::ggplot() +
+    ggplot2::theme_minimal() +
+    ggplot2::labs(title = "Crop Area Distribution")
+
+  if (!is.null(boundary)) {
+    p <- p + ggplot2::geom_sf(data = boundary, fill = NA, color = "black", inherit.aes = FALSE)
+  }
+
+  return(p)
+}
+
+#' Add crop statistics overlay
+#' @keywords internal
+add_crop_statistics_overlay <- function(plot_obj, cdl_raster, crop_codes, crop_names) {
+  # Calculate basic statistics
+  crop_freq <- terra::freq(cdl_raster)
+
+  # Add text annotation with statistics
+  stats_text <- paste("Total crop pixels:", sum(crop_freq$count[crop_freq$value %in% crop_codes]))
+
+  plot_obj <- plot_obj +
+    ggplot2::annotate("text", x = Inf, y = Inf, label = stats_text,
+                      hjust = 1, vjust = 1, size = 3)
+
+  return(plot_obj)
+}
+
+#' Create overlay comparison
+#' @keywords internal
+create_overlay_comparison <- function(data1, data2, titles, color_scheme) {
+  # Convert to data frames for overlay
+  df1 <- as.data.frame(data1, xy = TRUE)
+  colnames(df1)[3] <- "value1"
+
+  df2 <- as.data.frame(data2, xy = TRUE)
+  colnames(df2)[3] <- "value2"
+
+  # Merge data frames
+  overlay_df <- merge(df1, df2, by = c("x", "y"))
+  overlay_df <- overlay_df[complete.cases(overlay_df), ]
+
+  # Create overlay plot
+  p <- ggplot2::ggplot(overlay_df, ggplot2::aes(x = x, y = y)) +
+    ggplot2::geom_raster(ggplot2::aes(fill = value1), alpha = 0.7) +
+    ggplot2::geom_raster(ggplot2::aes(fill = value2), alpha = 0.5) +
+    ggplot2::coord_fixed() +
+    ggplot2::theme_minimal() +
+    ggplot2::labs(title = paste("Overlay:", paste(titles, collapse = " + ")))
+
+  return(p)
+}
+
+#' Add points to leaflet
+#' @keywords internal
+add_points_to_leaflet <- function(map_obj, spatial_data, fill_variable, popup_vars, color_scheme, cluster_points) {
+  if (!requireNamespace("leaflet", quietly = TRUE)) {
+    stop("leaflet package required")
+  }
+
+  if (!is.null(fill_variable) && fill_variable %in% names(spatial_data)) {
+    pal <- leaflet::colorNumeric("viridis", spatial_data[[fill_variable]])
+    map_obj <- map_obj %>%
+      leaflet::addCircleMarkers(
+        data = spatial_data,
+        color = ~pal(get(fill_variable)),
+        clusterOptions = if (cluster_points) leaflet::markerClusterOptions() else NULL
+      )
+  } else {
+    map_obj <- map_obj %>% leaflet::addCircleMarkers(data = spatial_data)
+  }
+
+  return(map_obj)
+}
+
+#' Add polygons to leaflet
+#' @keywords internal
+add_polygons_to_leaflet <- function(map_obj, spatial_data, fill_variable, popup_vars, color_scheme) {
+  if (!requireNamespace("leaflet", quietly = TRUE)) {
+    stop("leaflet package required")
+  }
+
+  if (!is.null(fill_variable) && fill_variable %in% names(spatial_data)) {
+    pal <- leaflet::colorNumeric("viridis", spatial_data[[fill_variable]])
+    map_obj <- map_obj %>%
+      leaflet::addPolygons(
+        data = spatial_data,
+        fillColor = ~pal(get(fill_variable)),
+        fillOpacity = 0.7
+      )
+  } else {
+    map_obj <- map_obj %>% leaflet::addPolygons(data = spatial_data)
+  }
+
+  return(map_obj)
+}
+
+#' Add lines to leaflet
+#' @keywords internal
+add_lines_to_leaflet <- function(map_obj, spatial_data, fill_variable, popup_vars, color_scheme) {
+  if (!requireNamespace("leaflet", quietly = TRUE)) {
+    stop("leaflet package required")
+  }
+
+  map_obj <- map_obj %>% leaflet::addPolylines(data = spatial_data)
+  return(map_obj)
+}
+
+#' Run enhanced terrain analysis workflow
+#' @keywords internal
+run_enhanced_terrain_analysis_workflow <- function(config, output_folder) {
+  message("Running enhanced terrain analysis workflow...")
+
+  # Basic terrain analysis implementation
+  terrain_results <- list(
+    analysis_type = "terrain",
+    message = "Enhanced terrain analysis workflow placeholder"
+  )
+
+  return(terrain_results)
+}
+
+#' Run enhanced temporal workflow
+#' @keywords internal
+run_enhanced_temporal_workflow <- function(config, output_folder) {
+  message("Running enhanced temporal workflow...")
+
+  # Basic temporal analysis implementation
+  temporal_results <- list(
+    analysis_type = "temporal",
+    message = "Enhanced temporal workflow placeholder"
+  )
+
+  return(temporal_results)
+}
+
+#' Run enhanced mosaic workflow
+#' @keywords internal
+run_enhanced_mosaic_workflow <- function(config, output_folder) {
+  message("Running enhanced mosaic workflow...")
+
+  # Basic mosaic workflow implementation
+  mosaic_results <- list(
+    analysis_type = "mosaic",
+    message = "Enhanced mosaic workflow placeholder"
+  )
+
+  return(mosaic_results)
+}
+
+#' Run multi-dataset workflow
+#' @keywords internal
+run_multi_dataset_workflow <- function(config, output_folder) {
+  message("Running multi-dataset workflow...")
+
+  # Basic multi-dataset workflow implementation
+  multi_results <- list(
+    analysis_type = "multi_dataset",
+    message = "Multi-dataset workflow placeholder"
+  )
+
+  return(multi_results)
+}

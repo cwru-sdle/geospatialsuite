@@ -1,0 +1,202 @@
+
+# Define null-coalescing operator
+`%||%` <- function(x, y) if(is.null(x)) y else x
+
+#' Get region boundary for any specified region
+#'
+#' @description
+#' Universal function to get region boundaries for any geographic area including
+#' US states, countries, CONUS, counties, or custom bounding boxes.
+#'
+#' @param region_def Region definition in various formats:
+#'   \itemize{
+#'     \item Character: "Ohio", "Nigeria", "CONUS"
+#'     \item Character with colon: "Ohio:Franklin" (state:county)
+#'     \item Numeric vector: c(xmin, ymin, xmax, ymax) bounding box
+#'     \item sf object: existing spatial object
+#'   }
+#'
+#' @return sf object with boundary geometry
+#'
+#' @examples
+#' \dontrun{
+#' # US State
+#' ohio_boundary <- get_region_boundary("Ohio")
+#'
+#' # Country
+#' nigeria_boundary <- get_region_boundary("Nigeria")
+#'
+#' # CONUS
+#' conus_boundary <- get_region_boundary("CONUS")
+#'
+#' # County
+#' franklin_county <- get_region_boundary("Ohio:Franklin")
+#'
+#' # Custom bounding box
+#' custom_area <- get_region_boundary(c(-84.5, 39.0, -82.0, 41.0))
+#' }
+#'
+#' @export
+get_region_boundary <- function(region_def) {
+  if (inherits(region_def, "sf")) {
+    return(region_def)
+  } else if (is.character(region_def) && length(region_def) == 1) {
+    if (region_def == "CONUS") {
+      return(tigris::states(cb = TRUE, resolution = "20m", year = 2021) %>%
+               dplyr::filter(!STUSPS %in% c("AK", "HI", "PR")))
+    } else if (grepl(":", region_def)) {
+      parts <- strsplit(region_def, ":")[[1]]
+      return(tigris::counties(state = parts[1], cb = TRUE) %>%
+               dplyr::filter(NAME == parts[2]))
+    } else {
+      tryCatch({
+        return(tigris::states(cb = TRUE) %>% dplyr::filter(NAME == region_def))
+      }, error = function(e) {
+        return(rnaturalearth::ne_countries(scale = "medium", country = region_def, returnclass = "sf"))
+      })
+    }
+  } else if (is.numeric(region_def) && length(region_def) == 4) {
+    bbox_poly <- sf::st_polygon(list(matrix(c(
+      region_def[1], region_def[2], region_def[3], region_def[2],
+      region_def[3], region_def[4], region_def[1], region_def[4],
+      region_def[1], region_def[2]
+    ), ncol = 2, byrow = TRUE)))
+    return(sf::st_sf(geometry = sf::st_sfc(bbox_poly, crs = 4326)))
+  }
+  stop("Invalid region boundary specification")
+}
+
+#' Load raster data from various sources
+#'
+#' @description
+#' Universal function to load raster data from files, directories, or raster objects.
+#'
+#' @param input_data Character string (path to file or directory),
+#'   character vector of file paths, or a SpatRaster/Raster* object
+#'
+#' @return List of terra SpatRaster objects
+#'
+#' @examples
+#' \dontrun{
+#' # Load from directory
+#' rasters <- load_raster_data("/path/to/raster/files")
+#'
+#' # Load from file list
+#' rasters <- load_raster_data(c("file1.tif", "file2.tif"))
+#'
+#' # Load single file
+#' raster <- load_raster_data("single_file.tif")
+#' }
+#'
+#' @export
+load_raster_data <- function(input_data) {
+  read_raster_safe <- function(f) {
+    tryCatch({
+      terra::rast(f)
+    }, error = function(e) {
+      warning(sprintf("Failed to read raster: %s\nReason: %s", f, e$message))
+      NULL
+    })
+  }
+
+  if (is.character(input_data)) {
+    if (length(input_data) == 1) {
+      if (dir.exists(input_data)) {
+        files <- list.files(input_data, pattern = "\\.tif(f)?$", full.names = TRUE, ignore.case = TRUE)
+        rasters <- lapply(files, read_raster_safe)
+        rasters <- Filter(Negate(is.null), rasters)
+        if (length(rasters) == 0) stop("No valid raster files found in directory.")
+        return(rasters)
+      } else if (file.exists(input_data)) {
+        r <- read_raster_safe(input_data)
+        if (is.null(r)) stop("Failed to read raster file.")
+        return(list(r))
+      } else {
+        stop("Provided path does not exist.")
+      }
+    } else {
+      existing <- input_data[file.exists(input_data)]
+      if (length(existing) == 0) stop("None of the specified files exist.")
+      rasters <- lapply(existing, read_raster_safe)
+      rasters <- Filter(Negate(is.null), rasters)
+      if (length(rasters) == 0) stop("No valid rasters could be loaded.")
+      return(rasters)
+    }
+  } else if (inherits(input_data, c("SpatRaster", "RasterStack", "RasterLayer"))) {
+    return(list(terra::rast(input_data)))
+  } else if (is.list(input_data)) {
+    return(input_data)
+  }
+
+  stop("Invalid raster data input: must be file path(s), directory, or raster object.")
+}
+
+#' Extract dates from filenames using various patterns
+#'
+#' @description
+#' Universal function to extract dates from filenames or provide custom labels.
+#'
+#' @param input_data Character vector (file paths or folder), or list of raster layers
+#' @param date_patterns Named list of custom regex patterns for date extraction
+#'
+#' @return Character vector of extracted or inferred date labels
+#'
+#' @examples
+#' \dontrun{
+#' # Extract dates from filenames
+#' dates <- extract_dates_universal(c("ndvi_2023-05-15.tif", "ndvi_2023-06-15.tif"))
+#'
+#' # Custom date patterns
+#' custom_patterns <- list("MMDDYYYY" = "\\b[0-9]{2}[0-9]{2}[0-9]{4}\\b")
+#' dates <- extract_dates_universal(files, custom_patterns)
+#' }
+#'
+#' @export
+extract_dates_universal <- function(input_data, date_patterns = NULL) {
+  default_patterns <- list(
+    "YYYY-MM-DD" = "\\b[0-9]{4}-[0-9]{2}-[0-9]{2}\\b",
+    "YYYY_MM_DD" = "\\b[0-9]{4}_[0-9]{2}_[0-9]{2}\\b",
+    "YYYYMMDD"   = "\\b[0-9]{8}\\b",
+    "MMDDYYYY"   = "\\b[0-9]{2}[0-9]{2}[0-9]{4}\\b"
+  )
+  patterns_to_use <- date_patterns %||% default_patterns
+
+  files <- NULL
+  if (is.character(input_data)) {
+    if (length(input_data) == 1 && dir.exists(input_data)) {
+      files <- list.files(input_data, pattern = "\\.tif(f)?$", full.names = FALSE)
+    } else {
+      files <- basename(input_data)
+    }
+  } else if (is.list(input_data)) {
+    files <- names(input_data)
+    if (is.null(files)) {
+      files <- paste0("Layer_", seq_along(input_data))
+    }
+  } else {
+    stop("Unsupported input type for extracting dates.")
+  }
+
+  dates <- sapply(files, function(f) {
+    for (pattern_name in names(patterns_to_use)) {
+      pattern <- patterns_to_use[[pattern_name]]
+      if (grepl(pattern, f)) {
+        date_str <- sub(paste0(".*(", pattern, ").*"), "\\1", f)
+        return(switch(pattern_name,
+                      "YYYY-MM-DD" = date_str,
+                      "YYYY_MM_DD" = gsub("_", "-", date_str),
+                      "YYYYMMDD"   = paste0(substr(date_str, 1, 4), "-",
+                                            substr(date_str, 5, 6), "-",
+                                            substr(date_str, 7, 8)),
+                      "MMDDYYYY"   = paste0(substr(date_str, 5, 8), "-",
+                                            substr(date_str, 1, 2), "-",
+                                            substr(date_str, 3, 4)),
+                      date_str
+        ))
+      }
+    }
+    return(paste0("Unknown_", which(files == f)))
+  })
+
+  return(unname(dates))
+}

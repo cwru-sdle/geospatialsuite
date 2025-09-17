@@ -1,0 +1,1829 @@
+---
+title: "ndvi conus"
+output: html_document
+date: "2024-08-05"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(raster)
+library(viridis)
+library(gridExtra)
+library(sf)
+library(tigris)
+
+# Load state boundaries
+states_sf <- states(cb = TRUE, resolution = "20m", year = 2021)
+
+# Exclude Alaska, Hawaii, and Puerto Rico
+states_sf <- states_sf %>% 
+ dplyr::filter(!STUSPS %in% c("AK", "HI", "PR"))
+
+# Directory containing NDVI raster files
+ndvi_dir <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine2/conus21_cropped"
+
+# Create a list of all NDVI raster files in the directory
+ndvi_files <- list.files(ndvi_dir, pattern = "\\.tif$", full.names = TRUE)
+
+# Define NDVI breaks, colors, and labels
+ndvi_breaks <- c(-1, -0.1, 0.2, 0.5, 1)
+ndvi_colors <- colorRampPalette(c("pink", "yellow", "green", "darkgreen"))(length(ndvi_breaks) - 1)
+ndvi_labels <- c("Barren/Urban areas", "Shrubs/Grasslands", "Crops/Bushes", "Dense Forest")
+
+# Create directory to save plots
+output_dir <- "ndvi_conus21-22"
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir)
+}
+
+# Function to extract date from filename
+extract_date <- function(filename) {
+  # Assuming the filename format is "2022-06-06_NDVI_mosaic.tif"
+  date <- sub(".*([0-9]{4}-[0-9]{2}-[0-9]{2}).*", "\\1", filename)
+  return(date)
+}
+
+# Create individual plots for each file
+for (file in ndvi_files) {
+  ndvi_layer <- raster(file)
+  date <- extract_date(file)
+  
+  # Transform state boundaries to match raster CRS
+  states_sf_transformed <- st_transform(states_sf, crs = st_crs(ndvi_layer))
+  
+  png(filename = paste0(output_dir, "/ndvi_", date, ".png"), width = 1900, height = 1200)
+  par(mar = c(6, 6, 4, 6)) # Adjust margins: bottom, left, top, right
+  
+  plot(
+    ndvi_layer,
+    main = paste("Temporal Analysis of CONUS Land Use on", date),
+    col = ndvi_colors,
+    ylab = "Latitude",
+    xlab = "Longitude",
+    lwd = 2,
+    breaks = ndvi_breaks,
+    key = NULL,
+    cex.lab = 2.5, cex.main = 2.5
+  )
+  
+  # Add state boundaries
+  plot(st_geometry(states_sf_transformed), add = TRUE, border = "black", lwd = 1)
+  
+  axis(side = 1, at = ndvi_breaks[-1], labels = round(ndvi_breaks[-1], 2))
+  axis(side = 2)
+  legend(
+    "bottomright",
+    legend = ndvi_labels,
+    fill = ndvi_colors,
+    title = "Condition",
+    bty = "n",
+    cex = 2.0  # Adjusted size
+  )
+  dev.off()
+}
+
+
+
+
+
+
+
+# WITH CHECKING COMPOSITE- checking
+
+library(ggplot2)
+library(raster)
+library(viridis)
+library(gridExtra)
+library(sf)
+library(tigris)
+library(dplyr)
+
+# Function to calculate coverage statistics
+calculate_coverage <- function(raster_data) {
+  total_cells <- ncell(raster_data)
+  na_cells <- sum(is.na(getValues(raster_data)))
+  coverage_percent <- ((total_cells - na_cells) / total_cells) * 100
+  return(coverage_percent)
+}
+
+# Function to create temporal composite
+create_temporal_composite <- function(raster_list, window_size = 3) {
+  if (length(raster_list) < window_size) {
+    return(raster_list[[1]])
+  }
+  
+  # Stack the rasters
+  raster_stack <- stack(raster_list)
+  
+  # Calculate mean, ignoring NA values
+  composite <- calc(raster_stack, fun = function(x) mean(x, na.rm = TRUE))
+  
+  return(composite)
+}
+
+# Enhanced NDVI visualization function for CONUS
+create_conus_ndvi_visualizations <- function(ndvi_dir, output_dir, temporal_window = 3, min_coverage = 70) {
+  # Create output directory if it doesn't exist
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir)
+  }
+  
+  # Create directory for coverage reports
+  report_dir <- file.path(output_dir, "coverage_reports")
+  if (!dir.exists(report_dir)) {
+    dir.create(report_dir)
+  }
+  
+  # Load state boundaries
+  states_sf <- states(cb = TRUE, resolution = "20m", year = 2021) %>%
+    dplyr::filter(!STUSPS %in% c("AK", "HI", "PR"))
+  
+  # Get list of NDVI files
+  ndvi_files <- list.files(ndvi_dir, pattern = "\\.tif$", full.names = TRUE)
+  
+  # Sort files by date
+  dates <- sapply(ndvi_files, function(x) {
+    date <- sub(".*([0-9]{4}-[0-9]{2}-[0-9]{2}).*", "\\1", x)
+    return(date)
+  })
+  ndvi_files <- ndvi_files[order(dates)]
+  dates <- sort(dates)
+  
+  # Initialize coverage report
+  coverage_report <- data.frame(
+    Date = dates,
+    Coverage = numeric(length(dates)),
+    UsedInComposite = logical(length(dates))
+  )
+  
+  # Define NDVI classification parameters
+  ndvi_breaks <- c(-1, -0.1, 0.2, 0.5, 1)
+  ndvi_colors <- colorRampPalette(c("pink", "yellow", "green", "darkgreen"))(length(ndvi_breaks) - 1)
+  ndvi_labels <- c("Barren/Urban areas", "Shrubs/Grasslands", "Crops/Bushes", "Dense Forest")
+  
+  # Process files with temporal compositing
+  for (i in seq_along(ndvi_files)) {
+    current_date <- dates[i]
+    
+    # Read current raster
+    current_raster <- raster(ndvi_files[i])
+    
+    # Calculate coverage
+    current_coverage <- calculate_coverage(current_raster)
+    coverage_report$Coverage[i] <- current_coverage
+    
+    # If coverage is too low, create temporal composite
+    if (current_coverage < min_coverage) {
+      # Get window of files centered on current date
+      start_idx <- max(1, i - floor(temporal_window/2))
+      end_idx <- min(length(ndvi_files), i + floor(temporal_window/2))
+      window_files <- ndvi_files[start_idx:end_idx]
+      
+      # Create composite
+      window_rasters <- lapply(window_files, raster)
+      ndvi_layer <- create_temporal_composite(window_rasters)
+      
+      # Update which dates were used in composite
+      coverage_report$UsedInComposite[start_idx:end_idx] <- TRUE
+    } else {
+      ndvi_layer <- current_raster
+    }
+    
+    # Transform state boundaries to match raster CRS
+    states_sf_transformed <- st_transform(states_sf, crs = st_crs(ndvi_layer))
+    
+    # Create output filename
+    output_file <- file.path(output_dir, paste0("ndvi_", current_date, ".png"))
+    
+    # Create plot
+    png(filename = output_file,
+        width = 1900, height = 1200,
+        res = 100)
+    
+    par(mar = c(6, 6, 4, 6))
+    
+    plot(ndvi_layer,
+         main = paste("Temporal Analysis of CONUS Land Use on", current_date),
+         col = ndvi_colors,
+         breaks = ndvi_breaks,
+         ylab = "Latitude",
+         xlab = "Longitude",
+         key = NULL,
+         lwd = 2,
+         cex.lab = 2.5,
+         cex.main = 2.5)
+    
+    # Add state boundaries
+    plot(st_geometry(states_sf_transformed),
+         add = TRUE,
+         border = "black",
+         lwd = 1)
+    
+    # Add axis and legend
+    axis(side = 1, at = ndvi_breaks[-1], labels = round(ndvi_breaks[-1], 2))
+    axis(side = 2)
+    
+    legend("bottomright",
+           legend = ndvi_labels,
+           fill = ndvi_colors,
+           title = "Class",
+           bty = "n",
+           cex = 2.0)
+    
+    dev.off()
+    
+    cat(sprintf("Created plot for %s (Coverage: %.1f%%)\n", current_date, current_coverage))
+  }
+  
+  # Save coverage report
+  write.csv(coverage_report,
+            file = file.path(report_dir, "coverage_report.csv"),
+            row.names = FALSE)
+  
+  # Create coverage summary plot
+  png(filename = file.path(report_dir, "coverage_summary.png"),
+      width = 1200, height = 800)
+  
+  plot(as.Date(coverage_report$Date),
+       coverage_report$Coverage,
+       type = "b",
+       main = "NDVI Coverage Over Time",
+       xlab = "Date",
+       ylab = "Coverage (%)",
+       ylim = c(0, 100))
+  
+  abline(h = min_coverage, col = "red", lty = 2)
+  text(par("usr")[1],
+       min_coverage,
+       sprintf("Minimum Coverage (%.0f%%)", min_coverage),
+       pos = 4,
+       col = "red")
+  
+  dev.off()
+}
+
+# Usage example
+ndvi_dir <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine2/conus21_cropped"
+output_dir <- "ndvi_conus21-compos"
+
+create_conus_ndvi_visualizations(
+  ndvi_dir = ndvi_dir,
+  output_dir = output_dir,
+  temporal_window = 3,  # Will use 3 time points for compositing
+  min_coverage = 57     # Minimum coverage threshold (%)
+)
+
+
+
+
+
+```
+
+
+
+
+
+
+
+
+```{r}
+
+# not used
+
+library(ggplot2)
+library(raster)
+library(viridis)
+library(gridExtra)
+library(sf)
+library(tigris)
+
+# Load state boundaries
+states_sf <- states(cb = TRUE, resolution = "20m", year = 2021)
+
+# Exclude Alaska, Hawaii, and Puerto Rico
+states_sf <- states_sf %>% 
+ dplyr::filter(!STUSPS %in% c("AK", "HI", "PR"))
+
+# Directory containing NDVI raster files
+ndvi_dir <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine2/conus21"
+
+# Create a list of all NDVI raster files in the directory
+ndvi_files <- list.files(ndvi_dir, pattern = "\\.tif$", full.names = TRUE)
+
+# Define NDVI breaks, colors, and labels
+ndvi_breaks <- c(-1, -0.1, 0.2, 0.5, 1)
+ndvi_colors <- colorRampPalette(c("pink", "yellow", "green", "darkgreen"))(length(ndvi_breaks) - 1)
+ndvi_labels <- c( "Dead/No Crop", "Stressed/Dying", "Healthy", "Very Healthy")
+
+# Create directory to save plots
+output_dir <- "ndvi21-corn"
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir)
+}
+
+# Function to extract date from filename
+extract_date <- function(filename) {
+  # Assuming the filename format is "2022-06-06_NDVI_mosaic.tif"
+  date <- sub(".*([0-9]{4}-[0-9]{2}-[0-9]{2}).*", "\\1", filename)
+  return(date)
+}
+
+# Create a list of dates corresponding to the input files
+dates <- sapply(ndvi_files, extract_date)
+
+# Read in the crop geotiff for CONUS (adjust the file path)
+crop_raster <- raster("/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine2/cdl_usda/2021/2021_30m_cdls.tif")
+
+# Set all pixels that do not correspond to the crop of interest as NA
+crop_raster[!(crop_raster == 1)] <- NA
+
+# Loop through each NDVI file, mask it with the crop raster, and plot
+for (i in seq_along(ndvi_files)) {
+  ndvi_layer <- raster(ndvi_files[i])
+  date <- dates[i]
+  
+  # Transform state boundaries to match raster CRS
+  states_sf_transformed <- st_transform(states_sf, crs = st_crs(ndvi_layer))
+  
+  # Resample crop raster to match NDVI raster
+  crop_raster_resampled <- resample(crop_raster, ndvi_layer, method = "bilinear")
+  
+  # Apply the mask to the NDVI layer
+  ndvi_masked <- mask(ndvi_layer, crop_raster_resampled)
+  
+  # Save the plot
+  png(filename = paste0(output_dir, "/ndvi_", date, ".png"), width = 1900, height = 1200)
+  par(mar = c(6, 6, 4, 6)) # Adjust margins: bottom, left, top, right
+  
+  plot(
+    ndvi_masked,
+    main = paste("Monitoring Corn Growth in CONUS Using NDVI (Date: ", date, ")"),
+    col = ndvi_colors,
+    ylab = "Latitude",
+    xlab = "Longitude",
+    lwd = 2,
+    breaks = ndvi_breaks,
+    key = NULL,
+    cex.lab = 2.5, cex.main = 2.5
+  )
+  
+  # Add state boundaries
+  plot(st_geometry(states_sf_transformed), add = TRUE, border = "black", lwd = 1)
+  
+  axis(side = 1, at = ndvi_breaks[-1], labels = round(ndvi_breaks[-1], 2))
+  axis(side = 2)
+  legend(
+    "bottomright",
+    legend = ndvi_labels,
+    fill = ndvi_colors,
+    title = "Condition",
+    bty = "n",
+    cex = 2.0  # Adjusted size
+  )
+  dev.off()
+}
+
+
+
+
+
+
+
+
+```
+
+
+
+
+```{r}
+# not used
+library(ggplot2)
+library(terra)
+library(viridis)
+library(sf)
+library(tigris)
+
+# Load state boundaries
+states_sf <- states(cb = TRUE, resolution = "20m", year = 2021)
+
+# Exclude Alaska, Hawaii, and Puerto Rico
+states_sf <- states_sf %>% 
+  dplyr::filter(!STUSPS %in% c("AK", "HI", "PR"))
+
+# Directory containing NDVI raster files
+ndvi_dir <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine2/conus21"
+
+# Create a list of all NDVI raster files in the directory
+ndvi_files <- list.files(ndvi_dir, pattern = "\\.tif$", full.names = TRUE)
+
+# Define NDVI breaks, colors, and labels
+ndvi_breaks <- c(-1, -0.1, 0.2, 0.5, 1)
+ndvi_colors <- colorRampPalette(c("pink", "yellow", "green", "darkgreen"))(length(ndvi_breaks) - 1)
+ndvi_labels <- c("Dead/No Crop", "Stressed/Dying", "Healthy", "Very Healthy")
+
+# Create directory to save plots
+output_dir <- "ndvi21-corn"
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir)
+}
+
+# Function to extract date from filename
+extract_date <- function(filename) {
+  # Assuming the filename format is "2022-06-06_NDVI_mosaic.tif"
+  date <- sub(".*([0-9]{4}-[0-9]{2}-[0-9]{2}).*", "\\1", filename)
+  return(date)
+}
+
+# Create a list of dates corresponding to the input files
+dates <- sapply(ndvi_files, extract_date)
+
+# Read in the crop GeoTIFF for CONUS (adjust the file path)
+crop_raster <- rast("/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine2/cdl_usda/2021/2021_30m_cdls.tif")
+
+# Set all pixels that do not correspond to the crop of interest as NA
+# Apply a direct mask for values not equal to 1
+crop_raster[crop_raster != 1] <- NA
+
+# Loop through each NDVI file, mask it with the crop raster, and plot
+# Loop through each NDVI file, mask it with the crop raster, and plot
+for (i in seq_along(ndvi_files)) {
+  ndvi_layer <- rast(ndvi_files[i])
+  date <- dates[i]
+  
+  # Ensure crop_raster has the same CRS as ndvi_layer
+  if (crs(crop_raster) != crs(ndvi_layer)) {
+    crop_raster <- project(crop_raster, crs(ndvi_layer))
+  }
+  
+  # Resample crop raster to match crop raster resolution and extent
+  crop_raster_resampled <- resample(ndvi_layer, crop_raster, method = "bilinear")
+  
+  # Apply the mask to the NDVI layer
+  ndvi_masked <- mask(ndvi_layer, crop_raster_resampled)
+  
+  # Save the plot
+  png(filename = paste0(output_dir, "/ndvi_", date, ".png"), width = 1900, height = 1200)
+  par(mar = c(6, 6, 4, 6)) # Adjust margins: bottom, left, top, right
+  
+  plot(
+    ndvi_masked,
+    main = paste("Monitoring Corn Growth in CONUS Using NDVI (Date: ", date, ")"),
+    col = ndvi_colors,
+    ylab = "Latitude",
+    xlab = "Longitude",
+    lwd = 2,
+    breaks = ndvi_breaks,
+    cex.lab = 2.5, cex.main = 2.5
+  )
+  
+  # Add state boundaries
+  plot(states_sf_transformed$geometry, add = TRUE, border = "black", lwd = 1)
+  
+  legend(
+    "bottomright",
+    legend = ndvi_labels,
+    fill = ndvi_colors,
+    title = "Condition",
+    bty = "n",
+    cex = 2.0  # Adjusted size
+  )
+  dev.off()
+}
+
+
+```
+
+
+```{r}
+# from made tiffs
+library(ggplot2)
+library(raster)
+library(viridis)
+library(sf)
+library(tigris)
+
+# Load state boundaries
+states_sf <- states(cb = TRUE, resolution = "20m", year = 2021)
+
+# Exclude Alaska, Hawaii, and Puerto Rico
+states_sf <- states_sf %>% 
+  dplyr::filter(!STUSPS %in% c("AK", "HI", "PR"))
+
+# Directory containing masked NDVI raster files
+ndvi_dir <- "/home/oda10/CSE_MSE_RXF131/cradle-members/casf/oda/ibm_scripts/ndvi21-cotton/"
+
+# Create a list of all NDVI raster files in the directory
+ndvi_files <- list.files(ndvi_dir, pattern = "\\.tif$", full.names = TRUE)
+
+# Define NDVI breaks, colors, and labels
+ndvi_breaks <- c(-1, -0.1, 0.2, 0.5, 1)
+ndvi_colors <- colorRampPalette(c("pink", "yellow", "green", "darkgreen"))(length(ndvi_breaks) - 1)
+ndvi_labels <- c("Dead/No Crop", "Stressed/Dying", "Healthy", "Very Healthy")
+
+# Create a directory to save plots
+output_dir <- "ndvi21-cotton"
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir)
+}
+
+# Function to extract date from filename
+extract_date <- function(filename) {
+  # Assuming the filename format is "ndvi_corn_masked_2021-01-01.tif"
+  date <- sub(".*_([0-9]{4}-[0-9]{2}-[0-9]{2}).*", "\\1", filename)
+  return(date)
+}
+
+# Create a list of dates corresponding to the input files
+dates <- sapply(ndvi_files, extract_date)
+
+# Loop through each NDVI file and plot
+for (i in seq_along(ndvi_files)) {
+  ndvi_layer <- raster(ndvi_files[i])
+  date <- dates[i]
+  
+  # Save the plot
+  png(filename = paste0(output_dir, "/ndvi_", date, ".png"), width = 1900, height = 1200)
+  par(mar = c(6, 6, 4, 6)) # Adjust margins: bottom, left, top, right
+  
+  plot(
+    ndvi_layer,
+    main = paste("Monitoring Cotton Growth in CONUS Using NDVI (Date: ", date, ")"),
+    col = ndvi_colors,
+    ylab = "Latitude",
+    xlab = "Longitude",
+    lwd = 2,
+    breaks = ndvi_breaks,
+    cex.lab = 2.5, cex.main = 2.5
+  )
+  
+  # Add state boundaries
+  plot(states_sf$geometry, add = TRUE, border = "black", lwd = 1)
+  
+  legend(
+    "bottomright",
+    legend = ndvi_labels,
+    fill = ndvi_colors,
+    title = "Condition",
+    bty = "n",
+    cex = 2.0  # Adjusted size
+  )
+  dev.off()
+}
+
+
+
+library(raster)
+
+a <- raster("/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine2/conus21-2/2021-01-01_NDVI_mosaic.tif")
+
+plot(a)
+
+```
+
+
+
+
+
+
+
+```{r}
+
+
+# from made tiffs for nigeria
+
+
+
+# Load required libraries
+library(ggplot2)
+library(raster)
+library(viridis)
+library(rnaturalearth)
+library(sp)
+library(sf)
+library(gridExtra)
+
+# Function to create NDVI visualizations
+create_ndvi_visualizations <- function(ndvi_dir, output_dir) {
+  # Create output directory if it doesn't exist
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir)
+  }
+  
+  # Get shapefiles
+  nigeria_shape <- ne_countries(scale = "medium", country = "Nigeria", returnclass = "sf")
+  nigeria_states <- ne_states(country = "Nigeria", returnclass = "sf")
+  
+  # Get list of NDVI files
+  ndvi_files <- list.files(ndvi_dir, pattern = "\\.tif$", full.names = TRUE)
+  
+  # Define NDVI classification parameters
+  ndvi_breaks <- c(-1, -0.1, 0.2, 0.5, 1)
+  ndvi_colors <- colorRampPalette(c("pink", "yellow", "green", "darkgreen"))(length(ndvi_breaks) - 1)
+  ndvi_labels <- c("Barren/Urban areas", "Shrubs/Grasslands", "Crops/Bushes", "Dense Forest")
+  
+  # Function to extract date from filename
+  extract_date <- function(filename) {
+    # Extract just the filename from the full path
+    base_name <- basename(filename)
+    # Extract date using regex
+    date <- sub("^([0-9]{4}_[0-9]{2}_[0-9]{2}).*", "\\1", base_name)
+    return(date)
+  }
+  
+  # Process each NDVI file
+  for (file in ndvi_files) {
+    # Get date from filename
+    date <- extract_date(file)
+    
+    # Create output filename
+    output_file <- file.path(output_dir, paste0("ndvi_", date, ".png"))
+    
+    # Read and process raster
+    ndvi_layer <- raster(file)
+    
+    # Crop and mask the raster
+    ndvi_cropped <- crop(ndvi_layer, nigeria_shape)
+    ndvi_masked <- mask(ndvi_cropped, nigeria_shape)
+    
+    # Transform state boundaries
+    nigeria_states_transformed <- st_transform(nigeria_states, crs = crs(ndvi_masked))
+    
+    # Create plot
+    png(filename = output_file, 
+        width = 1900, height = 1200,
+        res = 100)
+    
+    par(mar = c(6, 6, 4, 6))
+    
+    plot(ndvi_masked,
+         main = paste("Temporal Analysis of Nigeria Land Use on", date),
+         col = ndvi_colors,
+         breaks = ndvi_breaks,
+         ylab = "Latitude",
+         xlab = "Longitude",
+         key = NULL,
+         lwd = 2,
+         cex.lab = 2.5,
+         cex.main = 2.5)
+    
+    # Add state boundaries
+    plot(st_geometry(nigeria_states_transformed), 
+         add = TRUE, 
+         border = "black", 
+         lwd = 1)
+    
+    # Add axis and legend
+    axis(side = 1, at = ndvi_breaks[-1], labels = round(ndvi_breaks[-1], 2))
+    axis(side = 2)
+    
+    legend("bottomright",
+           legend = ndvi_labels,
+           fill = ndvi_colors,
+           title = "Class",
+           bty = "n",
+           cex = 2.0)
+    
+    dev.off()
+    
+    cat(sprintf("Created plot for %s\n", date))
+  }
+}
+
+# Usage example
+ndvi_dir <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine/nigeria-ndvi/2021"
+output_dir <- "ndvi_nigeria"
+
+create_ndvi_visualizations(ndvi_dir, output_dir)
+
+
+
+
+
+```
+
+
+
+
+
+
+```{r}
+
+# compositing in case of cloud
+
+# Load required libraries
+# Load required libraries
+library(ggplot2)
+library(raster)
+library(viridis)
+library(rnaturalearth)
+library(sp)
+library(sf)
+library(gridExtra)
+
+# Function to calculate coverage statistics
+calculate_coverage <- function(raster_data) {
+  total_cells <- ncell(raster_data)
+  na_cells <- sum(is.na(getValues(raster_data)))
+  coverage_percent <- ((total_cells - na_cells) / total_cells) * 100
+  return(coverage_percent)
+}
+
+# Function to create temporal composite
+create_temporal_composite <- function(raster_list, window_size = 3) {
+  if (length(raster_list) < window_size) {
+    return(raster_list[[1]])
+  }
+  
+  # Stack the rasters
+  raster_stack <- stack(raster_list)
+  
+  # Calculate mean, ignoring NA values
+  composite <- calc(raster_stack, fun = function(x) mean(x, na.rm = TRUE))
+  
+  return(composite)
+}
+
+# Enhanced NDVI visualization function
+create_ndvi_visualizations <- function(ndvi_dir, output_dir, temporal_window = 3, min_coverage = 70) {
+  # Create output directory if it doesn't exist
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir)
+  }
+  
+  # Create directory for coverage reports
+  report_dir <- file.path(output_dir, "coverage_reports")
+  if (!dir.exists(report_dir)) {
+    dir.create(report_dir)
+  }
+  
+  # Get shapefiles
+  nigeria_shape <- ne_countries(scale = "medium", country = "Nigeria", returnclass = "sf")
+  nigeria_states <- ne_states(country = "Nigeria", returnclass = "sf")
+  
+  # Get list of NDVI files
+  ndvi_files <- list.files(ndvi_dir, pattern = "\\.tif$", full.names = TRUE)
+  
+  # Sort files by date
+  dates <- sapply(ndvi_files, function(x) {
+    base_name <- basename(x)
+    # Extract date and convert underscore to dash
+    date_str <- sub("^([0-9]{4}_[0-9]{2}_[0-9]{2}).*", "\\1", base_name)
+    gsub("_", "-", date_str)
+  })
+  ndvi_files <- ndvi_files[order(dates)]
+  dates <- sort(dates)
+  
+  # Initialize coverage report
+  coverage_report <- data.frame(
+    Date = dates,
+    Coverage = numeric(length(dates)),
+    UsedInComposite = logical(length(dates))
+  )
+  
+  # Define NDVI classification parameters
+  ndvi_breaks <- c(-1, -0.1, 0.2, 0.5, 1)
+  ndvi_colors <- colorRampPalette(c("pink", "yellow", "green", "darkgreen"))(length(ndvi_breaks) - 1)
+  ndvi_labels <- c("Barren/Urban areas", "Shrubs/Grasslands", "Crops/Bushes", "Dense Forest")
+  
+  # Process files with temporal compositing
+  for (i in seq_along(ndvi_files)) {
+    current_date <- dates[i]
+    
+    # Read current raster
+    current_raster <- raster(ndvi_files[i])
+    
+    # Calculate coverage
+    current_coverage <- calculate_coverage(current_raster)
+    coverage_report$Coverage[i] <- current_coverage
+    
+    # If coverage is too low, create temporal composite
+    if (current_coverage < min_coverage) {
+      # Get window of files centered on current date
+      start_idx <- max(1, i - floor(temporal_window/2))
+      end_idx <- min(length(ndvi_files), i + floor(temporal_window/2))
+      window_files <- ndvi_files[start_idx:end_idx]
+      
+      # Create composite
+      window_rasters <- lapply(window_files, raster)
+      composite_raster <- create_temporal_composite(window_rasters)
+      
+      # Update which dates were used in composite
+      coverage_report$UsedInComposite[start_idx:end_idx] <- TRUE
+      
+      # Use composite for visualization
+      ndvi_layer <- composite_raster
+    } else {
+      ndvi_layer <- current_raster
+    }
+    
+    # Crop and mask
+    ndvi_cropped <- crop(ndvi_layer, nigeria_shape)
+    ndvi_masked <- mask(ndvi_cropped, nigeria_shape)
+    
+    # Transform state boundaries
+    nigeria_states_transformed <- st_transform(nigeria_states, crs = crs(ndvi_masked))
+    
+    # Create output filename
+    output_file <- file.path(output_dir, paste0("ndvi_", current_date, ".png"))
+    
+    # Create plot
+    png(filename = output_file, 
+        width = 1900, height = 1200,
+        res = 100)
+    
+    par(mar = c(6, 6, 4, 6))
+    
+    # Simple title with dash-separated date
+    title_text <- paste("Temporal Analysis of Nigeria Land Use on", current_date)
+    
+    plot(ndvi_masked,
+         main = title_text,
+         col = ndvi_colors,
+         breaks = ndvi_breaks,
+         ylab = "Latitude",
+         xlab = "Longitude",
+         key = NULL,
+         lwd = 2,
+         cex.lab = 2.5,
+         cex.main = 2.5)
+    
+    # Add state boundaries
+    plot(st_geometry(nigeria_states_transformed), 
+         add = TRUE, 
+         border = "black", 
+         lwd = 1)
+    
+    # Add axis and legend
+    axis(side = 1, at = ndvi_breaks[-1], labels = round(ndvi_breaks[-1], 2))
+    axis(side = 2)
+    
+    legend("bottomright",
+           legend = ndvi_labels,
+           fill = ndvi_colors,
+           title = "Class",
+           bty = "n",
+           cex = 2.0)
+    
+    dev.off()
+    
+    cat(sprintf("Created plot for %s (Coverage: %.1f%%)\n", current_date, current_coverage))
+  }
+  
+  # Save coverage report
+  write.csv(coverage_report,
+            file = file.path(report_dir, "coverage_report.csv"),
+            row.names = FALSE)
+  
+  # Create coverage summary plot
+  png(filename = file.path(report_dir, "coverage_summary.png"),
+      width = 1200, height = 800)
+  
+  plot(as.Date(coverage_report$Date),
+       coverage_report$Coverage,
+       type = "b",
+       main = "NDVI Coverage Over Time",
+       xlab = "Date",
+       ylab = "Coverage (%)",
+       ylim = c(0, 100))
+  
+  abline(h = min_coverage, col = "red", lty = 2)
+  text(par("usr")[1],
+       min_coverage,
+       sprintf("Minimum Coverage (%.0f%%)", min_coverage),
+       pos = 4,
+       col = "red")
+  
+  dev.off()
+}
+
+# Usage example
+ndvi_dir <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine/nigeria-ndvi/2021"
+output_dir <- "ndvi21_nigeria_composite"
+
+create_ndvi_visualizations(
+  ndvi_dir = ndvi_dir,
+  output_dir = output_dir,
+  temporal_window = 5,
+  min_coverage = 90
+)
+
+
+```
+
+
+
+
+
+
+```{r}
+
+# NEW TESTING FOR CONUS
+
+library(ggplot2)
+library(raster)
+library(viridis)
+library(gridExtra)
+library(sf)
+library(tigris)
+library(dplyr)
+
+# Function to calculate coverage statistics
+calculate_coverage <- function(raster_data) {
+  total_cells <- ncell(raster_data)
+  na_cells <- sum(is.na(getValues(raster_data)))
+  coverage_percent <- ((total_cells - na_cells) / total_cells) * 100
+  return(coverage_percent)
+}
+
+# Enhanced temporal composite function with edge case handling
+create_temporal_composite <- function(raster_list, window_size = 3, current_index = NULL) {
+  n_files <- length(raster_list)
+  
+  if (n_files < window_size) {
+    # If we have fewer files than window size, use all available
+    composite_rasters <- raster_list
+  } else if (is.null(current_index)) {
+    # If no index specified, use all in window
+    composite_rasters <- raster_list[1:min(window_size, n_files)]
+  } else if (current_index <= floor(window_size/2)) {
+    # For early dates: use forward-looking window
+    end_idx <- min(window_size, n_files)
+    composite_rasters <- raster_list[1:end_idx]
+  } else if (current_index > n_files - floor(window_size/2)) {
+    # For late dates: use backward-looking window
+    start_idx <- max(1, n_files - window_size + 1)
+    composite_rasters <- raster_list[start_idx:n_files]
+  } else {
+    # For middle dates: use centered window
+    half_window <- floor(window_size/2)
+    start_idx <- max(1, current_index - half_window)
+    end_idx <- min(n_files, current_index + half_window)
+    composite_rasters <- raster_list[start_idx:end_idx]
+  }
+  
+  # Stack the rasters and calculate mean
+  raster_stack <- stack(composite_rasters)
+  composite <- calc(raster_stack, fun = function(x) mean(x, na.rm = TRUE))
+  
+  return(composite)
+}
+
+# Enhanced NDVI visualization function for CONUS
+create_conus_ndvi_visualizations <- function(ndvi_dir, output_dir, temporal_window = 3, min_coverage = 70) {
+  # Create output directory if it doesn't exist
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir)
+  }
+  
+  # Create directory for coverage reports
+  report_dir <- file.path(output_dir, "coverage_reports")
+  if (!dir.exists(report_dir)) {
+    dir.create(report_dir)
+  }
+  
+  # Load state boundaries
+  states_sf <- states(cb = TRUE, resolution = "20m", year = 2021) %>%
+    dplyr::filter(!STUSPS %in% c("AK", "HI", "PR"))
+  
+  # Get list of NDVI files
+  ndvi_files <- list.files(ndvi_dir, pattern = "\\.tif$", full.names = TRUE)
+  
+  # Sort files by date
+  dates <- sapply(ndvi_files, function(x) {
+    date <- sub(".*([0-9]{4}-[0-9]{2}-[0-9]{2}).*", "\\1", x)
+    return(date)
+  })
+  ndvi_files <- ndvi_files[order(dates)]
+  dates <- sort(dates)
+  
+  # Initialize coverage report
+  coverage_report <- data.frame(
+    Date = dates,
+    Coverage = numeric(length(dates)),
+    UsedInComposite = logical(length(dates))
+  )
+  
+  # Define NDVI classification parameters
+  ndvi_breaks <- c(-1, -0.1, 0.2, 0.5, 1)
+  ndvi_colors <- colorRampPalette(c("pink", "yellow", "green", "darkgreen"))(length(ndvi_breaks) - 1)
+  ndvi_labels <- c("Barren/Urban areas", "Shrubs/Grasslands", "Crops/Bushes", "Dense Forest")
+  
+  # Process files with temporal compositing
+  for (i in seq_along(ndvi_files)) {
+    current_date <- dates[i]
+    
+    # Read current raster
+    current_raster <- raster(ndvi_files[i])
+    
+    # Calculate coverage
+    current_coverage <- calculate_coverage(current_raster)
+    coverage_report$Coverage[i] <- current_coverage
+    
+    # If coverage is too low, create temporal composite
+    if (current_coverage < min_coverage) {
+      # Determine window indices based on position in time series
+      if (i <= floor(temporal_window/2)) {
+        # Early dates: use forward-looking window
+        end_idx <- min(temporal_window, length(ndvi_files))
+        start_idx <- 1
+        window_files <- ndvi_files[start_idx:end_idx]
+        coverage_report$UsedInComposite[start_idx:end_idx] <- TRUE
+      } else if (i > length(ndvi_files) - floor(temporal_window/2)) {
+        # Late dates: use backward-looking window
+        start_idx <- max(1, length(ndvi_files) - temporal_window + 1)
+        end_idx <- length(ndvi_files)
+        window_files <- ndvi_files[start_idx:end_idx]
+        coverage_report$UsedInComposite[start_idx:end_idx] <- TRUE
+      } else {
+        # Middle dates: use centered window
+        start_idx <- max(1, i - floor(temporal_window/2))
+        end_idx <- min(length(ndvi_files), i + floor(temporal_window/2))
+        window_files <- ndvi_files[start_idx:end_idx]
+        coverage_report$UsedInComposite[start_idx:end_idx] <- TRUE
+      }
+      
+      # Create composite
+      window_rasters <- lapply(window_files, raster)
+      ndvi_layer <- create_temporal_composite(window_rasters, temporal_window, i)
+    } else {
+      ndvi_layer <- current_raster
+    }
+    
+    # Transform state boundaries to match raster CRS
+    states_sf_transformed <- st_transform(states_sf, crs = st_crs(ndvi_layer))
+    
+    # Create output filename
+    output_file <- file.path(output_dir, paste0("ndvi_", current_date, ".png"))
+    
+    # Create plot
+    png(filename = output_file,
+        width = 1900, height = 1200,
+        res = 100)
+    
+    par(mar = c(6, 6, 4, 6))
+    
+    plot(ndvi_layer,
+         main = paste("Temporal Analysis of CONUS Land Use on", current_date),
+         col = ndvi_colors,
+         breaks = ndvi_breaks,
+         ylab = "Latitude",
+         xlab = "Longitude",
+         key = NULL,
+         lwd = 2,
+         cex.lab = 2.5,
+         cex.main = 2.5)
+    
+    # Add state boundaries
+    plot(st_geometry(states_sf_transformed),
+         add = TRUE,
+         border = "black",
+         lwd = 1)
+    
+    # Add axis and legend
+    axis(side = 1, at = ndvi_breaks[-1], labels = round(ndvi_breaks[-1], 2))
+    axis(side = 2)
+    
+    legend("bottomright",
+           legend = ndvi_labels,
+           fill = ndvi_colors,
+           title = "Class",
+           bty = "n",
+           cex = 2.0)
+    
+    dev.off()
+    
+    cat(sprintf("Created plot for %s (Coverage: %.1f%%)\n", current_date, current_coverage))
+  }
+  
+  # Save coverage report
+  write.csv(coverage_report,
+            file = file.path(report_dir, "coverage_report.csv"),
+            row.names = FALSE)
+  
+  # Create coverage summary plot
+  png(filename = file.path(report_dir, "coverage_summary.png"),
+      width = 1200, height = 800)
+  
+  plot(as.Date(coverage_report$Date),
+       coverage_report$Coverage,
+       type = "b",
+       main = "NDVI Coverage Over Time",
+       xlab = "Date",
+       ylab = "Coverage (%)",
+       ylim = c(0, 100))
+  
+  abline(h = min_coverage, col = "red", lty = 2)
+  text(par("usr")[1],
+       min_coverage,
+       sprintf("Minimum Coverage (%.0f%%)", min_coverage),
+       pos = 4,
+       col = "red")
+  
+  dev.off()
+}
+
+# Usage example
+ndvi_dir <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine2/conus21_cropped"
+output_dir <- "ndvi_conus21-croppped"
+
+create_conus_ndvi_visualizations(
+  ndvi_dir = ndvi_dir,
+  output_dir = output_dir,
+  temporal_window = 3,  # Will use 3 time points for compositing
+  min_coverage = 80     # Minimum coverage threshold (%)
+)
+
+
+```
+
+
+
+
+
+
+
+
+
+```{r}
+
+# terra2 for conus
+
+# Load required libraries
+library(terra)
+library(ggplot2)
+library(viridis)
+library(sf)
+library(tigris)
+library(dplyr)
+
+# Function to calculate coverage statistics
+calculate_coverage <- function(raster_data) {
+  total_cells <- ncell(raster_data)
+  na_cells <- sum(is.na(values(raster_data)))
+  coverage_percent <- ((total_cells - na_cells) / total_cells) * 100
+  return(coverage_percent)
+}
+
+# Enhanced temporal composite function with edge case handling
+create_temporal_composite <- function(raster_list, window_size = 3, current_index = NULL) {
+  n_files <- length(raster_list)
+  
+  if (n_files < window_size) {
+    composite_rasters <- raster_list
+  } else if (is.null(current_index)) {
+    composite_rasters <- raster_list[1:min(window_size, n_files)]
+  } else if (current_index <= floor(window_size/2)) {
+    end_idx <- min(window_size, n_files)
+    composite_rasters <- raster_list[1:end_idx]
+  } else if (current_index > n_files - floor(window_size/2)) {
+    start_idx <- max(1, n_files - window_size + 1)
+    composite_rasters <- raster_list[start_idx:n_files]
+  } else {
+    half_window <- floor(window_size/2)
+    start_idx <- max(1, current_index - half_window)
+    end_idx <- min(n_files, current_index + half_window)
+    composite_rasters <- raster_list[start_idx:end_idx]
+  }
+  
+  # Stack the rasters and calculate mean
+  raster_stack <- rast(composite_rasters)
+  composite <- app(raster_stack, fun = mean, na.rm = TRUE)
+  
+  return(composite)
+}
+
+# Enhanced NDVI visualization function for CONUS using `terra`
+create_conus_ndvi_visualizations <- function(ndvi_dir, output_dir, temporal_window = 3, min_coverage = 70) {
+  # Create output and coverage report directories
+  if (!dir.exists(output_dir)) dir.create(output_dir)
+  report_dir <- file.path(output_dir, "coverage_reports")
+  if (!dir.exists(report_dir)) dir.create(report_dir)
+  
+  # Load state boundaries and cache transformed boundaries
+  states_sf <- states(cb = TRUE, resolution = "20m", year = 2021) %>%
+    dplyr::filter(!STUSPS %in% c("AK", "HI", "PR"))
+  
+  # Cache transformed state boundaries to match the NDVI rasters' CRS once
+  ndvi_sample <- rast(list.files(ndvi_dir, pattern = "\\.tif$", full.names = TRUE)[1])
+  states_sf_transformed <- st_transform(states_sf, crs = crs(ndvi_sample))
+  
+  # Get list of NDVI files and sort by date
+  ndvi_files <- list.files(ndvi_dir, pattern = "\\.tif$", full.names = TRUE)
+  dates <- sapply(ndvi_files, function(x) {
+    date <- sub(".*([0-9]{4}-[0-9]{2}-[0-9]{2}).*", "\\1", x)
+    return(date)
+  })
+  ndvi_files <- ndvi_files[order(dates)]
+  dates <- sort(dates)
+  
+  # Initialize coverage report
+  coverage_report <- data.frame(
+    Date = dates,
+    Coverage = numeric(length(dates)),
+    UsedInComposite = logical(length(dates))
+  )
+  
+  # Define NDVI classification parameters
+  ndvi_breaks <- c(-1, -0.1, 0.2, 0.5, 1)
+  ndvi_colors <- colorRampPalette(c("pink", "yellow", "green", "darkgreen"))(length(ndvi_breaks) - 1)
+  ndvi_labels <- c("Barren/Urban areas", "Shrubs/Grasslands", "Crops/Bushes", "Dense Forest")
+  
+  # Process files with temporal compositing
+  for (i in seq_along(ndvi_files)) {
+    current_date <- dates[i]
+    
+    # Read current raster
+    current_raster <- rast(ndvi_files[i])
+    
+    # Calculate coverage
+    current_coverage <- calculate_coverage(current_raster)
+    coverage_report$Coverage[i] <- current_coverage
+    
+    # If coverage is too low, create temporal composite
+    if (current_coverage < min_coverage) {
+      start_idx <- max(1, i - floor(temporal_window/2))
+      end_idx <- min(length(ndvi_files), i + floor(temporal_window/2))
+      window_files <- ndvi_files[start_idx:end_idx]
+      window_rasters <- lapply(window_files, rast)
+      ndvi_layer <- create_temporal_composite(window_rasters, temporal_window, i)
+      coverage_report$UsedInComposite[start_idx:end_idx] <- TRUE
+    } else {
+      ndvi_layer <- current_raster
+    }
+    
+    # Create output filename
+    output_file <- file.path(output_dir, paste0("ndvi_", current_date, ".png"))
+    
+    # Create plot
+    png(filename = output_file, width = 2300, height = 1400, res = 300)
+    par(mar = c(6, 9, 4, 6))
+    
+    plot(ndvi_layer, col = ndvi_colors, breaks = ndvi_breaks,
+     main = paste("Temporal Analysis of CONUS Land Use on", current_date),
+     ylab = "Latitude", xlab = "Longitude", legend = FALSE,
+     cex.main = 1.5,         # Increase title size
+     cex.lab = 1.0,          # Increase axis label size
+     cex.axis = 1.0)         # Increase axis tick label size
+    
+    # Add transformed state boundaries
+    plot(st_geometry(states_sf_transformed), add = TRUE, border = "black", lwd = 1)
+    
+    # Add legend
+    legend("bottomright", legend = ndvi_labels, fill = ndvi_colors, title = "Class", bty = "n", cex = 0.6)
+    dev.off()
+    
+    cat(sprintf("Created plot for %s (Coverage: %.1f%%)\n", current_date, current_coverage))
+  }
+  
+  # Save coverage report
+  write.csv(coverage_report, file = file.path(report_dir, "coverage_report.csv"), row.names = FALSE)
+}
+
+# Usage example
+ndvi_dir <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine2/conus21_cropped"
+output_dir <- "ndvi_conus21-cropped-terra2"
+
+create_conus_ndvi_visualizations(
+  ndvi_dir = ndvi_dir,
+  output_dir = output_dir,
+  temporal_window = 2,  # Use 3 time points for compositing
+  min_coverage = 80     # Minimum coverage threshold (%)
+)
+
+
+
+```
+
+
+
+```{r}
+
+# NIgeria with terra
+
+# Load required libraries
+library(terra)
+library(ggplot2)
+library(viridis)
+library(sf)
+library(rnaturalearth)
+library(dplyr)
+
+# Function to calculate coverage statistics
+calculate_coverage <- function(raster_data) {
+  total_cells <- ncell(raster_data)
+  na_cells <- sum(is.na(values(raster_data)))
+  coverage_percent <- ((total_cells - na_cells) / total_cells) * 100
+  return(coverage_percent)
+}
+
+# Enhanced temporal composite function with edge case handling
+create_temporal_composite <- function(raster_list, window_size = 3, current_index = NULL) {
+  n_files <- length(raster_list)
+  
+  if (n_files < window_size) {
+    composite_rasters <- raster_list
+  } else if (is.null(current_index)) {
+    composite_rasters <- raster_list[1:min(window_size, n_files)]
+  } else if (current_index <= floor(window_size/2)) {
+    end_idx <- min(window_size, n_files)
+    composite_rasters <- raster_list[1:end_idx]
+  } else if (current_index > n_files - floor(window_size/2)) {
+    start_idx <- max(1, n_files - window_size + 1)
+    composite_rasters <- raster_list[start_idx:n_files]
+  } else {
+    half_window <- floor(window_size/2)
+    start_idx <- max(1, current_index - half_window)
+    end_idx <- min(n_files, current_index + half_window)
+    composite_rasters <- raster_list[start_idx:end_idx]
+  }
+  
+  # Stack the rasters and calculate mean
+  raster_stack <- rast(composite_rasters)
+  composite <- app(raster_stack, fun = mean, na.rm = TRUE)
+  
+  return(composite)
+}
+
+# Enhanced NDVI visualization function for Nigeria using terra
+create_nigeria_ndvi_visualizations <- function(ndvi_dir, output_dir, temporal_window = 3, min_coverage = 70) {
+  # Create output and coverage report directories
+  if (!dir.exists(output_dir)) dir.create(output_dir)
+  report_dir <- file.path(output_dir, "coverage_reports")
+  if (!dir.exists(report_dir)) dir.create(report_dir)
+  
+  # Load Nigeria boundaries using rnaturalearth
+  nigeria_sf <- ne_countries(scale = "medium", country = "Nigeria", returnclass = "sf")
+  nigeria_states <- ne_states(country = "Nigeria", returnclass = "sf")
+  
+  # Get list of NDVI files and sort by date
+  ndvi_files <- list.files(ndvi_dir, pattern = "\\.tif$", full.names = TRUE)
+  dates <- sapply(ndvi_files, function(x) {
+    base_name <- basename(x)
+    date_str <- sub("^([0-9]{4}_[0-9]{2}_[0-9]{2}).*", "\\1", base_name)
+    gsub("_", "-", date_str)
+  })
+  ndvi_files <- ndvi_files[order(dates)]
+  dates <- sort(dates)
+  
+  # Initialize coverage report
+  coverage_report <- data.frame(
+    Date = dates,
+    Coverage = numeric(length(dates)),
+    UsedInComposite = logical(length(dates))
+  )
+  
+  # Define NDVI classification parameters
+  ndvi_breaks <- c(-1, -0.1, 0.2, 0.5, 1)
+  ndvi_colors <- colorRampPalette(c("pink", "yellow", "green", "darkgreen"))(length(ndvi_breaks) - 1)
+  ndvi_labels <- c("Barren/Urban areas", "Shrubs/Grasslands", "Crops/Bushes", "Dense Forest")
+  
+  # Cache transformed boundaries - get CRS from first raster
+  ndvi_sample <- rast(ndvi_files[1])
+  nigeria_sf_transformed <- st_transform(nigeria_sf, crs = crs(ndvi_sample))
+  nigeria_states_transformed <- st_transform(nigeria_states, crs = crs(ndvi_sample))
+  
+  # Process files with temporal compositing
+  for (i in seq_along(ndvi_files)) {
+    current_date <- dates[i]
+    
+    # Read current raster
+    current_raster <- rast(ndvi_files[i])
+    
+    # Calculate coverage
+    current_coverage <- calculate_coverage(current_raster)
+    coverage_report$Coverage[i] <- current_coverage
+    
+    # If coverage is too low, create temporal composite
+    if (current_coverage < min_coverage) {
+      start_idx <- max(1, i - floor(temporal_window/2))
+      end_idx <- min(length(ndvi_files), i + floor(temporal_window/2))
+      window_files <- ndvi_files[start_idx:end_idx]
+      window_rasters <- lapply(window_files, rast)
+      ndvi_layer <- create_temporal_composite(window_rasters, temporal_window, i)
+      coverage_report$UsedInComposite[start_idx:end_idx] <- TRUE
+    } else {
+      ndvi_layer <- current_raster
+    }
+    
+    # Crop and mask the raster to Nigeria boundaries
+    ndvi_cropped <- crop(ndvi_layer, nigeria_sf_transformed)
+    ndvi_masked <- mask(ndvi_cropped, nigeria_sf_transformed)
+    
+    # Create output filename
+    output_file <- file.path(output_dir, paste0("ndvi_", current_date, ".png"))
+    
+    # Create plot
+    png(filename = output_file, width = 2500, height = 1800, res = 300)
+    par(mar = c(7, 9, 4, 4)) 
+    
+    plot(ndvi_masked, 
+         col = ndvi_colors, 
+         breaks = ndvi_breaks,
+         main = paste("Temporal Analysis of Nigeria Land Use on", current_date),
+         ylab = "Latitude", 
+         xlab = "Longitude", 
+         legend = FALSE,
+         cex.main = 1.5,    # Increase title size
+         cex.lab = 1.2,     # Increase axis label size
+         cex.axis = 1.2)    # Increase axis tick label size
+    
+    # Add state boundaries
+    plot(st_geometry(nigeria_states_transformed), add = TRUE, border = "black", lwd = 1)
+    
+    # Add legend
+    legend( 
+           "bottomright", 
+           legend = ndvi_labels, 
+           fill = ndvi_colors, 
+           title = "Class", 
+           bty = "n", 
+           cex = 0.8, inset = c(0.15, 0))
+    
+    dev.off()
+    
+    cat(sprintf("Created plot for %s (Coverage: %.1f%%)\n", current_date, current_coverage))
+  }
+  
+  # Save coverage report
+  write.csv(coverage_report, file = file.path(report_dir, "coverage_report.csv"), row.names = FALSE)
+  
+  # Create coverage summary plot
+  png(filename = file.path(report_dir, "coverage_summary.png"),
+      width = 2300, height = 1400, res = 300)
+  
+  plot(as.Date(dates),
+       coverage_report$Coverage,
+       type = "b",
+       main = "NDVI Coverage Over Time",
+       xlab = "Date",
+       ylab = "Coverage (%)",
+       ylim = c(0, 100),
+       cex.main = 1.5,
+       cex.lab = 1.2,
+       cex.axis = 1.0)
+  
+  abline(h = min_coverage, col = "red", lty = 2)
+  text(as.Date(dates[1]),
+       min_coverage,
+       sprintf("Minimum Coverage (%.0f%%)", min_coverage),
+       pos = 4,
+       col = "red",
+       cex = 1.2)
+  
+  dev.off()
+}
+
+# Usage example
+ndvi_dir <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine/nigeria-ndvi/2021"
+output_dir <- "ndvi21_nigeria_composite_terra"
+
+create_nigeria_ndvi_visualizations(
+  ndvi_dir = ndvi_dir,
+  output_dir = output_dir,
+  temporal_window = 3,  # Use 5 time points for compositing
+  min_coverage = 90     # Minimum coverage threshold (%)
+)
+
+
+
+```
+
+
+
+
+
+```{r}
+
+# terra for conus with extent handling
+
+# Load required libraries
+library(terra)
+library(ggplot2)
+library(viridis)
+library(sf)
+library(tigris)
+library(dplyr)
+
+# Function to calculate coverage statistics
+calculate_coverage <- function(raster_data) {
+  total_cells <- ncell(raster_data)
+  na_cells <- sum(is.na(values(raster_data)))
+  coverage_percent <- ((total_cells - na_cells) / total_cells) * 100
+  return(coverage_percent)
+}
+
+# Diagnostic function to check raster properties
+check_raster_properties <- function(ndvi_files) {
+  properties <- lapply(ndvi_files, function(f) {
+    r <- rast(f)
+    list(
+      file = basename(f),
+      extent = ext(r),
+      crs = crs(r),
+      dims = dim(r)
+    )
+  })
+  
+  ref <- properties[[1]]
+  mismatches <- lapply(properties[-1], function(p) {
+    if (!identical(p$extent, ref$extent) || 
+        !identical(p$crs, ref$crs) || 
+        !identical(p$dims, ref$dims)) {
+      return(p$file)
+    }
+    return(NULL)
+  })
+  
+  mismatches <- Filter(Negate(is.null), mismatches)
+  
+  if (length(mismatches) > 0) {
+    cat("Found mismatches in the following files:\n")
+    print(mismatches)
+    cat("\nReference properties:\n")
+    print(ref)
+  }
+  
+  return(properties)
+}
+
+# Enhanced temporal composite function with error checking
+create_temporal_composite <- function(raster_list, window_size = 3, current_index = NULL) {
+  n_files <- length(raster_list)
+  
+  # Get reference extent from first raster
+  ref_extent <- ext(raster_list[[1]])
+  ref_crs <- crs(raster_list[[1]])
+  
+  # Check and align extents
+  aligned_rasters <- lapply(raster_list, function(r) {
+    if (!identical(ext(r), ref_extent) || !identical(crs(r), ref_crs)) {
+      cat(sprintf("Warning: Raster extent/CRS mismatch detected. Attempting to align...\n"))
+      cat(sprintf("Reference extent: %s\n", paste(as.vector(ref_extent), collapse=", ")))
+      cat(sprintf("Current extent: %s\n", paste(as.vector(ext(r)), collapse=", ")))
+      
+      # Try to project and align
+      r <- project(r, ref_crs)
+      r <- crop(r, ref_extent)
+      r <- extend(r, ref_extent)
+    }
+    return(r)
+  })
+  
+  # Select temporal window
+  if (n_files < window_size) {
+    composite_rasters <- aligned_rasters
+  } else if (is.null(current_index)) {
+    composite_rasters <- aligned_rasters[1:min(window_size, n_files)]
+  } else if (current_index <= floor(window_size/2)) {
+    end_idx <- min(window_size, n_files)
+    composite_rasters <- aligned_rasters[1:end_idx]
+  } else if (current_index > n_files - floor(window_size/2)) {
+    start_idx <- max(1, n_files - window_size + 1)
+    composite_rasters <- aligned_rasters[start_idx:n_files]
+  } else {
+    half_window <- floor(window_size/2)
+    start_idx <- max(1, current_index - half_window)
+    end_idx <- min(n_files, current_index + half_window)
+    composite_rasters <- aligned_rasters[start_idx:end_idx]
+  }
+  
+  # Stack and calculate mean with error handling
+  tryCatch({
+    raster_stack <- rast(composite_rasters)
+    composite <- app(raster_stack, fun = mean, na.rm = TRUE)
+    return(composite)
+  }, error = function(e) {
+    cat(sprintf("Error in composite creation: %s\n", e$message))
+    return(NULL)
+  })
+}
+
+# Enhanced NDVI visualization function
+create_conus_ndvi_visualizations <- function(ndvi_dir, output_dir, temporal_window = 3, min_coverage = 70) {
+  # Create output directories
+  if (!dir.exists(output_dir)) dir.create(output_dir)
+  report_dir <- file.path(output_dir, "coverage_reports")
+  if (!dir.exists(report_dir)) dir.create(report_dir)
+  
+  # Load and prepare state boundaries
+  states_sf <- states(cb = TRUE, resolution = "20m", year = 2021) %>%
+    dplyr::filter(!STUSPS %in% c("AK", "HI", "PR"))
+  
+  # Get and sort NDVI files
+  ndvi_files <- list.files(ndvi_dir, pattern = "\\.tif$", full.names = TRUE)
+  dates <- sapply(ndvi_files, function(x) {
+    sub(".*([0-9]{4}-[0-9]{2}-[0-9]{2}).*", "\\1", x)
+  })
+  ndvi_files <- ndvi_files[order(dates)]
+  dates <- sort(dates)
+  
+  # Check raster properties before processing
+  cat("Checking raster properties...\n")
+  properties <- check_raster_properties(ndvi_files)
+  
+  # Initialize coverage report
+  coverage_report <- data.frame(
+    Date = dates,
+    Coverage = numeric(length(dates)),
+    UsedInComposite = logical(length(dates))
+  )
+  
+  # Cache transformed state boundaries
+  ndvi_sample <- rast(ndvi_files[1])
+  states_sf_transformed <- st_transform(states_sf, crs = crs(ndvi_sample))
+  
+  # Define NDVI classification
+  ndvi_breaks <- c(-1, -0.1, 0.2, 0.5, 1)
+  ndvi_colors <- colorRampPalette(c("pink", "yellow", "green", "darkgreen"))(length(ndvi_breaks) - 1)
+  ndvi_labels <- c("Barren/Urban areas", "Shrubs/Grasslands", "Crops/Bushes", "Dense Forest")
+  
+  # Process files
+  for (i in seq_along(ndvi_files)) {
+    current_date <- dates[i]
+    cat(sprintf("\nProcessing %s...\n", current_date))
+    
+    tryCatch({
+      current_raster <- rast(ndvi_files[i])
+      current_coverage <- calculate_coverage(current_raster)
+      coverage_report$Coverage[i] <- current_coverage
+      
+      if (current_coverage < min_coverage) {
+        cat(sprintf("Coverage below threshold (%.1f%%). Creating temporal composite...\n", current_coverage))
+        start_idx <- max(1, i - floor(temporal_window/2))
+        end_idx <- min(length(ndvi_files), i + floor(temporal_window/2))
+        window_files <- ndvi_files[start_idx:end_idx]
+        window_rasters <- lapply(window_files, rast)
+        ndvi_layer <- create_temporal_composite(window_rasters, temporal_window, i)
+        coverage_report$UsedInComposite[start_idx:end_idx] <- TRUE
+      } else {
+        ndvi_layer <- current_raster
+      }
+      
+      output_file <- file.path(output_dir, paste0("ndvi_", current_date, ".png"))
+      
+      png(filename = output_file, width = 2300, height = 1400, res = 300)
+      par(mar = c(6, 9, 4, 6))
+      
+      plot(ndvi_layer, col = ndvi_colors, breaks = ndvi_breaks,
+           main = paste("Temporal Analysis of CONUS Land Use on", current_date),
+           ylab = "Latitude", xlab = "Longitude", legend = FALSE,
+           cex.main = 1.5, cex.lab = 1.0, cex.axis = 1.0)
+      
+      plot(st_geometry(states_sf_transformed), add = TRUE, border = "black", lwd = 1)
+      legend("bottomright", legend = ndvi_labels, fill = ndvi_colors, 
+             title = "Land Use", bty = "n", cex = 0.8)
+      
+      dev.off()
+      cat(sprintf("Created plot for %s (Coverage: %.1f%%)\n", current_date, current_coverage))
+      
+    }, error = function(e) {
+      cat(sprintf("Error processing %s: %s\n", current_date, e$message))
+    })
+  }
+  
+  write.csv(coverage_report, file = file.path(report_dir, "coverage_report.csv"), row.names = FALSE)
+}
+
+# Usage
+ndvi_dir <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine2/conus21_cropped"
+output_dir <- "ndvi_conus21-cropped-terra2-1"
+
+create_conus_ndvi_visualizations(
+  ndvi_dir = ndvi_dir,
+  output_dir = output_dir,
+  temporal_window = 2,
+  min_coverage = 80
+)
+
+
+```
+
+
+
+
+
+
+
+
+```{r}
+
+# CROPPING RASTERS- memory intensive
+
+
+library(terra)
+library(tigris)
+library(sf)
+library(dplyr)
+
+# Load CONUS boundaries
+states_sf <- states(cb = TRUE, resolution = "20m", year = 2021) %>%
+  filter(!STUSPS %in% c("AK", "HI", "PR"))  # Exclude Alaska, Hawaii, Puerto Rico
+
+# Convert to `terra` format
+states_sf <- st_transform(states_sf, 4326)  # Ensure CRS matches TIFFs
+conus_boundary <- vect(states_sf)  # Convert sf object to SpatVector
+
+# Input and output directories
+input_dir <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine2/conus21"
+output_dir <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine2/conus21_cropped"
+
+# Ensure output directory exists
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+}
+
+# Process TIFFs
+tif_files <- list.files(input_dir, pattern = "\\.tif$", full.names = TRUE)
+
+for (tif in tif_files) {
+  # Load raster
+  r <- rast(tif)
+  
+  # Crop to CONUS boundary
+  cropped_r <- crop(r, conus_boundary)
+  
+  # Write output
+  output_file <- file.path(output_dir, basename(tif))
+  writeRaster(cropped_r, output_file, overwrite = TRUE)
+  
+  print(paste("Cropped:", tif, "->", output_file))
+}
+
+print("Cropping complete!")
+
+
+
+```
+
+
+
+
+
+
+```{r}
+# used one 
+
+library(terra)
+library(tigris)
+library(sf)
+library(dplyr)
+
+# Load CONUS boundaries
+states_sf <- states(cb = TRUE, resolution = "20m", year = 2021) %>%
+  filter(!STUSPS %in% c("AK", "HI", "PR"))  # Exclude AK, HI, PR
+
+# Convert to `terra` format
+states_sf <- st_transform(states_sf, 4326)  # Ensure CRS matches TIFFs
+conus_boundary <- vect(states_sf)  # Convert sf object to SpatVector
+
+# Directories
+input_dir <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine2/conus21"
+output_dir <- "/home/oda10/CSE_MSE_RXF131/staging/casf/Gengine2/conus21_cropped"
+
+# Ensure output directory exists
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+}
+
+# Get list of TIFF files
+tif_files <- list.files(input_dir, pattern = "\\.tif$", full.names = TRUE)
+
+# Function to process each file safely
+process_tif <- function(tif) {
+  tryCatch({
+    print(paste("Processing:", tif))
+    
+    # Load raster lazily (avoids loading entire file into memory)
+    r <- rast(tif)
+    
+    # Crop and Mask
+    cropped_r <- crop(r, conus_boundary, snap = "out")  # Crop to bounding box
+    masked_r <- mask(cropped_r, conus_boundary)  # Apply exact mask
+    
+    # Write output
+    output_file <- file.path(output_dir, basename(tif))
+    writeRaster(masked_r, output_file, overwrite = TRUE, wopt = list(NAflag = -9999))
+    
+    print(paste("Saved:", output_file))
+    
+    # Remove from memory
+    rm(r, cropped_r, masked_r)
+    gc()  # Force garbage collection
+    
+  }, error = function(e) {
+    print(paste("Error processing:", tif, "->", e$message))
+  })
+}
+
+# Process files one by one
+lapply(tif_files, process_tif)
+
+print("Cropping and masking complete!")
+
+
+```
+

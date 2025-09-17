@@ -1,0 +1,49 @@
+Package: geospatialsuite
+Title: Comprehensive Geospatial Analysis and Advanced Visualization Toolkit
+Version: 0.1.0
+Authors@R: 
+    person("Olatunde", "Akanbi", , "oda10@case.edu", role = c("aut", "cre"))
+Description: A comprehensive toolkit for geospatial analysis featuring 40+ vegetation 
+    indices, advanced raster visualization, universal spatial mapping, water quality
+    analysis, CDL crop analysis, spatial interpolation, temporal analysis, and 
+    terrain analysis. Includes efficient visualization using tidyterra, RStoolbox,
+    and native terra plotting. Designed for agricultural research, environmental
+    monitoring, remote sensing applications, and publication-quality mapping with
+    support for any geographic region and robust error handling.
+License: MIT + file LICENSE
+Depends: 
+    R (>= 3.5.0)
+Imports:
+    dplyr,
+    ggplot2,
+    magrittr,
+    sf,
+    stats,
+    stringr,
+    terra,
+    tools,
+    utils,
+    viridis,
+    grDevices
+Suggests:
+    tidyterra (>= 0.4.0),
+    RStoolbox,
+    rasterVis,
+    raster,
+    leaflet,
+    htmlwidgets,
+    patchwork,
+    gganimate,
+    parallel,
+    gstat,
+    mice,
+    rnaturalearth,
+    tigris,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Config/testthat/edition: 3

@@ -1,0 +1,9 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^dev$
+^LICENSE\.md$
+^doc$
+^Meta$
+^README\.Rmd$
+^cran-comments\.md$
+^CRAN-SUBMISSION$

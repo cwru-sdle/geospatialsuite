@@ -1,0 +1,561 @@
+---
+title: "Advanced Visualization with GeoSpatialSuite"
+author: "GeoSpatialSuite Development Team"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Advanced Visualization with GeoSpatialSuite}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 9,
+  fig.height = 7,
+  warning = FALSE,
+  message = FALSE,
+  eval = FALSE  # Set to FALSE to prevent actual plotting in vignette build
+)
+```
+
+# Advanced Visualization
+
+GeoSpatialSuite provides powerful visualization capabilities with **efficient raster plotting**, **interactive mapping**, and **publication-quality graphics**. The package automatically selects the best available visualization method for optimal performance.
+
+## Loading the Package
+
+```{r}
+library(geospatialsuite)
+```
+
+## Visualization Philosophy
+
+GeoSpatialSuite uses a hierarchical approach to visualization:
+
+1. **tidyterra** (best ggplot2 integration)
+2. **RStoolbox** (excellent for remote sensing)
+3. **rasterVis** (powerful raster visualization)
+4. **terra native** (fastest for exploration)
+
+The package automatically selects the best available method and provides fallbacks when packages are missing.
+
+## Quick Visualization
+
+### One-Line Mapping
+
+```{r}
+# Auto-detects data type and creates appropriate visualization
+quick_map("my_shapefile.shp")
+quick_map(ndvi_raster)
+quick_map(study_points, interactive = TRUE)
+```
+
+### Universal Spatial Mapping
+
+```{r}
+# Works with any spatial data type
+map_result <- create_spatial_map(
+  spatial_data = my_data,
+  fill_variable = "ndvi_mean",
+  color_scheme = "viridis",
+  title = "NDVI Analysis"
+)
+```
+
+## Efficient Raster Visualization
+
+### Fast Raster Plotting
+
+```{r}
+# Automatically selects best method
+plot_raster_fast(
+  raster_data = elevation_raster,
+  title = "Digital Elevation Model",
+  color_scheme = "terrain"
+)
+
+# Force specific method
+plot_raster_fast(
+  raster_data = ndvi_raster,
+  title = "NDVI Analysis", 
+  color_scheme = "ndvi",
+  use_ggplot = TRUE  # Force ggplot output
+)
+```
+
+### RGB Composite Visualization
+
+```{r}
+# True color composite
+plot_rgb_raster(
+  raster_data = landsat_stack,
+  r = 3, g = 2, b = 1,  # True color bands
+  title = "Landsat True Color",
+  stretch = "hist"
+)
+
+# False color composite
+plot_rgb_raster(
+  raster_data = sentinel_stack,
+  r = 4, g = 3, b = 2,  # False color (NIR, Red, Green)
+  title = "False Color Composite",
+  stretch = "perc",
+  quantiles = c(0.02, 0.98)
+)
+```
+
+## Specialized Map Types
+
+### NDVI Maps with Classification
+
+```{r}
+# NDVI map with standard classes
+ndvi_map <- create_ndvi_map(
+  ndvi_data = ndvi_raster,
+  region_boundary = "Iowa",
+  ndvi_classes = "standard",
+  show_histogram = TRUE
+)
+
+# Custom NDVI classification
+custom_ndvi_map <- create_ndvi_map(
+  ndvi_data = ndvi_time_series,
+  time_layer = 5,
+  ndvi_classes = "custom",
+  class_breaks = c(-0.2, 0.1, 0.3, 0.5, 0.7, 1.0),
+  vector_overlay = field_boundaries
+)
+```
+
+### Crop Distribution Maps
+
+```{r}
+# Categorical crop map
+crop_map <- create_crop_map(
+  cdl_data = "cdl_2023.tif",
+  crop_selection = c("corn", "soybeans", "wheat"),
+  region_boundary = "Ohio", 
+  style = "categorical",
+  show_statistics = TRUE
+)
+
+# Crop diversity analysis
+diversity_map <- create_crop_map(
+  cdl_data = cdl_raster,
+  crop_selection = "grains",
+  style = "diversity",
+  aggregation_level = "county"
+)
+```
+
+## Interactive Mapping
+
+### Basic Interactive Maps
+
+```{r}
+# Point data with clustering
+interactive_points <- create_interactive_map(
+  spatial_data = monitoring_stations,
+  fill_variable = "water_quality",
+  popup_vars = c("station_id", "date", "value"),
+  basemap = "terrain",
+  cluster_points = TRUE
+)
+
+# Polygon data with custom popups
+interactive_polygons <- create_interactive_map(
+  spatial_data = watersheds,
+  fill_variable = "avg_precipitation",
+  popup_vars = c("watershed_name", "area_km2", "avg_precipitation"),
+  basemap = "satellite",
+  color_scheme = "viridis"
+)
+```
+
+### Advanced Interactive Features
+
+```{r}
+# Multi-layer interactive map with controls
+advanced_interactive <- create_interactive_map(
+  spatial_data = study_sites,
+  fill_variable = "ndvi_mean",
+  basemap = "osm",
+  layer_control = TRUE,
+  title = "Multi-layer Analysis"
+)
+
+# Save interactive map
+htmlwidgets::saveWidget(
+  advanced_interactive,
+  "interactive_analysis.html"
+)
+```
+
+## Comparison and Composite Maps
+
+### Side-by-Side Comparisons
+
+```{r}
+# Before/after comparison
+comparison_map <- create_comparison_map(
+  data1 = "ndvi_2020.tif",
+  data2 = "ndvi_2023.tif", 
+  comparison_type = "side_by_side",
+  titles = c("2020 NDVI", "2023 NDVI"),
+  region_boundary = "Iowa"
+)
+
+# Difference analysis
+difference_map <- create_comparison_map(
+  data1 = pre_treatment,
+  data2 = post_treatment,
+  comparison_type = "difference",
+  difference_palette = "RdBu"
+)
+```
+
+### Composite Multi-Layer Maps
+
+```{r}
+# Base layer with multiple overlays
+composite_map <- create_composite_map(
+  base_layer = elevation_raster,
+  overlay_layers = list(
+    rivers = river_network,
+    study_sites = field_locations,
+    boundaries = watershed_boundaries
+  ),
+  layer_styles = list(
+    rivers = list(color = "blue", size = 1),
+    study_sites = list(color = "red", size = 3),
+    boundaries = list(color = "black", fill = NA)
+  ),
+  transparency = c(0.8, 0.9, 0.7),
+  title = "Comprehensive Study Area"
+)
+```
+
+## Color Schemes and Styling
+
+### Built-in Color Schemes
+
+```{r}
+# NDVI-specific colors
+ndvi_plot <- plot_raster_fast(
+  ndvi_raster,
+  color_scheme = "ndvi",  # Brown → Yellow → Green
+  title = "NDVI with Vegetation Colors"
+)
+
+# Water index colors  
+water_plot <- plot_raster_fast(
+  water_index,
+  color_scheme = "water",  # Brown → Light Blue → Dark Blue
+  title = "Water Index"
+)
+
+# Terrain colors
+terrain_plot <- plot_raster_fast(
+  elevation_raster,
+  color_scheme = "terrain",  # Standard terrain.colors()
+  title = "Elevation"
+)
+
+# Viridis family
+viridis_plot <- plot_raster_fast(
+  temperature_raster,
+  color_scheme = "viridis",  # Default viridis
+  title = "Temperature"
+)
+
+plasma_plot <- plot_raster_fast(
+  precipitation_raster, 
+  color_scheme = "plasma",  # Plasma variant
+  title = "Precipitation"
+)
+```
+
+### Custom Color Schemes
+
+```{r}
+# Custom breaks and colors
+custom_plot <- create_spatial_map(
+  spatial_data = classified_raster,
+  color_scheme = "categorical",
+  breaks = c(0, 1, 2, 3, 4, 5),
+  labels = c("Water", "Urban", "Forest", "Agriculture", "Barren")
+)
+```
+
+## Animation and Time Series
+
+### NDVI Time Series Animation
+
+```{r}
+# Animated NDVI over time
+ndvi_animation <- create_ndvi_map(
+  ndvi_data = ndvi_time_series_stack,
+  animation = TRUE,
+  region_boundary = "Iowa",
+  output_file = "ndvi_animation.gif"
+)
+```
+
+### Custom Animations
+
+```{r}
+# Create custom time series visualization
+if (requireNamespace("gganimate", quietly = TRUE)) {
+  # Prepare time series data
+  temporal_data <- analyze_temporal_changes(
+    data_list = monthly_ndvi_files,
+    dates = monthly_dates,
+    analysis_type = "statistics"
+  )
+  
+  # Create animated plot (implementation would depend on gganimate)
+}
+```
+
+## Publication-Quality Graphics
+
+### High-Resolution Output
+
+```{r}
+# High-quality static maps
+publication_map <- create_spatial_map(
+  spatial_data = research_data,
+  fill_variable = "yield_kg_ha",
+  color_scheme = "viridis",
+  title = "Crop Yield Analysis",
+  output_file = "publication_figure.png"
+)
+
+# Save with specific parameters
+ggplot2::ggsave(
+  "high_res_map.png",
+  plot = publication_map,
+  width = 12, height = 8,
+  dpi = 300,
+  units = "in"
+)
+```
+
+### Multi-Panel Figures
+
+```{r}
+# Create multiple plots for comparison
+if (requireNamespace("patchwork", quietly = TRUE)) {
+  # Individual plots
+  p1 <- create_ndvi_map(ndvi_spring, title = "Spring NDVI")
+  p2 <- create_ndvi_map(ndvi_summer, title = "Summer NDVI") 
+  p3 <- create_ndvi_map(ndvi_fall, title = "Fall NDVI")
+  p4 <- create_ndvi_map(ndvi_winter, title = "Winter NDVI")
+  
+  # Combine with patchwork
+  seasonal_comparison <- (p1 + p2) / (p3 + p4)
+  
+  ggsave("seasonal_ndvi_comparison.png", seasonal_comparison,
+         width = 16, height = 12, dpi = 300)
+}
+```
+
+## Performance Optimization
+
+### Visualization Performance Tips
+
+```{r}
+# Check available visualization packages
+raster_plot_performance_tips()
+```
+
+### Large Raster Handling
+
+```{r}
+# For very large rasters, use sampling
+large_raster_plot <- plot_raster_fast(
+  raster_data = massive_raster,
+  title = "Large Dataset Visualization",
+  use_ggplot = FALSE  # Use terra native for speed
+)
+
+# Or create overview with resampling
+overview_raster <- terra::aggregate(massive_raster, fact = 10)
+overview_plot <- plot_raster_fast(overview_raster, title = "Dataset Overview")
+```
+
+### Memory-Efficient Plotting
+
+```{r}
+# Avoid data frame conversion for large rasters
+# GeoSpatialSuite automatically handles this, but you can force methods:
+
+# Method 1: tidyterra (most efficient for ggplot)
+if (requireNamespace("tidyterra", quietly = TRUE)) {
+  efficient_plot <- ggplot2::ggplot() +
+    tidyterra::geom_spatraster(data = large_raster) +
+    ggplot2::scale_fill_viridis_c() +
+    ggplot2::theme_minimal()
+}
+
+# Method 2: RStoolbox (excellent for remote sensing)
+if (requireNamespace("RStoolbox", quietly = TRUE)) {
+  rs_plot <- RStoolbox::ggR(large_raster, ggLayer = TRUE) +
+    ggplot2::scale_fill_viridis_c() +
+    ggplot2::theme_minimal()
+}
+
+# Method 3: terra native (fastest)
+terra::plot(large_raster, main = "Fast Native Plot")
+```
+
+## Troubleshooting Visualization
+
+### Common Issues and Solutions
+
+```{r}
+# Issue: Slow plotting with large rasters
+# Solution 1: Use terra native plotting
+terra::plot(huge_raster, main = "Quick Overview")
+
+# Solution 2: Install tidyterra for efficient ggplot
+# install.packages("tidyterra")
+
+# Solution 3: Resample for overview
+quick_overview <- terra::aggregate(huge_raster, fact = 5)
+plot_raster_fast(quick_overview)
+
+# Issue: Missing colors or poor visualization
+# Solution: Check data ranges and apply appropriate color schemes
+summary(terra::values(my_raster))
+plot_raster_fast(my_raster, 
+                color_scheme = "viridis",
+                breaks = seq(min_val, max_val, length.out = 10))
+
+# Issue: Interactive maps not working
+# Solution: Install leaflet and check data projection
+if (!requireNamespace("leaflet", quietly = TRUE)) {
+  install.packages("leaflet")
+}
+
+# Ensure data is in WGS84 for leaflet
+my_data_wgs84 <- sf::st_transform(my_data, crs = 4326)
+interactive_map <- create_interactive_map(my_data_wgs84)
+```
+
+### Memory and Performance Monitoring
+
+```{r}
+# Monitor memory usage
+print(paste("Memory used:", format(object.size(large_raster), units = "Mb")))
+
+# Time different plotting methods
+system.time(terra::plot(test_raster))
+system.time(plot_raster_fast(test_raster, use_ggplot = FALSE))
+system.time(plot_raster_fast(test_raster, use_ggplot = TRUE))
+```
+
+## Advanced Customization
+
+### Custom Plot Functions
+
+```{r}
+# Create custom visualization function
+create_custom_analysis_map <- function(raster_data, vector_overlay = NULL, 
+                                     title = "Custom Analysis") {
+  # Base plot
+  p <- plot_raster_fast(raster_data, color_scheme = "viridis")
+  
+  # Add vector overlay if provided
+  if (!is.null(vector_overlay)) {
+    if (inherits(p, "ggplot")) {
+      p <- p + ggplot2::geom_sf(data = vector_overlay, 
+                               fill = NA, color = "white", size = 1)
+    }
+  }
+  
+  # Add custom styling
+  if (inherits(p, "ggplot")) {
+    p <- p + 
+      ggplot2::labs(title = title) +
+      ggplot2::theme_minimal() +
+      ggplot2::theme(
+        plot.title = ggplot2::element_text(hjust = 0.5, size = 14),
+        legend.position = "bottom"
+      )
+  }
+  
+  return(p)
+}
+
+# Use custom function
+custom_map <- create_custom_analysis_map(
+  raster_data = analysis_result,
+  vector_overlay = study_boundaries,
+  title = "Custom Research Analysis"
+)
+```
+
+### Integration with Other Packages
+
+```{r}
+# Integration with tmap
+if (requireNamespace("tmap", quietly = TRUE)) {
+  # Convert GeoSpatialSuite output for tmap
+  tmap_ready <- process_vector_data(spatial_join_result)
+  
+  tmap::tm_shape(tmap_ready) +
+    tmap::tm_polygons("ndvi_mean", palette = "viridis") +
+    tmap::tm_layout(title = "NDVI Analysis")
+}
+
+# Integration with mapview
+if (requireNamespace("mapview", quietly = TRUE)) {
+  # Quick interactive overview
+  mapview::mapview(analysis_result, col.regions = "viridis")
+}
+```
+
+## Best Practices Summary
+
+### 1. Package Installation Priority
+
+```{r eval=TRUE}
+# Install in this order for best visualization performance:
+recommended_packages <- c(
+  "tidyterra",    # Best ggplot2 integration
+  "RStoolbox",    # Excellent for remote sensing  
+  "leaflet",      # Interactive mapping
+  "patchwork",    # Multi-panel figures
+  "gganimate"     # Animations
+)
+
+# Check which are installed
+installed_status <- sapply(recommended_packages, requireNamespace, quietly = TRUE)
+print(data.frame(Package = recommended_packages, Installed = installed_status))
+```
+
+### 2. Memory Management
+
+- Use `plot_raster_fast()` for automatic method selection
+- Avoid manual data frame conversion for large rasters
+- Use terra native plotting for quick exploration
+- Resample large rasters for overview visualizations
+
+### 3. Output Quality
+
+- Use `dpi = 300` for publication figures
+- Save as PNG for detailed maps, PDF for vector graphics
+- Use appropriate color schemes for data type
+- Include proper legends and titles
+
+### 4. Interactive Maps
+
+- Ensure data is in WGS84 (EPSG:4326) for leaflet
+- Use clustering for point data with many features
+- Provide meaningful popup information
+- Consider data size for web deployment
+
+The visualization capabilities in GeoSpatialSuite provide a complete toolkit for creating professional maps, interactive visualizations, and publication-quality figures with optimized performance for any dataset size.

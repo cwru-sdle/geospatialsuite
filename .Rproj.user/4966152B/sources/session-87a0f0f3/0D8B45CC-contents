@@ -1,0 +1,574 @@
+#' Test all GeoSpatialSuite functions with sample data
+#'
+#' @description
+#' Comprehensive testing function that validates all major package functions
+#' using synthetic test data. Tests NDVI calculation, water indices, mosaicing,
+#' spatial joins, CDL codes, and more.
+#'
+#' @param test_output_dir Directory for test outputs (default: tempdir())
+#' @param comprehensive Run comprehensive tests (slower but more thorough)
+#' @param verbose Print detailed test progress messages
+#'
+#' @return List of test results with success/failure status for each component
+#'
+#' @examples
+#' \dontrun{
+#' # Quick test (essential functions only)
+#' test_results <- test_geospatialsuite_package()
+#'
+#' # Comprehensive test (all functions)
+#' test_results <- test_geospatialsuite_package(comprehensive = TRUE)
+#'
+#' # With custom output directory
+#' test_results <- test_geospatialsuite_package(
+#'   test_output_dir = "~/geospatial_tests",
+#'   comprehensive = TRUE,
+#'   verbose = TRUE
+#' )
+#' }
+#'
+#' @export
+test_geospatialsuite_package <- function(test_output_dir = tempdir(),
+                                         comprehensive = TRUE,
+                                         verbose = FALSE) {
+
+  message("Testing GeoSpatialSuite package functions...")
+  message("=============================================")
+
+  # Create test output directory
+  if (!dir.exists(test_output_dir)) {
+    dir.create(test_output_dir, recursive = TRUE)
+    if (verbose) message("Created test output directory: ", test_output_dir)
+  }
+
+  test_results <- list()
+  start_time <- Sys.time()
+
+  # Test 1: Basic NDVI calculation
+  if (verbose) message("\n Testing NDVI calculation...")
+  test_results$ndvi_test <- tryCatch({
+    # Create sample red and NIR bands
+    sample_red <- terra::rast(nrows = 10, ncols = 10, xmin = 0, xmax = 10, ymin = 0, ymax = 10)
+    terra::values(sample_red) <- runif(100, 0.1, 0.3)
+
+    sample_nir <- terra::rast(nrows = 10, ncols = 10, xmin = 0, xmax = 10, ymin = 0, ymax = 10)
+    terra::values(sample_nir) <- runif(100, 0.4, 0.8)
+
+    # Test NDVI calculation
+    ndvi_result <- calculate_vegetation_index(sample_red, sample_nir, index_type = "NDVI")
+
+    # Validate results
+    is_spatraster <- inherits(ndvi_result, "SpatRaster")
+    has_values <- !all(is.na(terra::values(ndvi_result)))
+    values_in_range <- all(terra::values(ndvi_result, mat = FALSE) >= -1 &
+                             terra::values(ndvi_result, mat = FALSE) <= 1, na.rm = TRUE)
+
+    success <- is_spatraster && has_values && values_in_range
+    if (verbose && success) message("NDVI calculation successful")
+    success
+
+  }, error = function(e) {
+    if (verbose) message("NDVI test failed: ", e$message)
+    FALSE
+  })
+
+  # Test 2: Water indices (both NDWI variants)
+  if (verbose) message("\n Testing water indices (NDWI variants)...")
+  test_results$water_indices_test <- tryCatch({
+    # Create sample bands
+    sample_green <- terra::rast(nrows = 10, ncols = 10, xmin = 0, xmax = 10, ymin = 0, ymax = 10)
+    terra::values(sample_green) <- runif(100, 0.2, 0.4)
+
+    sample_nir <- terra::rast(nrows = 10, ncols = 10, xmin = 0, xmax = 10, ymin = 0, ymax = 10)
+    terra::values(sample_nir) <- runif(100, 0.4, 0.8)
+
+    sample_swir <- terra::rast(nrows = 10, ncols = 10, xmin = 0, xmax = 10, ymin = 0, ymax = 10)
+    terra::values(sample_swir) <- runif(100, 0.1, 0.3)
+
+    # Test both NDWI variants
+    ndwi1 <- calculate_water_index(sample_green, sample_nir, index_type = "NDWI")
+    ndwi2 <- calculate_water_index(sample_green, sample_nir, sample_swir, index_type = "MNDWI")
+
+    # Validate results
+    success <- !is.null(ndwi1) && !is.null(ndwi2) &&
+      inherits(ndwi1, "SpatRaster") && inherits(ndwi2, "SpatRaster")
+
+    if (verbose && success) message("Both NDWI variants working correctly")
+    success
+
+  }, error = function(e) {
+    if (verbose) message("Water indices test failed: ", e$message)
+    FALSE
+  })
+
+  # Test 3: Raster mosaicing
+  if (verbose) message("  Testing raster mosaicing...")
+  test_results$mosaic_test <- tryCatch({
+    # Create overlapping test rasters
+    r1 <- terra::rast(nrows = 10, ncols = 10, xmin = 0, xmax = 10, ymin = 0, ymax = 10)
+    terra::values(r1) <- runif(100, 0, 100)
+
+    r2 <- terra::rast(nrows = 10, ncols = 10, xmin = 5, xmax = 15, ymin = 5, ymax = 15)
+    terra::values(r2) <- runif(100, 0, 100)
+
+    r3 <- terra::rast(nrows = 10, ncols = 10, xmin = -5, xmax = 5, ymin = -5, ymax = 5)
+    terra::values(r3) <- runif(100, 0, 100)
+
+    # Test different mosaicing methods
+    merge_result <- create_raster_mosaic(list(r1, r2), method = "merge")
+    mean_result <- create_raster_mosaic(list(r1, r2, r3), method = "mean")
+
+    # Validate results
+    success <- !is.null(merge_result) && !is.null(mean_result) &&
+      inherits(merge_result, "SpatRaster") && inherits(mean_result, "SpatRaster")
+
+    if (verbose && success) message("  Raster mosaicing working with multiple methods")
+    success
+
+  }, error = function(e) {
+    if (verbose) message("  Mosaic test failed: ", e$message)
+    FALSE
+  })
+
+  # Test 4: Universal Spatial join
+  if (verbose) message("\n Testing universal spatial join...")
+  test_results$spatial_join_test <- tryCatch({
+    # Create sample point data
+    sample_points <- data.frame(
+      lon = runif(15, 1, 9),
+      lat = runif(15, 1, 9),
+      id = 1:15,
+      site_type = sample(c("A", "B", "C"), 15, replace = TRUE)
+    )
+
+    # Create sample rasters with different characteristics
+    sample_raster1 <- terra::rast(nrows = 10, ncols = 10, xmin = 0, xmax = 10, ymin = 0, ymax = 10)
+    terra::values(sample_raster1) <- runif(100, 0, 100)
+    names(sample_raster1) <- "elevation"
+
+    sample_raster2 <- terra::rast(nrows = 10, ncols = 10, xmin = 0, xmax = 10, ymin = 0, ymax = 10)
+    terra::values(sample_raster2) <- runif(100, -0.5, 1)
+    names(sample_raster2) <- "ndvi"
+
+    # Test different extraction methods
+    simple_join <- spatial_join_universal(
+      sample_points,
+      sample_raster1,
+      method = "simple"
+    )
+
+    buffer_join <- spatial_join_universal(
+      sample_points,
+      list(sample_raster1, sample_raster2),
+      method = "buffer",
+      buffer_size = 500
+    )
+
+    # Validate results
+    is_sf <- inherits(simple_join, "sf") && inherits(buffer_join, "sf")
+    has_extracted_values <- "elevation" %in% names(simple_join) &&
+      "elevation" %in% names(buffer_join)
+    correct_row_count <- nrow(simple_join) == 15 && nrow(buffer_join) == 15
+
+    success <- is_sf && has_extracted_values && correct_row_count
+
+    if (verbose && success) message("   Universal spatial join working with multiple methods")
+    success
+
+  }, error = function(e) {
+    if (verbose) message("   Spatial join test failed: ", e$message)
+    FALSE
+  })
+
+  # Test 5: CDL codes and crop analysis
+  if (verbose) message("\n Testing CDL crop codes...")
+  test_results$cdl_test <- tryCatch({
+    # Test individual crop codes
+    corn_codes <- get_comprehensive_cdl_codes("corn")
+    soybean_codes <- get_comprehensive_cdl_codes("soybeans")
+
+    # Test crop categories
+    grain_codes <- get_comprehensive_cdl_codes("grains")
+    oilseed_codes <- get_comprehensive_cdl_codes("oilseeds")
+
+    # Test "all" option
+    all_codes <- get_comprehensive_cdl_codes("all")
+
+    # Validate results
+    individual_correct <- length(corn_codes) == 1 && corn_codes == 1 &&
+      length(soybean_codes) == 1 && soybean_codes == 5
+    categories_correct <- length(grain_codes) > 5 && length(oilseed_codes) > 3
+    all_codes_correct <- length(all_codes) > 50
+
+    success <- individual_correct && categories_correct && all_codes_correct
+
+    if (verbose && success) message("  CDL codes working for individual crops and categories")
+    success
+
+  }, error = function(e) {
+    if (verbose) message("  CDL test failed: ", e$message)
+    FALSE
+  })
+
+  # Test 6: Region boundary functionality
+  if (comprehensive) {
+    if (verbose) message("\n  Testing region boundaries...")
+    test_results$region_boundary_test <- tryCatch({
+      # Test custom bounding box
+      bbox_boundary <- get_region_boundary(c(-85, 39, -82, 42))
+
+      # Test that function works (actual state data requires internet)
+      bbox_valid <- inherits(bbox_boundary, "sf") && nrow(bbox_boundary) > 0
+
+      if (verbose && bbox_valid) message("   Region boundary creation working")
+      bbox_valid
+
+    }, error = function(e) {
+      if (verbose) message("   Region boundary test failed: ", e$message)
+      FALSE
+    })
+  }
+
+  # Test 7: Data loading functionality
+  if (comprehensive) {
+    if (verbose) message("\n Testing data loading...")
+    test_results$data_loading_test <- tryCatch({
+      # Create temporary test files
+      temp_dir <- file.path(test_output_dir, "temp_rasters")
+      if (!dir.exists(temp_dir)) dir.create(temp_dir)
+
+      # Create and save test rasters
+      test_raster1 <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 5, ymin = 0, ymax = 5)
+      terra::values(test_raster1) <- 1:25
+
+      test_raster2 <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 5, ymin = 0, ymax = 5)
+      terra::values(test_raster2) <- 26:50
+
+      file1 <- file.path(temp_dir, "test1.tif")
+      file2 <- file.path(temp_dir, "test2.tif")
+
+      terra::writeRaster(test_raster1, file1, overwrite = TRUE)
+      terra::writeRaster(test_raster2, file2, overwrite = TRUE)
+
+      # Test loading from directory
+      loaded_rasters <- load_raster_data(temp_dir)
+
+      # Test loading from file list
+      loaded_files <- load_raster_data(c(file1, file2))
+
+      # Validate results
+      dir_success <- length(loaded_rasters) == 2 &&
+        all(sapply(loaded_rasters, function(x) inherits(x, "SpatRaster")))
+      file_success <- length(loaded_files) == 2 &&
+        all(sapply(loaded_files, function(x) inherits(x, "SpatRaster")))
+
+      # Cleanup
+      unlink(temp_dir, recursive = TRUE)
+
+      success <- dir_success && file_success
+      if (verbose && success) message("  Data loading working from directories and file lists")
+      success
+
+    }, error = function(e) {
+      if (verbose) message("   Data loading test failed: ", e$message)
+      FALSE
+    })
+  }
+
+  # Test 8: Multi-dataset integration
+  if (comprehensive) {
+    if (verbose) message("\n Testing multi-dataset integration...")
+    test_results$integration_test <- tryCatch({
+      # Create sample vector data
+      sample_sites <- data.frame(
+        lon = runif(5, 2, 8),
+        lat = runif(5, 2, 8),
+        site_id = paste0("Site_", 1:5)
+      )
+
+      # Create sample raster datasets
+      ndvi_raster <- terra::rast(nrows = 10, ncols = 10, xmin = 0, xmax = 10, ymin = 0, ymax = 10)
+      terra::values(ndvi_raster) <- runif(100, 0, 1)
+
+      soil_raster <- terra::rast(nrows = 10, ncols = 10, xmin = 0, xmax = 10, ymin = 0, ymax = 10)
+      terra::values(soil_raster) <- runif(100, 0, 50)
+
+      # Test integration
+      integrated_result <- integrate_multiple_datasets(
+        vector_data = sample_sites,
+        raster_datasets = list(
+          ndvi = ndvi_raster,
+          soil = soil_raster
+        )
+      )
+
+      # Validate results
+      has_sf_structure <- inherits(integrated_result, "sf")
+      has_integrated_vars <- all(c("ndvi_mean", "soil_mean") %in% names(integrated_result))
+      correct_rows <- nrow(integrated_result) == 5
+
+      success <- has_sf_structure && has_integrated_vars && correct_rows
+      if (verbose && success) message("   Multi-dataset integration working correctly")
+      success
+
+    }, error = function(e) {
+      if (verbose) message("   Integration test failed: ", e$message)
+      FALSE
+    })
+  }
+
+  # Calculate summary statistics
+  end_time <- Sys.time()
+  total_tests <- length(test_results)
+  passed_tests <- sum(unlist(test_results))
+  success_rate <- round((passed_tests / total_tests) * 100, 1)
+  duration <- round(as.numeric(difftime(end_time, start_time, units = "secs")), 2)
+
+  # Print summary
+  message("\n TEST SUMMARY")
+  message("===============")
+  message(sprintf("Tests passed: %d/%d (%.1f%%)", passed_tests, total_tests, success_rate))
+  message(sprintf("  Duration: %.2f seconds", duration))
+
+  if (passed_tests == total_tests) {
+    message(" ALL TESTS PASSED! GeoSpatialSuite is working correctly.")
+  } else {
+    message(" Some tests failed. Check the detailed results above.")
+  }
+
+  # Return detailed results
+  return(list(
+    test_results = test_results,
+    summary = list(
+      total_tests = total_tests,
+      passed_tests = passed_tests,
+      failed_tests = total_tests - passed_tests,
+      success_rate = success_rate,
+      duration_seconds = duration
+    ),
+    test_output_dir = test_output_dir,
+    timestamp = Sys.time(),
+    comprehensive = comprehensive
+  ))
+}
+
+#' Test specific GeoSpatialSuite function
+#'
+#' @description
+#' Test individual package functions for debugging and development purposes.
+#'
+#' @param function_name Name of function to test
+#' @param verbose Print detailed output
+#'
+#' @return Boolean indicating test success
+#'
+#' @examples
+#' \dontrun{
+#' # Test specific functions
+#' test_specific_function("calculate_ndvi")
+#' test_specific_function("spatial_join_universal")
+#' test_specific_function("get_comprehensive_cdl_codes")
+#' }
+#'
+#' @export
+test_specific_function <- function(function_name, verbose = TRUE) {
+
+  if (verbose) message(sprintf(" Testing function: %s", function_name))
+
+  result <- switch(function_name,
+
+                   "calculate_ndvi" = tryCatch({
+                     red <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 5, ymin = 0, ymax = 5)
+                     terra::values(red) <- runif(25, 0.1, 0.3)
+                     nir <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 5, ymin = 0, ymax = 5)
+                     terra::values(nir) <- runif(25, 0.4, 0.8)
+
+                     result <- calculate_vegetation_index(red, nir, index_type = "NDVI")
+                     inherits(result, "SpatRaster")
+                   }, error = function(e) FALSE),
+
+                   "calculate_water_index" = tryCatch({
+                     green <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 5, ymin = 0, ymax = 5)
+                     terra::values(green) <- runif(25, 0.2, 0.4)
+                     nir <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 5, ymin = 0, ymax = 5)
+                     terra::values(nir) <- runif(25, 0.4, 0.8)
+
+                     result <- calculate_water_index(green, nir, index_type = "NDWI")
+                     inherits(result, "SpatRaster")
+                   }, error = function(e) FALSE),
+
+                   "spatial_join_universal" = tryCatch({
+                     points <- data.frame(lon = c(1, 2, 3), lat = c(1, 2, 3), id = 1:3)
+                     raster_data <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 5, ymin = 0, ymax = 5)
+                     terra::values(raster_data) <- 1:25
+
+                     result <- spatial_join_universal(points, raster_data)
+                     inherits(result, "sf")
+                   }, error = function(e) FALSE),
+
+                   "get_comprehensive_cdl_codes" = tryCatch({
+                     corn <- get_comprehensive_cdl_codes("corn")
+                     grains <- get_comprehensive_cdl_codes("grains")
+                     length(corn) == 1 && length(grains) > 5
+                   }, error = function(e) FALSE),
+
+                   "create_raster_mosaic" = tryCatch({
+                     r1 <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 5, ymin = 0, ymax = 5)
+                     terra::values(r1) <- runif(25)
+                     r2 <- terra::rast(nrows = 5, ncols = 5, xmin = 2, xmax = 7, ymin = 2, ymax = 7)
+                     terra::values(r2) <- runif(25)
+
+                     result <- create_raster_mosaic(list(r1, r2), method = "merge")
+                     inherits(result, "SpatRaster")
+                   }, error = function(e) FALSE),
+
+                   {
+                     if (verbose) message(sprintf("Unknown function: %s", function_name))
+                     FALSE
+                   }
+  )
+
+  if (verbose) {
+    if (result) {
+      message(sprintf("%s: PASSED", function_name))
+    } else {
+      message(sprintf("%s: FAILED", function_name))
+    }
+  }
+
+  return(result)
+}
+
+#' Get package test coverage report
+#'
+#' @description
+#' Generate a coverage report showing which functions have been tested.
+#'
+#' @return Data frame with function coverage information
+#'
+#' @examples
+#' \dontrun{
+#' coverage_report <- get_test_coverage()
+#' print(coverage_report)
+#' }
+#'
+#' @export
+get_test_coverage <- function() {
+
+  # List of all main functions in the package
+  main_functions <- c(
+    "calculate_vegetation_index",
+    "calculate_water_index",
+    "list_water_indices",
+    "get_comprehensive_cdl_codes",
+    "create_crop_mask",
+    "analyze_cdl_crops_dynamic",
+    "create_raster_mosaic",
+    "select_rasters_for_region",
+    "spatial_join_universal",
+    "integrate_multiple_datasets",
+    "process_vector_data",
+    "spatial_interpolation",
+    "get_region_boundary",
+    "load_raster_data",
+    "extract_dates_universal"
+  )
+
+  # Functions covered by main test suite
+  covered_functions <- c(
+    "calculate_vegetation_index",
+    "calculate_water_index",
+    "create_raster_mosaic",
+    "spatial_join_universal",
+    "get_comprehensive_cdl_codes",
+    "get_region_boundary",
+    "load_raster_data",
+    "integrate_multiple_datasets"
+  )
+
+  # Create coverage report
+  coverage_df <- data.frame(
+    Function = main_functions,
+    Tested = main_functions %in% covered_functions,
+    Test_Type = ifelse(main_functions %in% covered_functions, "Automated", "Manual"),
+    stringsAsFactors = FALSE
+  )
+
+  coverage_df$Coverage_Status <- ifelse(coverage_df$Tested, "Covered", "Not Covered")
+
+  # Calculate summary
+  total_functions <- length(main_functions)
+  covered_count <- sum(coverage_df$Tested)
+  coverage_percentage <- round((covered_count / total_functions) * 100, 1)
+
+  message(sprintf(" Test Coverage: %d/%d functions (%.1f%%)",
+                  covered_count, total_functions, coverage_percentage))
+
+  return(coverage_df)
+}
+
+#' Quick package health check
+#'
+#' @description
+#' Perform a quick health check of the package installation and core functions.
+#'
+#' @return Boolean indicating overall package health
+#'
+#' @examples
+#' \dontrun{
+#' health_status <- quick_health_check()
+#' }
+#'
+#' @export
+quick_health_check <- function() {
+
+  message(" GeoSpatialSuite Health Check")
+  message("==============================")
+
+  checks <- list()
+
+  # Check 1: Package loading
+  checks$package_loaded <- tryCatch({
+    "GeoSpatialSuite" %in% (.packages())
+  }, error = function(e) FALSE)
+
+  # Check 2: Core dependencies
+  required_packages <- c("terra", "sf", "dplyr")
+  checks$dependencies <- all(sapply(required_packages, requireNamespace, quietly = TRUE))
+
+  # Check 3: Core functions exist
+  core_functions <- c("calculate_vegetation_index", "spatial_join_universal", "get_comprehensive_cdl_codes")
+  checks$core_functions <- all(sapply(core_functions, exists, mode = "function"))
+
+  # Check 4: Basic functionality
+  checks$basic_functionality <- tryCatch({
+    # Test simple NDVI calculation
+    red <- terra::rast(nrows = 3, ncols = 3, xmin = 0, xmax = 3, ymin = 0, ymax = 3)
+    terra::values(red) <- rep(0.2, 9)
+    nir <- terra::rast(nrows = 3, ncols = 3, xmin = 0, xmax = 3, ymin = 0, ymax = 3)
+    terra::values(nir) <- rep(0.8, 9)
+
+    ndvi <- calculate_vegetation_index(red, nir, index_type = "NDVI")
+    inherits(ndvi, "SpatRaster") && !all(is.na(terra::values(ndvi)))
+  }, error = function(e) FALSE)
+
+  # Print results
+  for (check_name in names(checks)) {
+    status <- if (checks[[check_name]]) "PASS" else "FAIL"
+    formatted_name <- gsub("_", " ", tools::toTitleCase(check_name))
+    message(sprintf("  %s: %s", formatted_name, status))
+  }
+
+  # Overall health
+  overall_health <- all(unlist(checks))
+  message("\n Overall Status:", if (overall_health) "HEALTHY" else "ISSUES DETECTED")
+
+  if (!overall_health) {
+    message("\n Troubleshooting tips:")
+    message("  - Try: devtools::install() to reinstall the package")
+    message("  - Check: install.packages(c('terra', 'sf', 'dplyr'))")
+    message("  - Run: devtools::check() to identify issues")
+  }
+
+  return(overall_health)
+}

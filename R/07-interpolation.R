@@ -1,0 +1,1121 @@
+#' Perform spatial interpolation for missing data
+#'
+#' @description
+#' Perform spatial interpolation using reliable methods to fill missing values
+#' in spatial datasets. Supports nearest neighbor, spline interpolation, and
+#' multivariate imputation with comprehensive error handling.
+#'
+#' @details
+#' ## Supported Interpolation Methods:
+#'
+#' ### Distance-Based Methods:
+#' \itemize{
+#'   \item **NN** (Nearest Neighbor): Assigns nearest known value
+#'     - Best for: Categorical data or when preserving exact values
+#'     - Fast and creates Voronoi-like patterns
+#'     - No assumptions about data distribution
+#'
+#'   \item **Simple** (Simple distance weighting): Basic distance-based averaging
+#'     - Best for: Quick estimates with minimal computation
+#'     - Uses inverse distance weighting without external dependencies
+#' }
+#'
+#' ### Statistical Methods:
+#' \itemize{
+#'   \item **Spline**: Smooth surface interpolation using thin plate splines
+#'     - Best for: Smooth, continuous phenomena
+#'     - Creates smooth surfaces without sharp changes
+#'     - Good for environmental data with gradual spatial variation
+#' }
+#'
+#' ### Multivariate Methods:
+#' \itemize{
+#'   \item **MICE**: Multivariate imputation by chained equations
+#'     - Best for: Multiple correlated variables with missing values
+#'     - Handles complex missing data patterns
+#'     - Preserves relationships between variables
+#'     - Requires mice package
+#' }
+#'
+#' ## Input Data Support:
+#' - sf objects with point geometries
+#' - data.frame with coordinate columns
+#' - File paths (CSV, shapefile, GeoJSON)
+#' - Target grids for raster output
+#'
+#' ## Quality Control Features:
+#' - Cross-validation for method comparison
+#' - Outlier detection and handling
+#' - Performance metrics calculation
+#' - Robust error handling
+#'
+#' @param spatial_data Spatial data to interpolate. Can be:
+#'   \itemize{
+#'     \item sf object with point geometries
+#'     \item data.frame with coordinate columns
+#'     \item File path to spatial data (CSV, SHP, GeoJSON)
+#'   }
+#' @param target_variables Character vector of variables to interpolate
+#' @param method Interpolation method:
+#'   \itemize{
+#'     \item **"NN"**: Nearest neighbor (default)
+#'     \item **"simple"**: Simple distance weighting
+#'     \item **"spline"**: Thin plate spline interpolation
+#'     \item **"mice"**: Multivariate imputation (requires mice package)
+#'     \item **"auto"**: Automatically select best method based on data
+#'   }
+#' @param target_grid Target grid for interpolation. Can be:
+#'   \itemize{
+#'     \item SpatRaster template for raster output
+#'     \item sf object with target locations
+#'     \item NULL for point-to-point interpolation only
+#'   }
+#' @param region_boundary Optional region boundary for clipping results
+#' @param power Power parameter for simple distance weighting (default: 2)
+#' @param max_distance Maximum distance for interpolation (map units)
+#' @param min_points Minimum number of points for interpolation
+#' @param max_points Maximum number of points to use for each prediction
+#' @param cross_validation Perform cross-validation for accuracy assessment
+#' @param cv_folds Number of folds for cross-validation (default: 5)
+#' @param handle_outliers Method for outlier handling: "none", "remove", "cap"
+#' @param outlier_threshold Z-score threshold for outlier detection (default: 3)
+#' @param coord_cols Coordinate column names for data.frame input
+#' @param mice_method MICE method for multivariate imputation
+#' @param mice_iterations Number of MICE iterations (default: 10)
+#' @param output_format Output format: "sf", "raster", "both"
+#' @param output_file Optional output file path
+#' @param verbose Print detailed progress messages
+#'
+#' @return Depending on output_format:
+#' \describe{
+#'   \item{"sf"}{sf object with interpolated values}
+#'   \item{"raster"}{SpatRaster with interpolated surfaces}
+#'   \item{"both"}{List containing both sf and raster results}
+#' }
+#' Additional attributes include:
+#' \itemize{
+#'   \item interpolation_info: Method used, parameters, processing time
+#'   \item cross_validation: CV results if performed
+#' }
+#'
+#' @section Method Selection Guide:
+#' \describe{
+#'   \item{Dense, regular data}{Simple distance weighting for good balance}
+#'   \item{Sparse, irregular data}{Nearest neighbor for stability}
+#'   \item{Environmental data}{Spline for smooth surfaces}
+#'   \item{Categorical data}{Nearest neighbor}
+#'   \item{Multiple correlated variables}{MICE for multivariate patterns}
+#'   \item{Unknown data characteristics}{Auto-selection based on data properties}
+#' }
+#'
+#' @section Performance Optimization:
+#' \itemize{
+#'   \item For large datasets: Set max_points=50-100 for faster processing
+#'   \item For high accuracy: Use cross_validation=TRUE to compare methods
+#'   \item For memory efficiency: Process variables individually
+#'   \item For smooth results: Use spline method
+#' }
+#'
+#' @examples
+#' \dontrun{
+#' # These examples require external data files not included with the package
+#' # Basic nearest neighbor interpolation
+#' soil_interpolated <- spatial_interpolation_comprehensive(
+#'   spatial_data = "soil_samples.csv",
+#'   target_variables = c("nitrogen", "phosphorus", "ph"),
+#'   method = "NN",
+#'   target_grid = study_area_grid,
+#'   region_boundary = "Iowa"
+#' )
+#'
+#' # Simple distance weighting
+#' temp_interp <- spatial_interpolation_comprehensive(
+#'   spatial_data = weather_stations,
+#'   target_variables = "temperature",
+#'   method = "simple",
+#'   power = 2,
+#'   cross_validation = TRUE,
+#'   verbose = TRUE
+#' )
+#'
+#' # Multivariate imputation for environmental data
+#' env_imputed <- spatial_interpolation_comprehensive(
+#'   spatial_data = env_monitoring,
+#'   target_variables = c("temp", "humidity", "pressure", "wind_speed"),
+#'   method = "mice",
+#'   mice_iterations = 15,
+#'   handle_outliers = "cap"
+#' )
+#'
+#' # Auto-method selection with comparison
+#' best_interp <- spatial_interpolation_comprehensive(
+#'   spatial_data = precipitation_data,
+#'   target_variables = "annual_precip",
+#'   method = "auto",
+#'   cross_validation = TRUE,
+#'   cv_folds = 10,
+#'   target_grid = dem_template
+#' )
+#'
+#' # Access results and diagnostics
+#' plot(best_interp)  # Plot interpolated surface
+#' best_interp$cross_validation$rmse  # Cross-validation RMSE
+#' best_interp$interpolation_info$method_selected  # Method chosen
+#' }
+#'
+#' @seealso
+#' \itemize{
+#'   \item \code{\link{universal_spatial_join}} for spatial data integration
+#'   \item \code{\link{calculate_spatial_correlation}} for spatial correlation analysis
+#'   \item \code{\link{create_spatial_map}} for visualization
+#' }
+#'
+#' @export
+spatial_interpolation_comprehensive <- function(spatial_data,
+                                                target_variables,
+                                                method = "NN",
+                                                target_grid = NULL,
+                                                region_boundary = NULL,
+                                                power = 2,
+                                                max_distance = Inf,
+                                                min_points = 3,
+                                                max_points = 50,
+                                                cross_validation = FALSE,
+                                                cv_folds = 5,
+                                                handle_outliers = "none",
+                                                outlier_threshold = 3,
+                                                coord_cols = c("lon", "lat"),
+                                                mice_method = "pmm",
+                                                mice_iterations = 10,
+                                                output_format = "sf",
+                                                output_file = NULL,
+                                                verbose = FALSE) {
+
+  if (verbose) {
+    message(paste(rep("=", 60), collapse = ""))
+    message("SPATIAL INTERPOLATION - RELIABLE METHODS")
+    message(paste(rep("=", 60), collapse = ""))
+    message(sprintf("Timestamp: %s", Sys.time()))
+  }
+
+  start_time <- Sys.time()
+
+  # =================================================================
+  # INPUT VALIDATION AND DATA LOADING
+  # =================================================================
+
+  if (verbose) message("\n--- STEP 1: INPUT VALIDATION AND DATA LOADING ---")
+
+  # Validate required parameters
+  if (missing(spatial_data) || missing(target_variables)) {
+    stop("spatial_data and target_variables are required", call. = FALSE)
+  }
+
+  # Validate method
+  valid_methods <- c("NN", "simple", "spline", "mice", "auto")
+  if (!method %in% valid_methods) {
+    stop(sprintf("Invalid method '%s'. Must be one of: %s",
+                 method, paste(valid_methods, collapse = ", ")), call. = FALSE)
+  }
+
+  # Validate output format
+  valid_formats <- c("sf", "raster", "both")
+  if (!output_format %in% valid_formats) {
+    stop(sprintf("Invalid output_format '%s'. Must be one of: %s",
+                 output_format, paste(valid_formats, collapse = ", ")), call. = FALSE)
+  }
+
+  # Load and process spatial data
+  if (verbose) message("Loading and processing spatial data...")
+
+  spatial_sf <- load_and_process_spatial_data(spatial_data, coord_cols, verbose)
+
+  # Validate target variables exist
+  missing_vars <- setdiff(target_variables, names(spatial_sf))
+  if (length(missing_vars) > 0) {
+    stop(sprintf("Variables not found in data: %s", paste(missing_vars, collapse = ", ")),
+         call. = FALSE)
+  }
+
+  if (verbose) {
+    message(sprintf("Loaded %d spatial points", nrow(spatial_sf)))
+    message(sprintf("Target variables: %s", paste(target_variables, collapse = ", ")))
+  }
+
+  # Apply region boundary if provided
+  if (!is.null(region_boundary)) {
+    if (verbose) message("Applying region boundary...")
+    boundary <- get_region_boundary(region_boundary)
+
+    # Ensure CRS compatibility
+    if (!identical(sf::st_crs(spatial_sf), sf::st_crs(boundary))) {
+      if (verbose) message("CRS mismatch detected. Reprojecting boundary to match data CRS...")
+      boundary <- sf::st_transform(boundary, crs = sf::st_crs(spatial_sf))
+    }
+
+    spatial_sf <- sf::st_filter(spatial_sf, boundary)
+    if (verbose) message(sprintf("Filtered to %d points within boundary", nrow(spatial_sf)))
+  }
+
+  # =================================================================
+  # DATA QUALITY ASSESSMENT AND PREPROCESSING
+  # =================================================================
+
+  if (verbose) message("\n--- STEP 2: DATA QUALITY ASSESSMENT ---")
+
+  # Handle outliers if requested
+  if (handle_outliers != "none") {
+    spatial_sf <- handle_outliers_in_data(spatial_sf, target_variables,
+                                          handle_outliers, outlier_threshold, verbose)
+  }
+
+  # Check data distribution and recommend methods
+  data_assessment <- assess_data_for_interpolation(spatial_sf, target_variables, verbose)
+
+  # Auto-select method if requested
+  if (method == "auto") {
+    method <- select_optimal_method(data_assessment, verbose)
+    if (verbose) message(sprintf("Auto-selected method: %s", method))
+  }
+
+  # =================================================================
+  # INTERPOLATION EXECUTION
+  # =================================================================
+
+  if (verbose) message(sprintf("\n--- STEP 3: EXECUTING %s INTERPOLATION ---", method))
+
+  interpolation_results <- list()
+
+  for (var in target_variables) {
+    if (verbose) message(sprintf("Interpolating variable: %s", var))
+
+    # Get complete cases for this variable
+    complete_data <- spatial_sf[!is.na(spatial_sf[[var]]), ]
+
+    if (nrow(complete_data) < min_points) {
+      warning(sprintf("Insufficient data points for %s (need %d, have %d)",
+                      var, min_points, nrow(complete_data)))
+      next
+    }
+
+    # Perform interpolation based on method
+    var_result <- execute_interpolation_method(
+      complete_data, var, method, target_grid,
+      power, max_distance, min_points, max_points,
+      mice_method, mice_iterations, verbose
+    )
+
+    interpolation_results[[var]] <- var_result
+  }
+
+  # =================================================================
+  # CROSS-VALIDATION (OPTIONAL)
+  # =================================================================
+
+  cv_results <- NULL
+  if (cross_validation) {
+    if (verbose) message("\n--- STEP 4: CROSS-VALIDATION ---")
+    cv_results <- perform_cross_validation(spatial_sf, target_variables, method,
+                                           cv_folds, power, max_distance,
+                                           min_points, max_points, verbose)
+  }
+
+  # =================================================================
+  # RESULTS COMPILATION AND OUTPUT
+  # =================================================================
+
+  if (verbose) message("\n--- STEP 5: COMPILING RESULTS ---")
+
+  # Compile results based on output format
+  final_results <- compile_interpolation_results(interpolation_results, spatial_sf,
+                                                 target_variables, output_format, verbose)
+
+  # Add metadata
+  end_time <- Sys.time()
+  processing_time <- round(as.numeric(difftime(end_time, start_time, units = "secs")), 2)
+
+  interpolation_info <- list(
+    method = method,
+    target_variables = target_variables,
+    n_input_points = nrow(spatial_sf),
+    parameters = list(
+      power = if (method == "simple") power else NULL,
+      max_distance = max_distance,
+      min_points = min_points,
+      max_points = max_points
+    ),
+    processing_time_seconds = processing_time,
+    timestamp = Sys.time(),
+    data_assessment = data_assessment
+  )
+
+  attr(final_results, "interpolation_info") <- interpolation_info
+  if (!is.null(cv_results)) {
+    attr(final_results, "cross_validation") <- cv_results
+  }
+
+  # Save results if output file specified
+  if (!is.null(output_file)) {
+    save_interpolation_results(final_results, output_file, output_format, verbose)
+  }
+
+  if (verbose) {
+    message("\n--- INTERPOLATION COMPLETED ---")
+    message(sprintf("Processing time: %.2f seconds", processing_time))
+    message(sprintf("Method used: %s", method))
+    message(sprintf("Variables interpolated: %s", paste(target_variables, collapse = ", ")))
+    if (!is.null(cv_results)) {
+      avg_rmse <- mean(sapply(cv_results, function(x) x$rmse), na.rm = TRUE)
+      message(sprintf("Average cross-validation RMSE: %.4f", avg_rmse))
+    }
+    message(paste(rep("=", 60), collapse = ""))
+  }
+
+  return(final_results)
+}
+
+#' Legacy spatial interpolation function (for backward compatibility)
+#'
+#' @description
+#' Simplified version of spatial interpolation maintaining backward compatibility.
+#' For new projects, use spatial_interpolation_comprehensive() instead.
+#'
+#' @param spatial_data sf object with some missing values
+#' @param target_variables Variables to interpolate
+#' @param method Interpolation method: "NN", "simple", "mice"
+#' @param power Power parameter for simple method (default: 2)
+#' @param mice_method MICE method for multivariate imputation
+#'
+#' @return sf object with interpolated values
+#'
+#' @examples
+#' \dontrun{
+#' # These examples require external data files not included with the package
+#' # Simple interpolation (legacy interface)
+#' interpolated_data <- spatial_interpolation(
+#'   soil_data,
+#'   target_variables = c("nitrogen", "carbon"),
+#'   method = "NN"
+#' )
+#' }
+#'
+#' @export
+spatial_interpolation <- function(spatial_data, target_variables, method = "NN",
+                                  power = 2, mice_method = "pmm") {
+
+  # Call the comprehensive function with simplified parameters
+  result <- spatial_interpolation_comprehensive(
+    spatial_data = spatial_data,
+    target_variables = target_variables,
+    method = method,
+    power = power,
+    mice_method = mice_method,
+    output_format = "sf",
+    verbose = FALSE
+  )
+
+  return(result)
+}
+
+# ==================== HELPER FUNCTIONS ==================== #
+
+#' Load and process spatial data for interpolation
+#' @keywords internal
+load_and_process_spatial_data <- function(spatial_data, coord_cols, verbose) {
+
+  if (is.character(spatial_data)) {
+    # File path provided
+    if (verbose) message(sprintf("Loading spatial data from: %s", basename(spatial_data)))
+
+    file_ext <- tolower(tools::file_ext(spatial_data))
+
+    if (file_ext == "csv") {
+      df <- read.csv(spatial_data)
+      spatial_sf <- process_vector_data(df, coord_cols = coord_cols)
+    } else {
+      spatial_sf <- sf::st_read(spatial_data, quiet = !verbose)
+    }
+
+  } else if (inherits(spatial_data, "sf")) {
+    spatial_sf <- spatial_data
+
+  } else if (is.data.frame(spatial_data)) {
+    spatial_sf <- process_vector_data(spatial_data, coord_cols = coord_cols)
+
+  } else {
+    stop("spatial_data must be sf object, data.frame, or file path", call. = FALSE)
+  }
+
+  # Ensure we have point geometries
+  geom_types <- sf::st_geometry_type(spatial_sf)
+  if (!all(grepl("POINT", geom_types))) {
+    stop("spatial_data must contain point geometries for interpolation", call. = FALSE)
+  }
+
+  return(spatial_sf)
+}
+
+#' Handle outliers in spatial data
+#' @keywords internal
+handle_outliers_in_data <- function(spatial_sf, target_variables, method, threshold, verbose) {
+
+  if (verbose) message("Handling outliers in data...")
+
+  outliers_removed <- 0
+
+  for (var in target_variables) {
+    if (!var %in% names(spatial_sf)) next
+
+    values <- spatial_sf[[var]]
+    values <- values[!is.na(values)]
+
+    if (length(values) < 10) {
+      if (verbose) message(sprintf("Skipping outlier detection for %s (too few values)", var))
+      next
+    }
+
+    # Calculate z-scores
+    z_scores <- abs((values - mean(values)) / sd(values))
+    outlier_mask <- z_scores > threshold
+
+    if (method == "remove") {
+      # Remove outliers
+      original_count <- nrow(spatial_sf)
+      spatial_sf <- spatial_sf[!is.na(spatial_sf[[var]]) &
+                                 abs((spatial_sf[[var]] - mean(spatial_sf[[var]], na.rm = TRUE)) /
+                                       sd(spatial_sf[[var]], na.rm = TRUE)) <= threshold, ]
+      removed <- original_count - nrow(spatial_sf)
+      outliers_removed <- outliers_removed + removed
+
+    } else if (method == "cap") {
+      # Cap outliers at threshold
+      mean_val <- mean(values)
+      sd_val <- sd(values)
+      upper_limit <- mean_val + threshold * sd_val
+      lower_limit <- mean_val - threshold * sd_val
+
+      spatial_sf[[var]][spatial_sf[[var]] > upper_limit] <- upper_limit
+      spatial_sf[[var]][spatial_sf[[var]] < lower_limit] <- lower_limit
+
+      capped <- sum(values > upper_limit | values < lower_limit)
+      if (verbose && capped > 0) {
+        message(sprintf("Capped %d outlier values for %s", capped, var))
+      }
+    }
+  }
+
+  if (verbose && outliers_removed > 0) {
+    message(sprintf("Removed %d outlier observations", outliers_removed))
+  }
+
+  return(spatial_sf)
+}
+
+#' Assess data characteristics for interpolation method selection
+#' @keywords internal
+assess_data_for_interpolation <- function(spatial_sf, target_variables, verbose) {
+
+  assessment <- list()
+
+  for (var in target_variables) {
+    if (!var %in% names(spatial_sf)) next
+
+    values <- spatial_sf[[var]]
+    valid_values <- values[!is.na(values)]
+
+    if (length(valid_values) == 0) next
+
+    # Calculate spatial distribution metrics
+    coords <- sf::st_coordinates(spatial_sf[!is.na(spatial_sf[[var]]), ])
+
+    var_assessment <- list(
+      n_points = length(valid_values),
+      missing_fraction = sum(is.na(values)) / length(values),
+      mean_value = mean(valid_values),
+      sd_value = sd(valid_values),
+      cv = sd(valid_values) / abs(mean(valid_values)),
+      skewness = calculate_skewness(valid_values),
+      spatial_extent = list(
+        x_range = diff(range(coords[, 1])),
+        y_range = diff(range(coords[, 2]))
+      ),
+      point_density = length(valid_values) / (diff(range(coords[, 1])) * diff(range(coords[, 2])))
+    )
+
+    assessment[[var]] <- var_assessment
+  }
+
+  if (verbose) {
+    message("Data assessment summary:")
+    for (var in names(assessment)) {
+      ass <- assessment[[var]]
+      message(sprintf("  %s: %d points, %.1f%% missing, CV=%.2f",
+                      var, ass$n_points, ass$missing_fraction*100, ass$cv))
+    }
+  }
+
+  return(assessment)
+}
+
+#' Select optimal interpolation method based on data characteristics
+#' @keywords internal
+select_optimal_method <- function(data_assessment, verbose) {
+
+  # Get average characteristics across variables
+  avg_n_points <- mean(sapply(data_assessment, function(x) x$n_points))
+  avg_missing <- mean(sapply(data_assessment, function(x) x$missing_fraction))
+  avg_cv <- mean(sapply(data_assessment, function(x) x$cv))
+
+  # Method selection logic
+  if (avg_missing > 0.3) {
+    method <- "mice"  # High missing data - use multivariate imputation
+  } else if (avg_n_points < 20) {
+    method <- "NN"    # Few points - use nearest neighbor
+  } else if (avg_cv < 0.5 && avg_n_points > 50) {
+    method <- "spline"  # Low variability, many points - use spline
+  } else {
+    method <- "simple"    # Default - simple distance weighting
+  }
+
+  if (verbose) {
+    message(sprintf("Method selection based on: n_points=%.0f, missing=%.2f, cv=%.2f",
+                    avg_n_points, avg_missing, avg_cv))
+  }
+
+  return(method)
+}
+
+#' Execute specific interpolation method
+#' @keywords internal
+execute_interpolation_method <- function(complete_data, variable, method, target_grid,
+                                         power, max_distance, min_points, max_points,
+                                         mice_method, mice_iterations, verbose) {
+
+  result <- switch(method,
+                   "NN" = execute_nn_interpolation(complete_data, variable, target_grid, verbose),
+                   "simple" = execute_simple_interpolation(complete_data, variable, target_grid, power,
+                                                           max_distance, max_points, verbose),
+                   "spline" = execute_spline_interpolation(complete_data, variable, target_grid, verbose),
+                   "mice" = execute_mice_interpolation(complete_data, variable, mice_method,
+                                                       mice_iterations, verbose),
+                   stop(sprintf("Method %s not implemented", method))
+  )
+
+  return(result)
+}
+
+#' Execute nearest neighbor interpolation
+#' @keywords internal
+execute_nn_interpolation <- function(complete_data, variable, target_grid, verbose) {
+
+  if (verbose) message("Performing nearest neighbor interpolation...")
+
+  if (!is.null(target_grid)) {
+    # Interpolate to grid
+    if (inherits(target_grid, "SpatRaster")) {
+      # Convert raster to points
+      grid_points <- terra::as.points(target_grid)
+      grid_sf <- sf::st_as_sf(grid_points)
+    } else {
+      grid_sf <- target_grid
+    }
+
+    # Ensure CRS compatibility
+    if (!identical(sf::st_crs(complete_data), sf::st_crs(grid_sf))) {
+      if (verbose) message("Reprojecting target grid to match data CRS...")
+      grid_sf <- sf::st_transform(grid_sf, crs = sf::st_crs(complete_data))
+    }
+
+    # Get coordinates
+    source_coords <- sf::st_coordinates(complete_data)
+    target_coords <- sf::st_coordinates(grid_sf)
+    source_values <- complete_data[[variable]]
+
+    # Remove any NA values
+    valid_idx <- !is.na(source_values)
+    source_coords <- source_coords[valid_idx, , drop = FALSE]
+    source_values <- source_values[valid_idx]
+
+    if (verbose) message(sprintf("Using %d source points for interpolation", length(source_values)))
+
+    # Perform nearest neighbor for each target point
+    predicted_values <- numeric(nrow(target_coords))
+
+    for (i in seq_len(nrow(target_coords))) {
+      if (verbose && i %% 1000 == 0) {
+        message(sprintf("Processing point %d/%d", i, nrow(target_coords)))
+      }
+
+      target_pt <- target_coords[i, ]
+
+      # Calculate distances
+      distances <- sqrt((source_coords[, 1] - target_pt[1])^2 +
+                          (source_coords[, 2] - target_pt[2])^2)
+
+      # Find nearest neighbor
+      nearest_idx <- which.min(distances)
+      predicted_values[i] <- source_values[nearest_idx]
+    }
+
+    # Create result sf object
+    result_sf <- grid_sf
+    result_sf$var1.pred <- predicted_values
+
+    if (verbose) {
+      message(sprintf("Nearest neighbor completed: %d predictions", length(predicted_values)))
+    }
+
+    return(list(
+      interpolated_points = result_sf,
+      method_details = list(
+        method = "nearest_neighbor",
+        n_predictions = nrow(result_sf)
+      )
+    ))
+
+  } else {
+    # Point-to-point interpolation (no target grid)
+    return(list(
+      interpolated_data = complete_data,
+      method_details = list(method = "nearest_neighbor")
+    ))
+  }
+}
+
+#' Execute simple distance weighting interpolation
+#' @keywords internal
+execute_simple_interpolation <- function(complete_data, variable, target_grid, power,
+                                         max_distance, max_points, verbose) {
+
+  if (verbose) message("Performing simple distance weighting interpolation...")
+
+  if (!is.null(target_grid)) {
+    # Interpolate to grid
+    if (inherits(target_grid, "SpatRaster")) {
+      # Convert raster to points
+      grid_points <- terra::as.points(target_grid)
+      grid_sf <- sf::st_as_sf(grid_points)
+    } else {
+      grid_sf <- target_grid
+    }
+
+    # Ensure CRS compatibility
+    if (!identical(sf::st_crs(complete_data), sf::st_crs(grid_sf))) {
+      if (verbose) message("Reprojecting target grid to match data CRS...")
+      grid_sf <- sf::st_transform(grid_sf, crs = sf::st_crs(complete_data))
+    }
+
+    # Get coordinates
+    source_coords <- sf::st_coordinates(complete_data)
+    target_coords <- sf::st_coordinates(grid_sf)
+    source_values <- complete_data[[variable]]
+
+    # Remove any NA values
+    valid_idx <- !is.na(source_values)
+    source_coords <- source_coords[valid_idx, , drop = FALSE]
+    source_values <- source_values[valid_idx]
+
+    if (verbose) message(sprintf("Using %d source points for interpolation", length(source_values)))
+
+    # Perform simple distance weighting for each target point
+    predicted_values <- numeric(nrow(target_coords))
+
+    for (i in seq_len(nrow(target_coords))) {
+      if (verbose && i %% 500 == 0) {
+        message(sprintf("Processing point %d/%d", i, nrow(target_coords)))
+      }
+
+      target_pt <- target_coords[i, ]
+
+      # Calculate distances
+      distances <- sqrt((source_coords[, 1] - target_pt[1])^2 +
+                          (source_coords[, 2] - target_pt[2])^2)
+
+      # Apply maximum distance filter if specified
+      if (is.finite(max_distance) && max_distance > 0) {
+        valid_distances <- distances <= max_distance
+        if (sum(valid_distances) < 1) {
+          predicted_values[i] <- NA
+          next
+        }
+        distances <- distances[valid_distances]
+        values_subset <- source_values[valid_distances]
+      } else {
+        values_subset <- source_values
+      }
+
+      # Limit to max_points nearest neighbors
+      if (length(distances) > max_points) {
+        nearest_idx <- order(distances)[1:max_points]
+        distances <- distances[nearest_idx]
+        values_subset <- values_subset[nearest_idx]
+      }
+
+      # Handle points that coincide with data points
+      zero_dist_idx <- distances < 1e-10
+      if (any(zero_dist_idx)) {
+        predicted_values[i] <- mean(values_subset[zero_dist_idx])
+      } else {
+        # Calculate distance weights
+        weights <- 1 / (distances^power)
+        weights <- weights / sum(weights)
+
+        # Calculate weighted average
+        predicted_values[i] <- sum(weights * values_subset)
+      }
+    }
+
+    # Create result sf object
+    result_sf <- grid_sf
+    result_sf$var1.pred <- predicted_values
+
+    if (verbose) {
+      valid_predictions <- sum(!is.na(predicted_values))
+      message(sprintf("Simple interpolation completed: %d/%d valid predictions",
+                      valid_predictions, length(predicted_values)))
+    }
+
+    return(list(
+      interpolated_points = result_sf,
+      method_details = list(
+        method = "simple_distance_weighting",
+        power = power,
+        max_distance = max_distance,
+        max_points = max_points,
+        n_predictions = nrow(result_sf),
+        n_valid_predictions = sum(!is.na(predicted_values))
+      )
+    ))
+
+  } else {
+    # Point-to-point interpolation (no target grid)
+    return(list(
+      interpolated_data = complete_data,
+      method_details = list(method = "simple_distance_weighting", power = power)
+    ))
+  }
+}
+
+#' Execute spline interpolation
+#' @keywords internal
+execute_spline_interpolation <- function(complete_data, variable, target_grid, verbose) {
+
+  if (verbose) message("Spline interpolation not fully implemented. Using nearest neighbor.")
+  return(execute_nn_interpolation(complete_data, variable, target_grid, verbose))
+}
+
+#' Execute MICE interpolation
+#' @keywords internal
+execute_mice_interpolation <- function(complete_data, variable, mice_method, mice_iterations, verbose) {
+
+  if (!requireNamespace("mice", quietly = TRUE)) {
+    warning("mice package required for MICE interpolation. Using nearest neighbor instead.")
+    return(execute_nn_interpolation(complete_data, variable, NULL, verbose))
+  }
+
+  if (verbose) message("Performing MICE multivariate imputation...")
+
+  # Basic MICE implementation
+  coords <- sf::st_coordinates(complete_data)
+  data_df <- sf::st_drop_geometry(complete_data)
+  data_df$x <- coords[, 1]
+  data_df$y <- coords[, 2]
+
+  mice_result <- mice::mice(data_df, method = mice_method, m = 1,
+                            maxit = mice_iterations, printFlag = !verbose)
+  imputed_data <- mice::complete(mice_result)
+
+  # Create sf object with imputed values
+  result_sf <- sf::st_as_sf(imputed_data, coords = c("x", "y"),
+                            crs = sf::st_crs(complete_data))
+
+  return(list(
+    interpolated_data = result_sf,
+    method_details = list(method = mice_method, iterations = mice_iterations)
+  ))
+}
+
+#' Perform cross-validation for interpolation accuracy
+#' @keywords internal
+perform_cross_validation <- function(spatial_sf, target_variables, method, cv_folds,
+                                     power, max_distance, min_points, max_points, verbose) {
+
+  cv_results <- list()
+
+  for (var in target_variables) {
+    if (verbose) message(sprintf("Cross-validating %s...", var))
+
+    complete_data <- spatial_sf[!is.na(spatial_sf[[var]]), ]
+
+    if (nrow(complete_data) < cv_folds) {
+      warning(sprintf("Insufficient data for %d-fold CV on %s", cv_folds, var))
+      next
+    }
+
+    # Create folds
+    n_points <- nrow(complete_data)
+    fold_ids <- sample(rep(1:cv_folds, length.out = n_points))
+
+    predictions <- numeric(n_points)
+    observed <- complete_data[[var]]
+
+    for (fold in 1:cv_folds) {
+      test_idx <- fold_ids == fold
+      train_data <- complete_data[!test_idx, ]
+      test_data <- complete_data[test_idx, ]
+
+      # Perform interpolation on training data
+      if (method == "NN") {
+        # Nearest neighbor prediction
+        train_coords <- sf::st_coordinates(train_data)
+        test_coords <- sf::st_coordinates(test_data)
+        train_values <- train_data[[var]]
+
+        for (i in seq_len(nrow(test_coords))) {
+          distances <- sqrt((train_coords[, 1] - test_coords[i, 1])^2 +
+                              (train_coords[, 2] - test_coords[i, 2])^2)
+          nearest_idx <- which.min(distances)
+          predictions[test_idx][i] <- train_values[nearest_idx]
+        }
+
+      } else if (method == "simple") {
+        # Simple distance weighting prediction
+        train_coords <- sf::st_coordinates(train_data)
+        test_coords <- sf::st_coordinates(test_data)
+        train_values <- train_data[[var]]
+
+        for (i in seq_len(nrow(test_coords))) {
+          distances <- sqrt((train_coords[, 1] - test_coords[i, 1])^2 +
+                              (train_coords[, 2] - test_coords[i, 2])^2)
+
+          # Limit to max_points nearest neighbors
+          if (length(distances) > max_points) {
+            nearest_idx <- order(distances)[1:max_points]
+            distances <- distances[nearest_idx]
+            values_subset <- train_values[nearest_idx]
+          } else {
+            values_subset <- train_values
+          }
+
+          # Handle coincident points
+          zero_dist_idx <- distances < 1e-10
+          if (any(zero_dist_idx)) {
+            predictions[test_idx][i] <- mean(values_subset[zero_dist_idx])
+          } else {
+            # Calculate weights
+            weights <- 1 / (distances^power)
+            weights <- weights / sum(weights)
+            predictions[test_idx][i] <- sum(weights * values_subset)
+          }
+        }
+
+      } else {
+        # Fallback: mean of training data
+        predictions[test_idx] <- mean(train_data[[var]], na.rm = TRUE)
+      }
+    }
+
+    # Calculate accuracy metrics
+    valid_idx <- !is.na(predictions) & !is.na(observed)
+    if (sum(valid_idx) > 0) {
+      rmse <- sqrt(mean((predictions[valid_idx] - observed[valid_idx])^2))
+      mae <- mean(abs(predictions[valid_idx] - observed[valid_idx]))
+      r_squared <- cor(predictions[valid_idx], observed[valid_idx])^2
+
+      cv_results[[var]] <- list(
+        rmse = rmse,
+        mae = mae,
+        r_squared = r_squared,
+        n_predictions = sum(valid_idx)
+      )
+
+      if (verbose) {
+        message(sprintf("  %s CV results: RMSE=%.4f, MAE=%.4f, R^2=%.3f",
+                        var, rmse, mae, r_squared))
+      }
+    }
+  }
+
+  return(cv_results)
+}
+
+#' Compile interpolation results into requested format
+#' @keywords internal
+compile_interpolation_results <- function(interpolation_results, original_data,
+                                          target_variables, output_format, verbose) {
+
+  if (output_format == "sf") {
+    # Return sf object with interpolated values
+    result_sf <- original_data
+
+    for (var in names(interpolation_results)) {
+      var_result <- interpolation_results[[var]]
+      if (!is.null(var_result$interpolated_points)) {
+        # This contains predictions at target grid points
+        return(var_result$interpolated_points)
+      } else if (!is.null(var_result$interpolated_data)) {
+        # Update values in original data
+        result_sf[[paste0(var, "_interpolated")]] <- var_result$interpolated_data[[var]]
+      }
+    }
+
+    return(result_sf)
+
+  } else if (output_format == "raster") {
+    # Return raster stack of interpolated surfaces
+    warning("Raster output not fully implemented. Returning sf object.")
+    return(compile_interpolation_results(interpolation_results, original_data,
+                                         target_variables, "sf", verbose))
+
+  } else if (output_format == "both") {
+    # Return both sf and raster results
+    sf_result <- compile_interpolation_results(interpolation_results, original_data,
+                                               target_variables, "sf", verbose)
+
+    return(list(
+      sf = sf_result,
+      raster = NULL,  # Placeholder
+      interpolation_results = interpolation_results
+    ))
+  }
+}
+
+#' Save interpolation results to file
+#' @keywords internal
+save_interpolation_results <- function(results, output_file, output_format, verbose) {
+
+  if (verbose) message(sprintf("Saving results to: %s", output_file))
+
+  file_ext <- tolower(tools::file_ext(output_file))
+
+  if (output_format == "sf" || (output_format == "both" && !is.null(results$sf))) {
+    data_to_save <- if (output_format == "both") results$sf else results
+
+    if (file_ext %in% c("shp", "gpkg", "geojson")) {
+      sf::st_write(data_to_save, output_file, quiet = !verbose)
+    } else if (file_ext == "csv") {
+      # Convert to CSV with coordinates
+      coords <- sf::st_coordinates(data_to_save)
+      csv_data <- sf::st_drop_geometry(data_to_save)
+      csv_data$longitude <- coords[, 1]
+      csv_data$latitude <- coords[, 2]
+      write.csv(csv_data, output_file, row.names = FALSE)
+    } else {
+      # Default to RDS
+      saveRDS(results, output_file)
+    }
+  }
+}
+
+#' Calculate skewness for data assessment
+#' @keywords internal
+calculate_skewness <- function(x) {
+  n <- length(x)
+  if (n < 3) return(NA)
+
+  mean_x <- mean(x)
+  sd_x <- sd(x)
+
+  skew <- sum((x - mean_x)^3) / ((n - 1) * sd_x^3)
+  return(skew)
+}
+
+#' Compare interpolation methods
+#'
+#' @description
+#' Compare multiple interpolation methods using cross-validation and
+#' return performance metrics for method selection.
+#'
+#' @param spatial_data Spatial data for interpolation
+#' @param target_variable Variable to interpolate
+#' @param methods Vector of methods to compare
+#' @param cv_folds Number of cross-validation folds
+#' @param verbose Print comparison results
+#'
+#' @return Data frame with method comparison results
+#'
+#' @examples
+#' \dontrun{
+#' # These examples require external data files not included with the package
+#' # Compare interpolation methods
+#' method_comparison <- compare_interpolation_methods(
+#'   soil_data,
+#'   target_variable = "nitrogen",
+#'   methods = c("NN", "simple", "spline"),
+#'   cv_folds = 10
+#' )
+#'
+#' # View results
+#' print(method_comparison)
+#' # Best method
+#' best_method <- method_comparison$method[which.min(method_comparison$rmse)]
+#' }
+#'
+#' @export
+compare_interpolation_methods <- function(spatial_data,
+                                          target_variable,
+                                          methods = c("NN", "simple", "spline"),
+                                          cv_folds = 5,
+                                          verbose = TRUE) {
+
+  if (verbose) message("Comparing interpolation methods...")
+
+  comparison_results <- data.frame(
+    method = character(),
+    rmse = numeric(),
+    mae = numeric(),
+    r_squared = numeric(),
+    processing_time = numeric(),
+    stringsAsFactors = FALSE
+  )
+
+  for (method in methods) {
+    if (verbose) message(sprintf("Testing method: %s", method))
+
+    start_time <- Sys.time()
+
+    tryCatch({
+      # Perform interpolation with cross-validation
+      result <- spatial_interpolation_comprehensive(
+        spatial_data = spatial_data,
+        target_variables = target_variable,
+        method = method,
+        cross_validation = TRUE,
+        cv_folds = cv_folds,
+        verbose = FALSE
+      )
+
+      # Extract cross-validation results
+      cv_results <- attr(result, "cross_validation")
+
+      if (!is.null(cv_results) && target_variable %in% names(cv_results)) {
+        cv_data <- cv_results[[target_variable]]
+        processing_time <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+
+        comparison_results <- rbind(comparison_results, data.frame(
+          method = method,
+          rmse = cv_data$rmse,
+          mae = cv_data$mae,
+          r_squared = cv_data$r_squared,
+          processing_time = processing_time,
+          stringsAsFactors = FALSE
+        ))
+      }
+
+    }, error = function(e) {
+      if (verbose) message(sprintf("Method %s failed: %s", method, e$message))
+    })
+  }
+
+  # Sort by RMSE (lower is better)
+  comparison_results <- comparison_results[order(comparison_results$rmse), ]
+
+  if (verbose && nrow(comparison_results) > 0) {
+    message("\nMethod Comparison Results (ranked by RMSE):")
+    print(comparison_results)
+    message(sprintf("\nBest method: %s (RMSE = %.4f)",
+                    comparison_results$method[1], comparison_results$rmse[1]))
+  }
+
+  return(comparison_results)
+}

@@ -1,0 +1,331 @@
+#' Analyze temporal changes in geospatial data
+#'
+#' @description
+#' Analyze temporal changes in raster data including trend analysis,
+#' change detection, and seasonal patterns. Works with any time series data.
+#'
+#' @param data_list List of raster data for different time periods
+#' @param dates Vector of dates corresponding to rasters
+#' @param region_boundary Region boundary for analysis
+#' @param analysis_type Type of temporal analysis: "trend", "change_detection", "seasonal", "statistics"
+#' @param output_folder Output directory for results
+#'
+#' @return Temporal analysis results
+#'
+#' @examples
+#' \dontrun{
+#' # Analyze NDVI trends over time
+#' ndvi_trend <- analyze_temporal_changes(
+#'   data_list = c("ndvi_2020.tif", "ndvi_2021.tif", "ndvi_2022.tif"),
+#'   dates = c("2020", "2021", "2022"),
+#'   region_boundary = "Iowa",
+#'   analysis_type = "trend"
+#' )
+#'
+#' # Detect land cover changes
+#' land_changes <- analyze_temporal_changes(
+#'   data_list = land_cover_files,
+#'   dates = land_cover_dates,
+#'   analysis_type = "change_detection"
+#' )
+#' }
+#'
+#' @export
+analyze_temporal_changes <- function(data_list, dates = NULL, region_boundary = NULL,
+                                     analysis_type = "trend", output_folder = NULL) {
+
+  message("Starting temporal change analysis...")
+
+  # Load raster data
+  if (is.character(data_list)) {
+    # Directory or file list provided
+    rasters <- load_raster_data(data_list)
+  } else if (is.list(data_list)) {
+    rasters <- data_list
+  } else {
+    stop("data_list must be a list of rasters or file paths")
+  }
+
+  # Extract or validate dates
+  if (is.null(dates)) {
+    dates <- extract_dates_universal(data_list)
+  }
+
+  if (length(dates) != length(rasters)) {
+    warning("Number of dates doesn't match number of rasters")
+    dates <- paste0("Period_", seq_along(rasters))
+  }
+
+  # Apply region boundary if provided
+  if (!is.null(region_boundary)) {
+    boundary <- get_region_boundary(region_boundary)
+    boundary_vect <- terra::vect(boundary)
+    rasters <- lapply(rasters, function(r) {
+      r_cropped <- terra::crop(r, boundary_vect)
+      terra::mask(r_cropped, boundary_vect)
+    })
+  }
+
+  # Perform temporal analysis
+  result <- switch(analysis_type,
+                   "trend" = {
+                     # Calculate linear trend over time
+                     calculate_temporal_trend(rasters, dates)
+                   },
+
+                   "change_detection" = {
+                     # Detect significant changes between periods
+                     detect_temporal_changes(rasters, dates)
+                   },
+
+                   "seasonal" = {
+                     # Analyze seasonal patterns
+                     analyze_seasonal_patterns(rasters, dates)
+                   },
+
+                   "statistics" = {
+                     # Calculate temporal statistics
+                     calculate_temporal_statistics(rasters, dates)
+                   },
+
+                   stop(paste("Unsupported temporal analysis type:", analysis_type))
+  )
+
+  # Save results
+  if (!is.null(output_folder)) {
+    if (!dir.exists(output_folder)) {
+      dir.create(output_folder, recursive = TRUE)
+    }
+
+    save_temporal_results(result, output_folder, analysis_type)
+  }
+
+  message("Temporal analysis completed!")
+  return(result)
+}
+
+#' Calculate temporal trend using linear regression
+#'
+#' @description
+#' Internal function to calculate pixel-wise temporal trends.
+#'
+#' @param rasters List of rasters
+#' @param dates Vector of dates
+#'
+#' @return List with trend analysis results
+#'
+#' @keywords internal
+calculate_temporal_trend <- function(rasters, dates) {
+  message("Calculating temporal trends...")
+
+  # Convert dates to numeric (days since first date)
+  date_objects <- as.Date(dates)
+  if (any(is.na(date_objects))) {
+    # Use sequential numbering if dates can't be parsed
+    time_numeric <- seq_along(dates)
+  } else {
+    time_numeric <- as.numeric(date_objects - min(date_objects))
+  }
+
+  # Stack all rasters
+  raster_stack <- terra::rast(rasters)
+
+  # Calculate trend using linear regression for each pixel
+  trend_function <- function(values) {
+    if (sum(!is.na(values)) < 3) return(c(NA, NA, NA))
+
+    valid_idx <- !is.na(values)
+    y <- values[valid_idx]
+    x <- time_numeric[valid_idx]
+
+    if (length(unique(x)) < 2) return(c(NA, NA, NA))
+
+    lm_result <- tryCatch({
+      lm(y ~ x)
+    }, error = function(e) NULL)
+
+    if (is.null(lm_result)) return(c(NA, NA, NA))
+
+    slope <- coef(lm_result)[2]
+    intercept <- coef(lm_result)[1]
+    r_squared <- summary(lm_result)$r.squared
+
+    return(c(slope, intercept, r_squared))
+  }
+
+  # Apply trend calculation
+  trend_results <- terra::app(raster_stack, trend_function)
+  names(trend_results) <- c("slope", "intercept", "r_squared")
+
+  return(list(
+    trend_rasters = trend_results,
+    dates = dates,
+    time_numeric = time_numeric,
+    analysis_type = "trend"
+  ))
+}
+
+#' Detect temporal changes between periods
+#'
+#' @description
+#' Internal function to detect changes between time periods.
+#'
+#' @param rasters List of rasters
+#' @param dates Vector of dates
+#'
+#' @return List with change detection results
+#'
+#' @keywords internal
+detect_temporal_changes <- function(rasters, dates) {
+  message("Detecting temporal changes...")
+
+  if (length(rasters) < 2) {
+    stop("At least 2 time periods required for change detection")
+  }
+
+  changes <- list()
+
+  for (i in 2:length(rasters)) {
+    change_name <- paste0("change_", dates[i-1], "_to_", dates[i])
+    change_raster <- rasters[[i]] - rasters[[i-1]]
+    names(change_raster) <- change_name
+    changes[[change_name]] <- change_raster
+  }
+
+  # Calculate overall change (first to last)
+  if (length(rasters) > 2) {
+    overall_change <- rasters[[length(rasters)]] - rasters[[1]]
+    names(overall_change) <- paste0("overall_change_", dates[1], "_to_", dates[length(dates)])
+    changes[["overall_change"]] <- overall_change
+  }
+
+  return(list(
+    change_rasters = changes,
+    dates = dates,
+    analysis_type = "change_detection"
+  ))
+}
+
+#' Analyze seasonal patterns
+#'
+#' @description
+#' Internal function to analyze seasonal patterns in temporal data.
+#'
+#' @param rasters List of rasters
+#' @param dates Vector of dates
+#'
+#' @return List with seasonal analysis results
+#'
+#' @keywords internal
+analyze_seasonal_patterns <- function(rasters, dates) {
+  message("Analyzing seasonal patterns...")
+
+  # Try to extract month information from dates
+  date_objects <- as.Date(dates)
+  if (any(is.na(date_objects))) {
+    warning("Could not parse dates for seasonal analysis")
+    return(list(error = "Could not parse dates"))
+  }
+
+  months <- format(date_objects, "%m")
+  seasons <- ifelse(months %in% c("12", "01", "02"), "Winter",
+                    ifelse(months %in% c("03", "04", "05"), "Spring",
+                           ifelse(months %in% c("06", "07", "08"), "Summer", "Fall")))
+
+  # Group rasters by season
+  seasonal_rasters <- list()
+  for (season in unique(seasons)) {
+    season_indices <- which(seasons == season)
+    if (length(season_indices) > 1) {
+      season_stack <- terra::rast(rasters[season_indices])
+      seasonal_rasters[[season]] <- terra::app(season_stack, mean, na.rm = TRUE)
+    } else {
+      seasonal_rasters[[season]] <- rasters[[season_indices]]
+    }
+    names(seasonal_rasters[[season]]) <- paste0(season, "_mean")
+  }
+
+  return(list(
+    seasonal_rasters = seasonal_rasters,
+    seasons = seasons,
+    dates = dates,
+    analysis_type = "seasonal"
+  ))
+}
+
+#' Calculate temporal statistics
+#'
+#' @description
+#' Internal function to calculate temporal statistics.
+#'
+#' @param rasters List of rasters
+#' @param dates Vector of dates
+#'
+#' @return List with temporal statistics
+#'
+#' @keywords internal
+calculate_temporal_statistics <- function(rasters, dates) {
+  message("Calculating temporal statistics...")
+
+  # Stack all rasters
+  raster_stack <- terra::rast(rasters)
+
+  # Calculate statistics
+  temporal_mean <- terra::app(raster_stack, mean, na.rm = TRUE)
+  temporal_sd <- terra::app(raster_stack, sd, na.rm = TRUE)
+  temporal_min <- terra::app(raster_stack, min, na.rm = TRUE)
+  temporal_max <- terra::app(raster_stack, max, na.rm = TRUE)
+  temporal_range <- temporal_max - temporal_min
+
+  names(temporal_mean) <- "temporal_mean"
+  names(temporal_sd) <- "temporal_sd"
+  names(temporal_min) <- "temporal_min"
+  names(temporal_max) <- "temporal_max"
+  names(temporal_range) <- "temporal_range"
+
+  return(list(
+    statistics_rasters = list(
+      mean = temporal_mean,
+      sd = temporal_sd,
+      min = temporal_min,
+      max = temporal_max,
+      range = temporal_range
+    ),
+    dates = dates,
+    analysis_type = "statistics"
+  ))
+}
+
+#' Save temporal analysis results
+#'
+#' @description
+#' Internal function to save temporal analysis results to files.
+#'
+#' @param result Temporal analysis results
+#' @param output_folder Output directory
+#' @param analysis_type Type of analysis
+#'
+#' @keywords internal
+save_temporal_results <- function(result, output_folder, analysis_type) {
+  if (analysis_type == "trend") {
+    terra::writeRaster(result$trend_rasters$slope,
+                       file.path(output_folder, "temporal_slope.tif"), overwrite = TRUE)
+    terra::writeRaster(result$trend_rasters$r_squared,
+                       file.path(output_folder, "temporal_r_squared.tif"), overwrite = TRUE)
+  } else if (analysis_type == "change_detection") {
+    for (change_name in names(result$change_rasters)) {
+      filename <- file.path(output_folder, paste0(change_name, ".tif"))
+      terra::writeRaster(result$change_rasters[[change_name]], filename, overwrite = TRUE)
+    }
+  } else if (analysis_type == "seasonal") {
+    for (season in names(result$seasonal_rasters)) {
+      filename <- file.path(output_folder, paste0("seasonal_", season, ".tif"))
+      terra::writeRaster(result$seasonal_rasters[[season]], filename, overwrite = TRUE)
+    }
+  } else if (analysis_type == "statistics") {
+    for (stat_name in names(result$statistics_rasters)) {
+      filename <- file.path(output_folder, paste0("temporal_", stat_name, ".tif"))
+      terra::writeRaster(result$statistics_rasters[[stat_name]], filename, overwrite = TRUE)
+    }
+  }
+}

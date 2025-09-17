@@ -1,0 +1,26 @@
+{
+    "id": "B51FD0C9",
+    "path": "~/CSE_MSE_RXF131/staging/casf/EE/geospatialsuite-r/packages/geospatialsuite/R/12-workflows.R",
+    "project_path": "R/12-workflows.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1753396686618.0,
+    "source_on_save": false,
+    "relative_order": 11,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "742,23",
+        "scrollLine": "737"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1753396705,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1753396706003,
+    "read_only": false,
+    "read_only_alternatives": []
+}

@@ -1,0 +1,289 @@
+#' Analyze water quality comprehensively
+#'
+#' @description
+#' Complete water quality analysis including spatial integration with landscape
+#' variables, threshold analysis, and visualization.
+#'
+#' @param water_data Water quality data (data.frame, sf object, or file path)
+#' @param variable Variable to analyze (e.g., "discharge", "nitrate_nitrite")
+#' @param region_boundary Region boundary
+#' @param river_network Optional river network data
+#' @param output_folder Output directory
+#' @param thresholds Named list of threshold values for classification
+#'
+#' @return List with water quality analysis results
+#'
+#' @examples
+#' \dontrun{
+#' # Comprehensive water quality analysis
+#' water_results <- analyze_water_quality_comprehensive(
+#'   water_data = "ohio_water_stations.csv",
+#'   variable = "nitrate_nitrite",
+#'   region_boundary = "Ohio",
+#'   river_network = "ohio_rivers.geojson",
+#'   thresholds = list(Normal = c(0, 4), High = c(4, 7), Warning = c(7, 10))
+#' )
+#' }
+#'
+#' @export
+analyze_water_quality_comprehensive <- function(water_data, variable, region_boundary,
+                                                river_network = NULL, output_folder = tempdir(),
+                                                thresholds = list(Normal = c(0, 4), High = c(4, 7),
+                                                                  Warning = c(7, 10), Toxic = c(10, Inf))) {
+
+  message("Starting comprehensive water quality analysis...")
+
+  # Step 1: Load and process water data
+  message("Step 1: Loading water quality data...")
+  if (is.character(water_data)) {
+    water_df <- read.csv(water_data)
+  } else {
+    water_df <- water_data
+  }
+
+  # Convert to sf if needed
+  if (!inherits(water_df, "sf")) {
+    coord_cols <- c("lon", "lat")
+    if ("LongitudeMeasure" %in% names(water_df)) {
+      coord_cols <- c("LongitudeMeasure", "LatitudeMeasure")
+    }
+    water_sf <- sf::st_as_sf(water_df, coords = coord_cols, crs = 4326)
+  } else {
+    water_sf <- water_df
+  }
+
+  # Step 2: Filter for region
+  if (!is.null(region_boundary)) {
+    message("Step 2: Filtering data for region...")
+    boundary <- get_region_boundary(region_boundary)
+    water_sf <- sf::st_filter(water_sf, boundary)
+  }
+
+  # Step 3: Apply thresholds and create categories
+  message("Step 3: Applying water quality thresholds...")
+  if (!is.null(thresholds) && variable %in% names(water_sf)) {
+    water_sf$quality_category <- NA
+    for (threshold_name in names(thresholds)) {
+      threshold_range <- thresholds[[threshold_name]]
+      mask <- water_sf[[variable]] >= threshold_range[1] &
+        water_sf[[variable]] < threshold_range[2]
+      water_sf$quality_category[mask] <- threshold_name
+    }
+  }
+
+  # Step 4: Calculate summary statistics
+  message("Step 4: Calculating summary statistics...")
+  if (variable %in% names(water_sf)) {
+    quality_stats <- list(
+      mean_value = mean(water_sf[[variable]], na.rm = TRUE),
+      median_value = median(water_sf[[variable]], na.rm = TRUE),
+      max_value = max(water_sf[[variable]], na.rm = TRUE),
+      min_value = min(water_sf[[variable]], na.rm = TRUE),
+      sd_value = sd(water_sf[[variable]], na.rm = TRUE),
+      n_stations = nrow(water_sf),
+      n_valid_measurements = sum(!is.na(water_sf[[variable]]))
+    )
+
+    # Category statistics if thresholds applied
+    if ("quality_category" %in% names(water_sf)) {
+      category_counts <- table(water_sf$quality_category, useNA = "ifany")
+      quality_stats$category_counts <- category_counts
+      quality_stats$category_percentages <- round(prop.table(category_counts) * 100, 1)
+    }
+  } else {
+    quality_stats <- list(error = paste("Variable", variable, "not found in data"))
+  }
+
+  # Step 5: Create visualization
+  message("Step 5: Creating water quality visualization...")
+  plot_result <- NULL
+  if (variable %in% names(water_sf)) {
+    plot_result <- create_water_quality_plot(
+      water_data = water_sf,
+      variable = variable,
+      region_boundary = region_boundary,
+      river_network = river_network,
+      thresholds = thresholds,
+      output_file = if (!is.null(output_folder)) {
+        file.path(output_folder, paste0("water_quality_", variable, ".png"))
+      } else NULL
+    )
+  }
+
+  # Step 6: Save results
+  message("Step 6: Saving results...")
+  if (!dir.exists(output_folder)) {
+    dir.create(output_folder, recursive = TRUE)
+  }
+
+  # Save processed data
+  water_file <- file.path(output_folder, "water_quality_processed.csv")
+  water_df_export <- water_sf
+  if (inherits(water_sf, "sf")) {
+    coords <- sf::st_coordinates(water_sf)
+    water_df_export <- sf::st_drop_geometry(water_sf)
+    water_df_export$longitude <- coords[, 1]
+    water_df_export$latitude <- coords[, 2]
+  }
+  write.csv(water_df_export, water_file, row.names = FALSE)
+
+  # Save statistics
+  stats_file <- file.path(output_folder, "water_quality_statistics.txt")
+  stats_text <- c(
+    paste("Water Quality Analysis for", variable),
+    paste("Region:", region_boundary),
+    paste("Date:", Sys.time()),
+    "",
+    "SUMMARY STATISTICS:",
+    paste("Number of stations:", quality_stats$n_stations),
+    paste("Valid measurements:", quality_stats$n_valid_measurements),
+    paste("Mean value:", round(quality_stats$mean_value, 3)),
+    paste("Median value:", round(quality_stats$median_value, 3)),
+    paste("Range:", round(quality_stats$min_value, 3), "to", round(quality_stats$max_value, 3)),
+    paste("Standard deviation:", round(quality_stats$sd_value, 3))
+  )
+
+  if ("category_counts" %in% names(quality_stats)) {
+    stats_text <- c(stats_text, "", "THRESHOLD CATEGORIES:")
+    for (cat in names(quality_stats$category_counts)) {
+      count <- quality_stats$category_counts[[cat]]
+      pct <- quality_stats$category_percentages[[cat]]
+      stats_text <- c(stats_text, paste(cat, ":", count, "stations (", pct, "%)", sep = ""))
+    }
+  }
+
+  writeLines(stats_text, stats_file)
+
+  message("Water quality analysis completed successfully!")
+
+  return(list(
+    water_data = water_sf,
+    statistics = quality_stats,
+    plot = plot_result,
+    output_files = list(
+      data = water_file,
+      statistics = stats_file,
+      plot = if (!is.null(plot_result) && is.character(plot_result)) plot_result else NULL
+    )
+  ))
+}
+
+#' Create water quality visualization plot
+#'
+#' @description
+#' Create professional water quality visualization with thresholds and river networks.
+#'
+#' @param water_data Water quality data (data.frame or sf object)
+#' @param variable Variable to visualize
+#' @param region_boundary Region boundary
+#' @param river_network Optional river network data
+#' @param thresholds Named list of threshold values
+#' @param date_column Date column name (optional)
+#' @param output_file Output file path
+#'
+#' @return Plot object or file path
+#'
+#' @examples
+#' \dontrun{
+#' # Create water quality plot
+#' plot_result <- create_water_quality_plot(
+#'   water_data = water_stations,
+#'   variable = "discharge",
+#'   region_boundary = "Ohio",
+#'   thresholds = list(Low = c(0, 50), High = c(50, 200)),
+#'   output_file = "water_quality_map.png"
+#' )
+#' }
+#'
+#' @export
+create_water_quality_plot <- function(water_data, variable, region_boundary,
+                                      river_network = NULL,
+                                      thresholds = list(Normal = c(0, 4), High = c(4, 7),
+                                                        Warning = c(7, 10), Toxic = c(10, Inf)),
+                                      date_column = NULL, output_file = NULL) {
+
+  message("Creating water quality visualization...")
+
+  # Load required plotting packages
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop("ggplot2 package required for plotting")
+  }
+
+  # Load and process data
+  if (is.character(water_data)) {
+    water_data <- read.csv(water_data)
+  }
+
+  # Convert to sf if needed
+  if (!inherits(water_data, "sf")) {
+    coord_cols <- c("lon", "lat")
+    if ("LongitudeMeasure" %in% names(water_data)) {
+      coord_cols <- c("LongitudeMeasure", "LatitudeMeasure")
+    }
+    water_data <- sf::st_as_sf(water_data, coords = coord_cols, crs = 4326)
+  }
+
+  # Create threshold groups if variable exists
+  if (variable %in% names(water_data) && !is.null(thresholds)) {
+    water_data$threshold_group <- NA
+    for (threshold_name in names(thresholds)) {
+      threshold_range <- thresholds[[threshold_name]]
+      mask <- water_data[[variable]] >= threshold_range[1] &
+        water_data[[variable]] < threshold_range[2]
+      water_data$threshold_group[mask] <- threshold_name
+    }
+  }
+
+  # Get region boundary
+  boundary <- get_region_boundary(region_boundary)
+
+  # Create base plot
+  p <- ggplot2::ggplot() +
+    ggplot2::geom_sf(data = boundary, fill = "gray90", color = "black") +
+    ggplot2::coord_sf() +
+    ggplot2::theme_minimal()
+
+  # Add river network if provided
+  if (!is.null(river_network)) {
+    if (is.character(river_network)) {
+      rivers <- sf::st_read(river_network)
+    } else {
+      rivers <- river_network
+    }
+    p <- p + ggplot2::geom_sf(data = rivers, color = "lightblue", size = 0.5)
+  }
+
+  # Add water quality points
+  if (variable %in% names(water_data)) {
+    if (!is.null(thresholds) && "threshold_group" %in% names(water_data)) {
+      colors <- c("Normal" = "blue", "High" = "purple", "Warning" = "orange", "Toxic" = "red")
+      p <- p +
+        ggplot2::geom_sf(data = water_data, ggplot2::aes(color = threshold_group), size = 3, alpha = 0.8) +
+        ggplot2::scale_color_manual(name = paste(stringr::str_to_title(variable), "Levels"), values = colors)
+    } else {
+      p <- p +
+        ggplot2::geom_sf(data = water_data, ggplot2::aes(color = .data[[variable]]), size = 3) +
+        ggplot2::scale_color_viridis_c(name = stringr::str_to_title(variable))
+    }
+  }
+
+  # Add title
+  title_text <- paste(stringr::str_to_title(gsub("_", " ", variable)), "Levels")
+  if (!is.null(date_column) && date_column %in% names(water_data)) {
+    date_info <- unique(water_data[[date_column]])[1]
+    title_text <- paste(title_text, "on", date_info)
+  }
+
+  p <- p +
+    ggplot2::labs(title = title_text, x = "Longitude", y = "Latitude") +
+    ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))
+
+  # Save if output file specified
+  if (!is.null(output_file)) {
+    ggplot2::ggsave(output_file, plot = p, width = 12, height = 8, dpi = 300)
+    message(sprintf("Plot saved to: %s", output_file))
+    return(output_file)
+  }
+
+  return(p)
+}

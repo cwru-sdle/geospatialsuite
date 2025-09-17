@@ -1,0 +1,41 @@
+Package: geospatialsuite
+Title: Comprehensive Geospatial Analysis and Modeling Toolkit for Multimodal Data
+Version: 0.1.0
+Authors@R: 
+    person("Olatunde", "Akanbi", , "oda10@case.edu", role = c("aut", "cre"))
+Description: A comprehensive toolkit for geospatial analysis including
+    vegetation indices (NDVI, EVI, SAVI and others), water quality
+    analysis, both NDWI variants, raster mosaicking, universal spatial
+    joins, CDL crop analysis with comprehensive crop codes, spatial
+    interpolation, temporal analysis, terrain analysis, and dynamic
+    visualization. Designed for agricultural research, environmental
+    monitoring, water quality assessment, and land use analysis with
+    support for any geographic region and robust error handling.
+License: MIT + file LICENSE
+Depends: 
+    R (>= 3.5.0)
+Imports:
+    dplyr,
+    ggplot2,
+    magrittr,
+    sf,
+    stats,
+    stringr,
+    terra,
+    tools,
+    utils,
+    viridis,
+    grDevices
+Suggests:
+    gstat,
+    mice,
+    rnaturalearth,
+    tigris,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Config/testthat/edition: 3

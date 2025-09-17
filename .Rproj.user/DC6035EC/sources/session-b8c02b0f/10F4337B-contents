@@ -1,0 +1,137 @@
+#' @keywords package geospatial remote-sensing visualization vegetation-indices
+#' @importFrom terra rast values nlyr crop mask mosaic merge resample project terrain plotRGB plot
+#' @importFrom sf st_read st_write st_transform st_crs st_as_sf st_geometry st_bbox st_coordinates st_drop_geometry st_filter st_buffer st_distance
+#' @importFrom dplyr filter select mutate group_by summarise n
+#' @importFrom stats cor lm sd median quantile na.omit coef complete.cases runif as.formula setNames
+#' @importFrom utils read.csv write.csv head
+#' @importFrom grDevices terrain.colors colorRampPalette
+#' @importFrom RColorBrewer brewer.pal
+#' @importFrom magrittr %>%
+#' @importFrom ggplot2 ggplot aes geom_sf geom_tile geom_text geom_raster coord_sf coord_fixed theme_minimal theme element_text labs scale_fill_gradient2 scale_fill_gradientn scale_color_manual ggsave scale_colour_viridis_c scale_fill_viridis_c
+#' @importFrom viridis scale_fill_viridis scale_color_viridis
+#' @name geospatialsuite
+#' @aliases geospatialsuite
+#' @author Olatunde D. Akanbi \email{olatunde.akanbi@case.edu}
+#' @author Erika I. Barcelos \email{erika.barcelos@case.edu}
+#' @author Roger H. French \email{roger.french@case.edu}
+#' @description
+#' GeoSpatialSuite provides universal functions for geospatial analysis and advanced
+#' visualization that work with any region for multimodal data. Features include
+#' 40+ vegetation indices, efficient raster visualization, universal spatial mapping,
+#' dynamic crop analysis, water quality assessment, and publication-quality visualizations.
+#'
+#' @details
+#' ## Key Features:
+#'
+#' ### Universal Spatial Analysis:
+#' - Universal region support (states, countries, CONUS, custom boundaries)
+#' - Universal spatial join (works with ANY raster-vector combination)
+#' - Multi-dataset integration and temporal analysis
+#' - Spatial interpolation and terrain analysis
+#'
+#' ### Advanced Vegetation Analysis:
+#' - **40+ vegetation indices** including NDVI, EVI, SAVI, ARVI, PRI, SIPI, etc.
+#' - **Specialized crop analysis** with stress detection and yield assessment
+#' - **Auto band detection** from multi-band satellite imagery
+#' - **Quality filtering** and temporal smoothing for time series
+#'
+#' ### Efficient Visualization:
+#' - **Universal mapping** with auto-detection (`quick_map()` function)
+#' - **Efficient raster plotting** using tidyterra, RStoolbox, rasterVis
+#' - **Interactive maps** with leaflet integration and clustering
+#' - **RGB composites** with stretching algorithms
+#' - **Comparison maps** for before/after analysis
+#'
+#' ### Agricultural Applications:
+#' - **Dynamic CDL crop analysis** (all crop codes and categories)
+#' - **NDVI time series** with animation and classification
+#' - **Crop-specific analysis** (corn, soybeans, wheat, etc.)
+#' - **Water quality assessment** with threshold analysis
+#'
+#' ### Performance Features:
+#' - **No data frame conversion** for large rasters (uses tidyterra/RStoolbox)
+#' - **Automatic method selection** for optimal performance
+#' - **Parallel processing** support for multiple indices
+#' - **Smart fallback systems** when packages unavailable
+#'
+#' ## Quick Start Examples:
+#'
+#' ```r
+#' # One-line mapping (auto-detects everything!)
+#' quick_map("mydata.shp")
+#'
+#' # Calculate multiple vegetation indices
+#' indices <- calculate_multiple_indices(
+#'   spectral_data = landsat_stack,
+#'   indices = c("NDVI", "EVI", "SAVI", "PRI"),
+#'   auto_detect_bands = TRUE
+#' )
+#'
+#' # Comprehensive crop analysis
+#' crop_analysis <- analyze_crop_vegetation(
+#'   spectral_data = sentinel_data,
+#'   crop_type = "corn",
+#'   analysis_type = "comprehensive"
+#' )
+#'
+#' # Interactive NDVI map with animation
+#' create_ndvi_map("ndvi_stack.tif", animation = TRUE,
+#'                region_boundary = "Iowa")
+#'
+#' # Efficient RGB plotting
+#' plot_rgb_raster(satellite_data, r = 4, g = 3, b = 2,
+#'                stretch = "hist")
+#' ```
+#'
+#' ## Recommended Packages:
+#' For optimal performance, install these suggested packages:
+#'
+#' ```r
+#' # Essential for efficient raster visualization
+#' install.packages("tidyterra")
+#'
+#' # Excellent for remote sensing applications
+#' install.packages("RStoolbox")
+#'
+#' # For interactive mapping
+#' install.packages("leaflet")
+#'
+#' # For multi-panel plots and animations
+#' install.packages(c("patchwork", "gganimate"))
+#' ```
+"_PACKAGE"
+
+# Package startup message
+.onAttach <- function(libname, pkgname) {
+  packageStartupMessage("==================================================")
+  packageStartupMessage("GeoSpatialSuite v0.1.0 - Advanced Geospatial Analysis")
+  packageStartupMessage("==================================================")
+  packageStartupMessage("Universal - 40+ Vegetation Indices - Efficient Visualization")
+  packageStartupMessage("")
+  packageStartupMessage("   Efficient raster plotting (tidyterra/RStoolbox)")
+  packageStartupMessage("   40+ vegetation indices with auto band detection")
+  packageStartupMessage("   Universal mapping with quick_map()")
+  packageStartupMessage("   Interactive maps and RGB composites")
+  packageStartupMessage("")
+  packageStartupMessage("Quick Start: help(package='geospatialsuite')")
+  packageStartupMessage("Test Package: test_geospatialsuite_package()")
+  packageStartupMessage("Visualization: raster_plot_performance_tips()")
+  packageStartupMessage("==================================================")
+
+  # Check for recommended packages
+  recommended <- c("tidyterra", "RStoolbox", "leaflet")
+  missing <- recommended[!sapply(recommended, requireNamespace, quietly = TRUE)]
+
+  if (length(missing) > 0) {
+    packageStartupMessage("")
+    packageStartupMessage("RECOMMENDED: Install for better performance:")
+    packageStartupMessage(sprintf("   install.packages(c('%s'))", paste(missing, collapse = "', '")))
+  }
+}
+
+# Global variables
+utils::globalVariables(c(".", "STATEFP", "STUSPS", "NAME", "GEOID", "Var1", "Var2",
+                         "Correlation", "threshold_group", ".data", "x", "y", "value",
+                         "variable", "dataset", "NDVI", "NDVI_Class", "crop_code",
+                         "crop_name", "difference", "time_step", "Category", "Tested",
+                         "success", "method", "operation", "time_seconds", "value1", "value2"))
