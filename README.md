@@ -1,6 +1,12 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
+<div align="center">
+
+<img src="img/logo.png" alt="GeoSpatialSuite Logo" width="200"/>
+
+</div>
+
 # GeoSpatialSuite 🌍
 
 <!-- badges: start -->

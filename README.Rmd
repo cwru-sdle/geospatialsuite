@@ -13,6 +13,16 @@ knitr::opts_chunk$set(
 )
 ```
 
+
+
+
+<div align="center">
+  <img src="img/logo.png" alt="GeoSpatialSuite Logo" width="200"/>
+</div>
+
+
+
+
 # GeoSpatialSuite 🌍
 
 <!-- badges: start -->

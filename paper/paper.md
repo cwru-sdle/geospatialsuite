@@ -12,7 +12,12 @@ tags:
 - sf
 - agricultural research
 - environmental monitoring
-output: pdf_document
+date: "17 September 2025"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+bibliography: paper.bib
 authors:
 - name: Olatunde D. Akanbi
   orcid: "0000-0001-7719-2619"
@@ -35,12 +40,12 @@ authors:
 - name: Roger H. French
   orcid: "0000-0002-6162-0532"
   affiliation: '1'
-bibliography: paper.bib
 affiliations:
 - name: Case Western Reserve University, Cleveland, OH, USA
   index: 1
-  ror: 01dqwps44
+  ror: 051fd9666
 ---
+
 
 # Summary
 
@@ -62,11 +67,21 @@ GeoSpatialSuite addresses these fundamental challenges through several key innov
 
 **Reliable visualization for large datasets**: Built on `terra`'s efficient raster handling, the package provides publication-quality mapping through functions like `quick_map()` that handle large rasters without memory issues, automatic legend generation, and consistent color schemes. The visualization system includes robust error handling that prevents common plotting failures.
 
+![Example output from GeoSpatialSuite's `quick_map()` function demonstrating universal spatial mapping capabilities. The function automatically detects data types, coordinate systems, and optimal visualization parameters, requiring only a single line of code to produce publication-quality maps from any spatial data format.](../img/quick.png){#fig:quickmap width=90%}
+
 **Multimodal integration workflows**: Streamlined functions for combining satellite imagery, weather data, crop data layers, and administrative boundaries with built-in spatial and temporal alignment, quality checks, and standardized output formats. This addresses the type of complex geospatial analysis challenges found across diverse research domains [@gordon2025geospatial].
 
 The package architecture prioritizes reproducibility, computational efficiency, and ease of use through comprehensive documentation, extensive testing, and a consistent API design. This approach has proven essential in research funded by the National Science Foundation Engineering Research Center for Advancing Sustainable and Distributed Fertilizer Production (CASFER), where reliable geospatial analysis tools are critical for understanding agricultural systems at multiple scales [@akanbi2024multiscale; @akanbi2024leveraging].
 
 GeoSpatialSuite fills a critical gap by providing a single, well-documented package that handles the most common geospatial analysis challenges with the reliability and consistency required for reproducible science, while maintaining the flexibility needed for specialized research applications.
+
+# Software Architecture
+
+GeoSpatialSuite is organized into 10 functional categories comprising 165 functions (Figure 2), designed to provide comprehensive geospatial analysis capabilities while maintaining ease of use and reliability. The package architecture emphasizes modularity, with each functional category serving specific analytical needs while integrating seamlessly with other components.
+
+![GeoSpatialSuite functional organization showing the 10 major categories of functions: Core Spatial Operations, Water Quality and Indices, Spatial Interpolation, Testing & Validation, Utility Functions, Temporal Analysis, Data Processing, Visualization & Mapping, Comprehensive Workflows, and Vegetation Analysis. \label{fig:architecture}](../img/fig2.png)
+
+The core design philosophy centers on universal compatibility and robust error handling. Functions automatically detect data types, coordinate systems, and optimal processing methods, reducing the technical barrier for researchers while maintaining the flexibility needed for advanced applications. This architecture enables both novice users to quickly generate results and experienced researchers to implement sophisticated analytical workflows.
 
 # Availability
 
