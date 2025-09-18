@@ -14,9 +14,9 @@ tags:
 - environmental monitoring
 date: "17 September 2025"
 output:
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
 bibliography: paper.bib
 authors:
 - name: Olatunde D. Akanbi
