@@ -27,7 +27,7 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 [![CRAN status](https://www.r-pkg.org/badges/version/geospatialsuite)](https://CRAN.R-project.org/package=geospatialsuite)
-[![Downloads](https://cranlogs.r-pkg.org/badges/geospatialsuite)](https://cran.r-project.org/package=geospatialsuite)
+[![Total Downloads](https://cranlogs.r-pkg.org/badges/grand-total/geospatialsuite)](https://cran.r-project.org/package=geospatialsuite)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 <!-- badges: end -->
 
@@ -345,59 +345,73 @@ result <- universal_spatial_join(
 
 ## 📊 Supported Vegetation Indices
 
-<details>
-<summary><strong>Click to see all 60+ vegetation indices</strong></summary>
+<details> <summary><strong>Click to see all 60+ vegetation indices (full table)</strong></summary>
 
-### Basic Vegetation Indices
-- **NDVI** - Normalized Difference Vegetation Index (Rouse et al. 1974)
-- **EVI** - Enhanced Vegetation Index (Huete et al. 2002)
-- **SAVI** - Soil Adjusted Vegetation Index (Huete 1988)
-- **MSAVI** - Modified Soil Adjusted Vegetation Index (Qi et al. 1994)
-- **OSAVI** - Optimized Soil Adjusted Vegetation Index (Rondeaux et al. 1996)
-- **GNDVI** - Green Normalized Difference Vegetation Index
+| #  | Index      | Category    | Application | Required Bands   | Description                                    |
+| -- | ---------- | ----------- | ----------- | ---------------- | ---------------------------------------------- |
+| 1  | **NDVI**   | basic       | general     | Red, NIR         | Normalized Difference Vegetation Index         |
+| 2  | **SAVI**   | basic       | soil        | Red, NIR         | Soil Adjusted Vegetation Index                 |
+| 3  | **MSAVI**  | basic       | soil        | Red, NIR         | Modified Soil Adjusted Vegetation Index        |
+| 4  | **OSAVI**  | basic       | soil        | Red, NIR         | Optimized Soil Adjusted Vegetation Index       |
+| 5  | **EVI**    | basic       | general     | Red, NIR, Blue   | Enhanced Vegetation Index                      |
+| 6  | **EVI2**   | basic       | general     | Red, NIR         | Two-band Enhanced Vegetation Index             |
+| 7  | **DVI**    | basic       | biomass     | Red, NIR         | Difference Vegetation Index                    |
+| 8  | **RVI**    | basic       | general     | Red, NIR         | Ratio Vegetation Index                         |
+| 9  | **GNDVI**  | basic       | chlorophyll | Green, NIR       | Green NDVI                                     |
+| 10 | **WDVI**   | basic       | soil        | Red, NIR         | Weighted Difference Vegetation Index           |
+| 11 | **ARVI**   | enhanced    | atmospheric | Red, NIR, Blue   | Atmospherically Resistant Vegetation Index     |
+| 12 | **RDVI**   | enhanced    | general     | Red, NIR         | Renormalized Difference Vegetation Index       |
+| 13 | **PVI**    | enhanced    | general     | Red, NIR         | Perpendicular Vegetation Index                 |
+| 14 | **IPVI**   | enhanced    | general     | Red, NIR         | Infrared Percentage Vegetation Index           |
+| 15 | **TNDVI**  | enhanced    | general     | Red, NIR         | Transformed NDVI                               |
+| 16 | **GEMI**   | enhanced    | general     | Red, NIR         | Global Environment Monitoring Index            |
+| 17 | **VARI**   | enhanced    | general     | Red, Green, Blue | Visible Atmospherically Resistant Index        |
+| 18 | **TSAVI**  | enhanced    | soil        | Red, NIR         | Transformed Soil Adjusted VI                   |
+| 19 | **ATSAVI** | enhanced    | soil        | Red, NIR         | Adjusted Transformed Soil Adjusted VI          |
+| 20 | **GESAVI** | enhanced    | soil        | Red, NIR         | Generalized Soil Adjusted VI                   |
+| 21 | **MTVI**   | enhanced    | general     | Red, NIR         | Modified Triangular VI                         |
+| 22 | **CTVI**   | enhanced    | canopy      | Red, NIR         | Corrected Transformed VI                       |
+| 23 | **NDRE**   | advanced    | stress      | NIR, RedEdge     | Normalized Difference Red Edge                 |
+| 24 | **MTCI**   | advanced    | stress      | RedEdge, NIR     | MERIS Terrestrial Chlorophyll Index            |
+| 25 | **IRECI**  | advanced    | stress      | RedEdge, NIR     | Inverted Red-Edge Chlorophyll Index            |
+| 26 | **S2REP**  | advanced    | stress      | RedEdge          | Sentinel-2 Red-Edge Position                   |
+| 27 | **PSRI**   | advanced    | stress      | RedEdge, NIR     | Plant Senescence Reflectance Index             |
+| 28 | **CRI1**   | advanced    | stress      | Red, Green       | Carotenoid Reflectance Index 1                 |
+| 29 | **CRI2**   | advanced    | stress      | RedEdge, Green   | Carotenoid Reflectance Index 2                 |
+| 30 | **ARI1**   | advanced    | stress      | RedEdge, Green   | Anthocyanin Reflectance Index 1                |
+| 31 | **ARI2**   | advanced    | stress      | RedEdge, NIR     | Anthocyanin Reflectance Index 2                |
+| 32 | **MCARI**  | advanced    | stress      | Red, Green       | Modified Chlorophyll Absorption Ratio Index    |
+| 33 | **PRI**    | stress      | stress      | Green, NIR       | Photochemical Reflectance Index                |
+| 34 | **SIPI**   | stress      | stress      | Red, NIR         | Structure Insensitive Pigment Index            |
+| 35 | **CCI**    | stress      | stress      | RedEdge, Green   | Canopy Chlorophyll Index                       |
+| 36 | **NDNI**   | stress      | stress      | NIR, SWIR1       | Normalized Difference Nitrogen Index           |
+| 37 | **CARI**   | stress      | stress      | Red, Green       | Chlorophyll Absorption Ratio Index             |
+| 38 | **TCARI**  | stress      | stress      | Red, Green       | Transformed Chlorophyll Absorption Ratio Index |
+| 39 | **MTVI1**  | stress      | stress      | Red, NIR         | Modified Triangular Vegetation Index 1         |
+| 40 | **MTVI2**  | stress      | stress      | Red, NIR         | Modified Triangular Vegetation Index 2         |
+| 41 | **TVI**    | stress      | stress      | Red, NIR         | Triangular Vegetation Index                    |
+| 42 | **NPCI**   | stress      | stress      | Red, Blue        | Normalized Pigment Chlorophyll Index           |
+| 43 | **RARS**   | stress      | stress      | Red, NIR         | Ratio Analysis of Reflectance Spectra          |
+| 44 | **NPQI**   | stress      | stress      | Red, Blue        | Normalized Phaeophytinization Index            |
+| 45 | **NDWI**   | water       | water       | Green, NIR       | Normalized Difference Water Index              |
+| 46 | **MNDWI**  | water       | water       | Green, SWIR1     | Modified Normalized Difference Water Index     |
+| 47 | **NDMI**   | water       | water       | NIR, SWIR1       | Normalized Difference Moisture Index           |
+| 48 | **MSI**    | water       | water       | NIR, SWIR1       | Moisture Stress Index                          |
+| 49 | **NDII**   | water       | water       | NIR, SWIR1       | Normalized Difference Infrared Index           |
+| 50 | **WI**     | water       | water       | NIR, SWIR1       | Water Index                                    |
+| 51 | **SRWI**   | water       | water       | NIR, SWIR1       | Simple Ratio Water Index                       |
+| 52 | **LSWI**   | water       | water       | NIR, SWIR1       | Land Surface Water Index                       |
+| 53 | **LAI**    | specialized | forestry    | Red, NIR         | Leaf Area Index                                |
+| 54 | **FAPAR**  | specialized | forestry    | Red, NIR         | Fraction of Absorbed PAR                       |
+| 55 | **FCOVER** | specialized | forestry    | Red, NIR         | Fraction of Vegetation Cover                   |
+| 56 | **NBR**    | specialized | forestry    | NIR, SWIR2       | Normalized Burn Ratio                          |
+| 57 | **BAI**    | specialized | forestry    | Red, NIR         | Burn Area Index                                |
+| 58 | **NDSI**   | specialized | snow        | Green, SWIR1     | Normalized Difference Snow Index               |
+| 59 | **GRVI**   | specialized | general     | Red, Green       | Green-Red Vegetation Index                     |
+| 60 | **VIG**    | specialized | general     | Green, NIR       | Vegetation Index Green                         |
+| 61 | **CI**     | specialized | canopy      | Red, Green       | Coloration Index                               |
+| 62 | **GBNDVI** | specialized | general     | Green, Blue, NIR | Green-Blue NDVI                                |
 
-### Atmospheric Correction Indices
-- **ARVI** - Atmospherically Resistant Vegetation Index (Kaufman & Tanré 1992)
-- **RDVI** - Renormalized Difference Vegetation Index
-- **WDVI** - Weighted Difference Vegetation Index
-- **PVI** - Perpendicular Vegetation Index
-- **VARI** - Visible Atmospherically Resistant Index
-
-### Red-Edge Indices (Sentinel-2/Hyperspectral)
-- **NDRE** - Normalized Difference Red Edge
-- **MTCI** - MERIS Terrestrial Chlorophyll Index
-- **IRECI** - Inverted Red-Edge Chlorophyll Index
-- **S2REP** - Sentinel-2 Red-Edge Position
-- **CIred-edge** - Chlorophyll Index Red-Edge
-
-### Stress Detection and Pigment Indices
-- **PRI** - Photochemical Reflectance Index
-- **SIPI** - Structure Insensitive Pigment Index
-- **PSRI** - Plant Senescence Reflectance Index
-- **CCI** - Canopy Chlorophyll Index
-- **ARI** - Anthocyanin Reflectance Index
-
-### Water and Moisture Indices
-- **NDWI** - Normalized Difference Water Index (McFeeters 1996)
-- **MNDWI** - Modified Normalized Difference Water Index (Xu 2006)
-- **NDMI** - Normalized Difference Moisture Index (Gao 1996)
-- **MSI** - Moisture Stress Index
-- **WI** - Water Index
-- **LSWI** - Land Surface Water Index
-
-### Specialized Agricultural Indices
-- **GCCI** - Green Crop Coverage Index
-- **NGRDI** - Normalized Green-Red Difference Index  
-- **GLI** - Green Leaf Index
-- **VDVI** - Visible-band Difference Vegetation Index
-- **TGI** - Triangular Greenness Index
-
-### Advanced Biophysical Indices
-- **LAI** - Leaf Area Index estimators
-- **FAPAR** - Fraction of Absorbed PAR
-- **MTVI1/MTVI2** - Modified Triangular Vegetation Index
-- **TCARI** - Transformed Chlorophyll Absorption Ratio Index
-- **OSAVI2** - Second Optimized SAVI
 
 *Total: 60+ indices with automatic band detection across satellite platforms*
 
