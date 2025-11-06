@@ -60,6 +60,47 @@ stress_indices <- list_vegetation_indices(category = "stress")
 **Stress and Chlorophyll Indices (12):**
 - PRI, SIPI, CCI, NDNI, CARI, TCARI, MTVI1, MTVI2, TVI, NPCI, RARS, NPQI
 
+
+
+## Complete Index Reference
+
+All 62 vegetation indices with formulas, ranges, and references:
+
+```{r complete-index-table, echo=FALSE, message=FALSE}
+library(geospatialsuite)
+detailed <- list_vegetation_indices(detailed = TRUE)
+
+knitr::kable(
+  detailed[, c("Index", "Category", "Formula", "Range", "Reference")],
+  caption = "Complete Vegetation Indices Reference - All 62 Indices",
+  format = "html"
+)
+```
+
+### Using Index Information
+```{r index-info-example, eval=FALSE}
+# Get all indices with formulas
+all_indices <- list_vegetation_indices(detailed = TRUE)
+View(all_indices)
+
+# Filter by category
+stress <- list_vegetation_indices(category = "stress", detailed = TRUE)
+water <- list_vegetation_indices(application = "water", detailed = TRUE)
+
+# Get specific index information
+ndvi_info <- all_indices[all_indices$Index == "NDVI", ]
+cat(sprintf("NDVI Formula: %s\n", ndvi_info$Formula))
+cat(sprintf("NDVI Range: %s\n", ndvi_info$Range))
+cat(sprintf("Reference: %s\n", ndvi_info$Reference))
+```
+
+
+
+
+
+
+
+
 ## Single Date Analysis
 
 ### Basic NDVI Calculation
@@ -975,6 +1016,393 @@ list_vegetation_indices(detailed = TRUE)
 # Test your installation
 test_geospatialsuite_package_simple(verbose = TRUE)
 ```
+
+
+# Band Naming Conventions for geospatialsuite
+
+## Overview
+The `calculate_vegetation_index()` and `analyze_crop_vegetation()` functions support automatic band detection from multiple satellite platforms. This document explains how band naming works and what formats are supported.
+
+---
+
+## How Band Detection Works
+
+### 1. Case-Insensitive Matching
+**All band names are case-insensitive.**
+
+✅ These are all equivalent:
+- `"red"`, `"RED"`, `"Red"`, `"rEd"`
+- `"nir"`, `"NIR"`, `"Nir"`, `"nIR"`
+- `"B4"`, `"b4"`, `"B04"`, `"b04"`
+
+---
+
+## Supported Band Names by Type
+
+### Red Band
+Recognized patterns:
+- Generic: `red`, `RED`, `Red`
+- Landsat 8/9: `B4`, `b4`, `band4`, `Band_4`, `Band4`
+- Sentinel-2: `B04`, `b04`
+- Generic numbered: `band_4`, `sr_band4`
+
+**Example:**
+```{r eval=FALSE}
+# All of these will be recognized as the red band
+calculate_vegetation_index(red = red_band, nir = nir_band, index_type = "NDVI")
+calculate_vegetation_index(spectral_data = raster_with_band_named_"B4", auto_detect_bands = TRUE)
+calculate_vegetation_index(spectral_data = raster_with_band_named_"RED", auto_detect_bands = TRUE)
+```
+
+### NIR (Near Infrared) Band
+Recognized patterns:
+- Generic: `nir`, `NIR`, `Nir`, `near_infrared`
+- Landsat 8/9: `B5`, `b5`, `band5`, `Band_5`, `Band5`
+- Sentinel-2: `B08`, `b08`, `B8`, `b8`, `band8`, `Band_8`, `Band8`
+
+### Blue Band
+Recognized patterns:
+- Generic: `blue`, `BLUE`, `Blue`
+- Landsat 8/9: `B2`, `b2`, `band2`, `Band_2`, `Band2`
+- Sentinel-2: `B02`, `b02`
+
+### Green Band
+Recognized patterns:
+- Generic: `green`, `GREEN`, `Green`
+- Landsat 8/9: `B3`, `b3`, `band3`, `Band_3`, `Band3`
+- Sentinel-2: `B03`, `b03`
+
+### SWIR1 (Shortwave Infrared 1) Band
+Recognized patterns:
+- Generic: `swir1`, `SWIR1`, `Swir1`, `shortwave_infrared_1`, `SWIR_1`
+- Landsat 8/9: `B6`, `b6`
+- Sentinel-2: `B11`, `b11`
+
+### SWIR2 (Shortwave Infrared 2) Band
+Recognized patterns:
+- Generic: `swir2`, `SWIR2`, `Swir2`, `shortwave_infrared_2`, `SWIR_2`
+- Landsat 8/9: `B7`, `b7`
+- Sentinel-2: `B12`, `b12`
+
+### Red Edge Band
+Recognized patterns:
+- Generic: `rededge`, `RedEdge`, `red_edge`, `RED_EDGE`, `RE`, `re`
+- Sentinel-2: `B05`, `b05`, `B5`, `b5` (note: conflicts with Landsat NIR)
+
+### Coastal/Aerosol Band
+Recognized patterns:
+- Generic: `coastal`, `COASTAL`, `Coastal`, `aerosol`
+- Landsat 8/9: `B1`, `b1`
+- Sentinel-2: `B01`, `b01`
+
+---
+
+## Satellite-Specific Examples
+
+### Landsat 8/9 (OLI)
+
+**Band Mapping:**
+| Band | Number | Wavelength | geospatialsuite Name |
+|------|--------|------------|---------------------|
+| Coastal/Aerosol | B1 | 0.43-0.45 µm | `coastal`, `B1` |
+| Blue | B2 | 0.45-0.51 µm | `blue`, `B2` |
+| Green | B3 | 0.53-0.59 µm | `green`, `B3` |
+| Red | B4 | 0.64-0.67 µm | `red`, `B4` |
+| NIR | B5 | 0.85-0.88 µm | `nir`, `B5` |
+| SWIR1 | B6 | 1.57-1.65 µm | `swir1`, `B6` |
+| SWIR2 | B7 | 2.11-2.29 µm | `swir2`, `B7` |
+
+**Example - Landsat Scene:**
+```{r eval=FALSE}
+library(geospatialsuite)
+library(terra)
+
+# If your Landsat file has band names: B1, B2, B3, B4, B5, B6, B7
+landsat <- rast("LC08_L2SP_029030_20230615_B1-7.tif")
+
+# Auto-detection will work automatically
+ndvi <- calculate_vegetation_index(
+  spectral_data = landsat,
+  index_type = "NDVI",
+  auto_detect_bands = TRUE
+)
+
+# Or specify bands explicitly
+ndvi <- calculate_vegetation_index(
+  red = landsat[["B4"]],
+  nir = landsat[["B5"]],
+  index_type = "NDVI"
+)
+```
+
+### Sentinel-2 (MSI)
+
+**Band Mapping:**
+| Band | Number | Wavelength | Resolution | geospatialsuite Name |
+|------|--------|------------|-----------|---------------------|
+| Coastal | B01 | 0.433-0.453 µm | 60m | `coastal`, `B01`, `B1` |
+| Blue | B02 | 0.458-0.523 µm | 10m | `blue`, `B02`, `B2` |
+| Green | B03 | 0.543-0.578 µm | 10m | `green`, `B03`, `B3` |
+| Red | B04 | 0.650-0.680 µm | 10m | `red`, `B04`, `B4` |
+| Red Edge 1 | B05 | 0.698-0.713 µm | 20m | `red_edge`, `B05`, `B5` |
+| Red Edge 2 | B06 | 0.733-0.748 µm | 20m | N/A |
+| Red Edge 3 | B07 | 0.765-0.785 µm | 20m | N/A |
+| NIR | B08 | 0.785-0.900 µm | 10m | `nir`, `B08`, `B8` |
+| SWIR1 | B11 | 1.565-1.655 µm | 20m | `swir1`, `B11` |
+| SWIR2 | B12 | 2.100-2.280 µm | 20m | `swir2`, `B12` |
+
+**Example - Sentinel-2 Scene:**
+```{r eval=FALSE}
+# If your Sentinel-2 file has standard band names
+sentinel <- rast("S2A_MSIL2A_20230615_B02-B12.tif")
+
+# Auto-detection works
+ndvi <- calculate_vegetation_index(
+  spectral_data = sentinel,
+  index_type = "NDVI",
+  auto_detect_bands = TRUE
+)
+
+# Calculate red edge index (requires Sentinel-2)
+ndre <- calculate_vegetation_index(
+  spectral_data = sentinel,
+  index_type = "NDRE",
+  auto_detect_bands = TRUE
+)
+
+# Or use specific band names
+evi <- calculate_vegetation_index(
+  red = sentinel[["B04"]],
+  nir = sentinel[["B08"]],
+  blue = sentinel[["B02"]],
+  index_type = "EVI"
+)
+```
+
+### MODIS (Terra/Aqua)
+
+**Band Mapping:**
+| Band | Number | Wavelength | geospatialsuite Name |
+|------|--------|------------|---------------------|
+| Red | 1 | 0.620-0.670 µm | `red`, `band1` |
+| NIR | 2 | 0.841-0.876 µm | `nir`, `band2` |
+| Blue | 3 | 0.459-0.479 µm | `blue`, `band3` |
+| Green | 4 | 0.545-0.565 µm | `green`, `band4` |
+| SWIR1 | 6 | 1.628-1.652 µm | `swir1`, `band6` |
+| SWIR2 | 7 | 2.105-2.155 µm | `swir2`, `band7` |
+
+**Example - MODIS:**
+```{r eval=FALSE}
+modis <- rast("MOD13Q1_NDVI_2023165.tif")
+
+# If bands are named generically
+ndvi <- calculate_vegetation_index(
+  spectral_data = modis,
+  index_type = "NDVI",
+  auto_detect_bands = TRUE
+)
+```
+
+---
+
+## Custom Band Names
+
+If your raster has non-standard band names, you have three options:
+
+### Option 1: Rename Bands
+```{r eval=FALSE}
+# Your raster has bands: "band_A", "band_B", "band_C", "band_D"
+my_raster <- rast("custom_satellite.tif")
+
+# Rename to standard names
+names(my_raster) <- c("red", "green", "blue", "nir")
+
+# Now auto-detection works
+ndvi <- calculate_vegetation_index(
+  spectral_data = my_raster,
+  index_type = "NDVI",
+  auto_detect_bands = TRUE
+)
+```
+
+### Option 2: Specify Band Names
+```{r eval=FALSE}
+# Tell the function which bands are which
+ndvi <- calculate_vegetation_index(
+  spectral_data = my_raster,
+  band_names = c("band_A", "band_B", "band_C", "band_D"),  # Order: Red, Green, Blue, NIR
+  index_type = "NDVI",
+  auto_detect_bands = FALSE
+)
+```
+
+### Option 3: Extract and Pass Bands Directly
+```{r eval=FALSE}
+# Extract specific layers
+red_band <- my_raster[[1]]   # Assuming layer 1 is red
+nir_band <- my_raster[[4]]   # Assuming layer 4 is NIR
+
+# Pass explicitly
+ndvi <- calculate_vegetation_index(
+  red = red_band,
+  nir = nir_band,
+  index_type = "NDVI"
+)
+```
+
+---
+
+## Common Issues and Solutions
+
+### Issue 1: "Band not found" error
+**Problem:** Your band names don't match any recognized patterns
+
+**Solution:**
+```{r eval=FALSE}
+# Check your band names
+names(my_raster)
+# [1] "sr_band_4" "sr_band_5" "sr_band_3" "sr_band_2"
+
+# Rename them
+names(my_raster) <- c("red", "nir", "green", "blue")
+
+# Or extract and pass explicitly
+calculate_vegetation_index(
+  red = my_raster[[1]],
+  nir = my_raster[[2]],
+  index_type = "NDVI"
+)
+```
+
+### Issue 2: Wrong bands detected
+**Problem:** Auto-detection picked the wrong bands (e.g., Sentinel-2 B05 detected as NIR instead of Red Edge)
+
+**Solution:**
+```{r eval=FALSE}
+# Don't use auto-detection, be explicit
+calculate_vegetation_index(
+  red = my_raster[["B04"]],
+  nir = my_raster[["B08"]],
+  red_edge = my_raster[["B05"]],
+  index_type = "NDRE"
+)
+```
+
+### Issue 3: Multiple files/directories
+**Problem:** Your bands are in separate files
+
+**Solution A - List of files:**
+```{r eval=FALSE}
+# Create file list
+band_files <- c(
+  red = "LC08_B4.tif",
+  nir = "LC08_B5.tif",
+  blue = "LC08_B2.tif"
+)
+
+# Let the function load them
+evi <- calculate_vegetation_index(
+  spectral_data = band_files,
+  index_type = "EVI"
+)
+```
+
+**Solution B - Directory:**
+```{r eval=FALSE}
+# If all bands are in one directory with recognizable names
+ndvi <- calculate_vegetation_index(
+  spectral_data = "/path/to/landsat/bands/",
+  index_type = "NDVI",
+  auto_detect_bands = TRUE
+)
+```
+
+---
+
+## Band Detection Priority
+
+When using auto-detection, the function searches in this order:
+
+1. **Exact matches** (case-insensitive)
+   - `"red"` matches `"red"`, `"RED"`, `"Red"`
+   
+2. **Satellite-specific patterns**
+   - `"B4"` for Landsat red
+   - `"B04"` for Sentinel-2 red
+   
+3. **Generic patterns**
+   - `"band4"`, `"Band_4"`, etc.
+   
+4. **Partial matches** (regex, case-insensitive)
+   - Any layer with "red" in the name
+   
+5. **Position-based fallback** (if all else fails)
+   - Band 1 → Red
+   - Band 2 → Green  
+   - Band 3 → Blue
+   - Band 4 → NIR
+
+---
+
+## Testing Band Detection
+
+To see which bands were detected:
+
+```{r eval=FALSE}
+# Turn on verbose mode
+result <- calculate_vegetation_index(
+  spectral_data = my_raster,
+  index_type = "NDVI",
+  auto_detect_bands = TRUE,
+  verbose = TRUE  # This will print which bands were detected
+)
+```
+
+Expected output:
+
+```
+Processing spectral_data input...
+Extracting bands from multi-band raster...
+Exact match detected red band: B4
+Exact match detected nir band: B8
+Starting NDVI calculation with comprehensive input handling...
+```
+
+---
+
+## Best Practices
+
+1. **Use standard naming** when possible (`red`, `nir`, `blue`, etc.)
+2. **Keep satellite band numbers** if using Landsat/Sentinel-2 (B4, B05, etc.)
+3. **Enable verbose mode** when debugging band detection issues
+4. **Rename bands** for clarity rather than relying on position-based fallback
+5. **Be explicit** when working with unusual sensors or custom band combinations
+
+---
+
+## Summary Table
+
+| Your Data | Band Detection Method | Example |
+|-----------|----------------------|---------|
+| Landsat with standard names | Auto-detect | `auto_detect_bands = TRUE` |
+| Sentinel-2 with standard names | Auto-detect | `auto_detect_bands = TRUE` |
+| Generic names (red, nir, blue) | Auto-detect | `auto_detect_bands = TRUE` |
+| Custom names | Rename first | `names(raster) <- c("red", "nir", ...)` |
+| Separate files | Pass list | `spectral_data = c(red="file1.tif", ...)` |
+| Non-standard structure | Extract & pass | `red = raster[[1]], nir = raster[[4]]` |
+
+---
+
+
+
+
+
+
+
+
+
+
+
 ## Acknowledgments
 
 This work was developed by the GeoSpatialSuite team with contributions from:

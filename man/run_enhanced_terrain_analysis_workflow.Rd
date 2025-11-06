@@ -11,6 +11,6 @@ run_enhanced_terrain_analysis_workflow(config, output_folder)
 \description{
 Run enhanced terrain analysis workflow
 
-Run enhanced terrain analysis workflow - IMPLEMENTED
+Run enhanced terrain analysis workflow
 }
 \keyword{internal}

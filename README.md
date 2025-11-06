@@ -24,9 +24,9 @@ MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.or
 
 GeoSpatialSuite is a powerful R package for geospatial analysis
 featuring **60+ vegetation indices**, **universal spatial analysis**,
-**efficient raster visualization**, and **comprehensive workflows** for
-agricultural research, environmental monitoring, and remote sensing
-applications.
+**auto-geocoding without coordinates**, **efficient raster
+visualization**, and **comprehensive workflows** for agricultural
+research, environmental monitoring, and remote sensing applications.
 
 ## 📋 Table of Contents
 
@@ -34,6 +34,7 @@ applications.
 - [Quick Links](#-quick-links)
 - [Installation](#-installation)
 - [Quick Start](#-quick-start)
+- [Auto-Geocoding](#️-auto-geocoding-without-coordinates)
 - [Documentation](#-documentation)
 - [Real-World Examples](#-real-world-examples)
 - [What Makes GeoSpatialSuite
@@ -53,6 +54,19 @@ applications.
 - **Bug Reports**: <https://github.com/cwru-sdle/geospatialsuite/issues>
 
 ## ✨ Key Features
+
+### 🗺️ **Auto-Geocoding Without Coordinates** ⭐ NEW!
+
+- **Work with data that has NO lat/lon!** Automatically geocode using
+  geographic identifiers
+- **States**: Full names or abbreviations (e.g., “Ohio”, “OH”)
+- **Counties**: County names with or without state
+- **FIPS codes**: 5-digit Federal codes
+- **HUC codes**: Watershed codes (handles HUC_8, HUC-8, huc8, etc.)
+- **ZIP codes**: US postal codes
+- **Cities**: City names (works best with state column)
+- **Flexible column naming**: Handles spaces, hyphens, underscores,
+  mixed case
 
 ### 🌱 **Advanced Vegetation Analysis**
 
@@ -105,7 +119,7 @@ install.packages("geospatialsuite")
 ### Development Version from GitHub
 
 ``` r
-# Install development version with latest features
+# Install development version with latest features (includes auto-geocoding!)
 # install.packages("devtools")
 devtools::install_github("cwru-sdle/geospatialsuite")
 ```
@@ -115,6 +129,9 @@ devtools::install_github("cwru-sdle/geospatialsuite")
 ``` r
 # Enhanced visualization and functionality
 install.packages(c("tidyterra", "RStoolbox", "leaflet", "patchwork"))
+
+# For auto-geocoding features (optional)
+install.packages(c("tigris", "nhdplusTools", "zipcodeR", "tidygeocoder"))
 ```
 
 ## 🚀 Quick Start
@@ -170,6 +187,53 @@ indices <- calculate_multiple_indices(
 )
 ```
 
+## 🗺️ Auto-Geocoding Without Coordinates
+
+**NEW!** Work with data that doesn’t have latitude/longitude
+coordinates. GeoSpatialSuite automatically detects and geocodes
+geographic identifiers:
+
+``` r
+# Works with state names or abbreviations
+state_data <- data.frame(
+  state = c("Ohio", "PA", "Michigan"),
+  population = c(11.8, 13.0, 10.1)
+)
+spatial_data <- auto_geocode_data(state_data)
+quick_map(spatial_data, variable = "population")
+
+# Works with FIPS codes
+county_data <- data.frame(
+  fips = c("39049", "39035", "39113"),
+  unemployment = c(4.2, 5.1, 4.8)
+)
+county_sf <- auto_geocode_data(county_data)
+
+# Works with HUC codes (any format!)
+watershed_data <- data.frame(
+  HUC_8 = c("04100009", "04100012"),  # or HUC-8, huc8, Huc 8, etc.
+  water_quality = c(72, 65)
+)
+huc_sf <- auto_geocode_data(watershed_data)
+
+# Works with ZIP codes
+zip_data <- data.frame(
+  zip = c("43215", "44113", "45202"),
+  median_income = c(58000, 45000, 72000)
+)
+zip_sf <- auto_geocode_data(zip_data)
+
+# Preview what will be detected before geocoding
+preview_geocoding(my_data)
+```
+
+**Supported geographic entities:** - ✅ States (names or
+abbreviations) - ✅ Counties - ✅ FIPS codes - ✅ HUC watershed codes
+(HUC-8, HUC_8, huc8, etc.) - ✅ ZIP codes - ✅ City names
+
+**Column name flexibility:** The package handles any naming convention -
+`HUC_8`, `HUC-8`, `huc8`, `State`, `STATE`, `state_name`, etc.
+
 ## 📖 Documentation
 
 ### Vignettes and Tutorials
@@ -177,9 +241,15 @@ indices <- calculate_multiple_indices(
 - [**Getting
   Started**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/getting-started.html) -
   Package overview and quick start examples
+- [**Analyze Crop
+  Vegetation**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/analyze-crop-vegetation.html) -
+  Using analyze_crop_vegetation() in GeoSpatialSuite ⭐ NEW!
 - [**Universal Spatial
   Analysis**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/spatial-analysis.html) -
   Core spatial join capabilities
+- [**Spatial
+  Integration**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/spatial-integration.html) -
+  Robust multi-modal spatial integration capabilities
 - [**Vegetation
   Analysis**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/vegetation-indices.html) -
   60+ vegetation indices and crop analysis
@@ -196,6 +266,10 @@ indices <- calculate_multiple_indices(
 # View all available functions
 help(package = "geospatialsuite")
 
+# New auto-geocoding functions
+?auto_geocode_data
+?preview_geocoding
+
 # Test function availability
 test_function_availability()
 
@@ -207,6 +281,61 @@ test_package_minimal(verbose = TRUE)
 ```
 
 ## 🎯 Real-World Examples
+
+### Census Data Analysis (No Coordinates Needed!)
+
+``` r
+# Load census data with just state names - no coordinates!
+census_data <- data.frame(
+  state = c("California", "Texas", "Florida", "New York"),
+  population_millions = c(39.5, 29.1, 22.2, 20.2),
+  median_income = c(75000, 64000, 59000, 72000),
+  unemployment_rate = c(4.8, 4.1, 3.2, 4.3)
+)
+
+# Auto-geocode and visualize
+census_sf <- auto_geocode_data(census_data, verbose = TRUE)
+quick_map(census_sf, variable = "median_income", 
+          title = "Median Household Income by State")
+
+# Combine with satellite data
+ndvi_raster <- terra::rast("vegetation_data.tif")
+census_with_ndvi <- universal_spatial_join(
+  source_data = census_sf,
+  target_data = ndvi_raster,
+  method = "extract"
+)
+```
+
+### Watershed Analysis with HUC Codes
+
+``` r
+# Water quality data with HUC-8 codes (no coordinates!)
+watershed_data <- data.frame(
+  HUC_8 = c("04100009", "04100012", "04110002", "05120201"),
+  basin_name = c("Great Miami", "Mill Creek-Cincinnati", 
+                 "Middle Ohio", "Upper Wabash"),
+  nitrogen_mg_l = c(2.3, 3.1, 1.8, 2.7),
+  phosphorus_mg_l = c(0.08, 0.12, 0.06, 0.09)
+)
+
+# Auto-geocode watersheds
+huc_sf <- auto_geocode_data(watershed_data, verbose = TRUE)
+
+# Comprehensive water quality analysis
+water_results <- analyze_water_quality_comprehensive(
+  water_data = huc_sf,
+  variable = "nitrogen_mg_l",
+  thresholds = list(
+    Normal = c(0, 2), 
+    Elevated = c(2, 5),
+    High = c(5, Inf)
+  )
+)
+
+quick_map(huc_sf, variable = "nitrogen_mg_l",
+          title = "Nitrogen Levels by Watershed")
+```
 
 ### Agricultural Monitoring
 
@@ -233,51 +362,42 @@ corn_codes <- get_comprehensive_cdl_codes("corn")
 grain_codes <- get_comprehensive_cdl_codes("grains")
 ```
 
-### Environmental Monitoring
+### County-Level Environmental Analysis
 
 ``` r
+# County data with FIPS codes (no coordinates needed!)
+county_data <- data.frame(
+  fips = c("39049", "39035", "39113", "39061"),
+  county_name = c("Franklin", "Cuyahoga", "Montgomery", "Hamilton"),
+  air_quality_index = c(45, 52, 48, 41),
+  tree_canopy_pct = c(28, 35, 32, 40)
+)
+
+# Auto-geocode counties
+county_sf <- auto_geocode_data(county_data, verbose = TRUE)
+
 # Multi-dataset environmental integration
-environmental_data <- universal_spatial_join(
-  source_data = "monitoring_stations.csv",
-  target_data = "satellite_ndvi.tif",
+ndvi_data <- terra::rast("vegetation.tif")
+temp_data <- terra::rast("temperature.tif")
+
+# Extract satellite data for each county
+county_analysis <- universal_spatial_join(
+  source_data = county_sf,
+  target_data = ndvi_data,
   method = "extract",
-  buffer_distance = 1000,
   summary_function = "mean"
 )
 
-# Process additional raster data
-soil_data <- universal_spatial_join(
-  source_data = environmental_data,
-  target_data = "soil_nitrogen.tif",
+# Add temperature data
+county_complete <- universal_spatial_join(
+  source_data = county_analysis,
+  target_data = temp_data,
   method = "extract"
 )
-```
 
-### Water Quality Assessment
-
-``` r
-# Comprehensive water quality analysis
-water_results <- analyze_water_quality_comprehensive(
-  water_data = "water_stations.csv",
-  variable = "nitrate_nitrite",
-  region_boundary = "Ohio",
-  thresholds = list(
-    Normal = c(0, 4), 
-    High = c(4, 10),
-    Critical = c(10, Inf)
-  ),
-  verbose = TRUE
-)
-
-# Calculate water indices for drought monitoring
-water_indices <- calculate_water_index(
-  green = "landsat_green.tif",
-  nir = "landsat_nir.tif",
-  swir1 = "landsat_swir1.tif",
-  index_type = "MNDWI",
-  mask_invalid = TRUE,
-  verbose = TRUE
-)
+# Visualize
+quick_map(county_complete, variable = "extracted_mean_ndvi",
+          title = "Vegetation Health by County")
 ```
 
 ### Remote Sensing Applications
@@ -300,7 +420,13 @@ quick_map(results$vegetation_data, title = "Vegetation Analysis Results")
 
 ## 🌟 What Makes GeoSpatialSuite Special
 
-### 1. **Universal Design**
+### 1. **Auto-Geocoding Revolution** ⭐ NEW!
+
+No more manual coordinate lookups! Work directly with: - State names,
+county names, FIPS codes - HUC watershed codes (any format) - ZIP codes,
+city names - Flexible column naming (HUC_8, HUC-8, huc8 all work!)
+
+### 2. **Universal Design**
 
 Works with any spatial data combination - no need to learn different
 functions for different data types. The `universal_spatial_join()`
@@ -308,15 +434,17 @@ function automatically handles: - Vector-to-vector joins -
 Vector-to-raster extractions  
 - Raster-to-raster operations - Multi-dataset integrations
 
-### 2. **Intelligent Automation**
+### 3. **Intelligent Automation**
 
 - **Auto-detects coordinate columns** (lat/lng, x/y, longitude/latitude)
+- **Auto-geocodes geographic entities** (states, counties, FIPS, HUCs,
+  ZIPs)
 - **Automatically identifies satellite bands** across Landsat,
   Sentinel-2, MODIS
 - **Smart coordinate system transformations** with validation
 - **Optimal method selection** for performance and accuracy
 
-### 3. **Efficient Visualization**
+### 4. **Efficient Visualization**
 
 - **Terra-based plotting** using reliable `terra::plot()` and
   `terra::plotRGB()`
@@ -327,7 +455,7 @@ Vector-to-raster extractions
 - **Interactive mapping** with automatic leaflet integration when
   available
 
-### 4. **Comprehensive Coverage**
+### 5. **Comprehensive Coverage**
 
 - **60+ vegetation indices** including latest research developments
 - **Complete spatial operations** through `universal_spatial_join()`
@@ -335,7 +463,7 @@ Vector-to-raster extractions
   strategies
 - **Cross-platform compatibility** (Windows, macOS, Linux)
 
-### 5. **Research-Ready**
+### 6. **Research-Ready**
 
 Designed specifically for reproducible research with: - Comprehensive
 testing suite (`test_geospatialsuite_package_simple()`) - Function
@@ -355,6 +483,8 @@ GeoSpatialSuite is optimized for:
   imagery
 - **Interactive analysis**: Fast visualization without data conversion
   overhead
+- **Geocoding**: Efficient caching and batch processing for large
+  datasets
 
 ### Performance Tips
 
@@ -364,6 +494,9 @@ test_package_minimal(verbose = TRUE)
 
 # Check which functions are available
 test_function_availability(verbose = TRUE)
+
+# Preview geocoding before processing large datasets
+preview_geocoding(my_data)
 
 # Use efficient spatial operations
 result <- universal_spatial_join(
@@ -482,7 +615,19 @@ install.packages(c(
 ))
 ```
 
-### Optional Packages
+### Optional Packages for Auto-Geocoding
+
+``` r
+# Install these for geocoding features (NEW!)
+install.packages(c(
+  "tigris",        # US Census boundaries (states, counties, FIPS)
+  "nhdplusTools",  # HUC watershed boundaries
+  "zipcodeR",      # ZIP code centroids
+  "tidygeocoder"   # City name geocoding
+))
+```
+
+### Additional Optional Packages
 
 ``` r
 # Additional packages for specialized functions
@@ -543,9 +688,12 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - `terra` package developers (Robert J. Hijmans et al.)
 - `sf` package developers (Edzer Pebesma et al.)
 - Remote sensing and geospatial R community
+- geocoding package developers (`tigris`, `nhdplusTools`, `zipcodeR`,
+  `tidygeocoder`)
 
 ------------------------------------------------------------------------
 
 **Ready to get started?** Install from CRAN with
-`install.packages("geospatialsuite")` and check out the [Getting Started
-vignette](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/getting-started.html)!
+`install.packages("geospatialsuite")` or get the development version
+with auto-geocoding from GitHub! Check out the [Getting Started
+vignette](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/getting-started.html)

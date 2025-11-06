@@ -68,6 +68,52 @@
 #' - Date matching between red/NIR
 #' - **Use for**: Multi-temporal analysis, time series trends
 #'
+#'#' ## Band Naming Conventions:
+#'
+#' The function supports case-insensitive band detection:
+#' - **Generic names**: "red"/"RED"/"Red", "nir"/"NIR", "blue"/"BLUE", "green"/"GREEN"
+#' - **Landsat 8/9**: B1-B7 (e.g., B4=Red, B5=NIR)
+#' - **Sentinel-2**: B01-B12 (e.g., B04=Red, B08=NIR, B05=RedEdge)
+#' - **MODIS**: band1-band7
+#'
+#' ### Satellite-Specific Examples:
+#'
+#' **Landsat 8/9:**
+#' ```r
+#' # Bands automatically detected
+#' ndvi <- calculate_vegetation_index(
+#'   spectral_data = "LC08_stack.tif",  # Has bands named B1-B7
+#'   index_type = "NDVI",
+#'   auto_detect_bands = TRUE
+#' )
+#' ```
+#'
+#' **Sentinel-2:**
+#' ```r
+#' # Red Edge indices need Sentinel-2
+#' ndre <- calculate_vegetation_index(
+#'   spectral_data = sentinel_data,  # Has B01-B12
+#'   index_type = "NDRE",
+#'   auto_detect_bands = TRUE
+#' )
+#' ```
+#'
+#' **Custom band names:**
+#' ```r
+#' # Rename your bands first
+#' names(my_raster) <- c("red", "nir", "blue", "green")
+#'
+#' # Or specify explicitly
+#' ndvi <- calculate_vegetation_index(
+#'   red = my_raster[[1]],
+#'   nir = my_raster[[4]],
+#'   index_type = "NDVI"
+#' )
+#' ```
+#'
+#' For complete band naming documentation, see:
+#' \code{vignette("vegetation-indices", package = "geospatialsuite")}
+#'
 #' @examples
 #' \dontrun{
 #' # These examples require satellite imagery files (Landsat/Sentinel data etc.)
@@ -908,6 +954,78 @@ calculate_multiple_indices <- function(spectral_data = NULL, indices = c("NDVI",
 #' - **Soybeans**: NDVI, EVI, SAVI, GNDVI, PRI
 #' - **Wheat**: NDVI, EVI, SAVI, DVI
 #' - **General**: NDVI, EVI, SAVI, GNDVI, DVI, RVI
+#'
+#' ## Analysis Types:
+#' - **comprehensive**: All analyses (stress, growth, yield)
+#' - **stress**: Focus on stress detection indices
+#' - **growth**: Growth stage analysis
+#' - **yield**: Yield prediction support
+#'
+#' ## Output Structure:
+#'
+#' The function returns a list with three main components:
+#'
+#' ### 1. vegetation_indices (SpatRaster)
+#' Multi-layer raster with calculated indices (NDVI, EVI, etc.)
+#'
+#' ### 2. analysis_results (List)
+#'
+#' **stress_analysis** (if requested):
+#' - Percentage of pixels in each stress category
+#' - Categories: healthy (NDVI 0.6-1.0), moderate stress (0.4-0.6), severe stress (0.0-0.4)
+#' - Includes mean, median, std_dev, and thresholds used
+#'
+#' **growth_analysis** (if requested):
+#' - Predicted growth stage based on NDVI patterns
+#' - Stage confidence (0-1 scale)
+#' - Detailed statistics for each index
+#' - Growth stages: emergence, vegetative, reproductive, maturity (crop-specific)
+#'
+#' **yield_analysis** (if requested):
+#' - **Composite Yield Index**: Normalized 0-1 score combining multiple indices
+#'   - 0.0 = Very low yield potential
+#'   - 0.5 = Medium yield potential
+#'   - 1.0 = Maximum yield potential
+#' - **Yield Potential Class**: Categorical (Low, Medium, High, Very High)
+#' - **Index Contributions**: How each index contributed to composite score
+#' - Calculation: Each index (NDVI, EVI, GNDVI, DVI, RVI) is normalized to 0-1,
+#'   then averaged to create composite score
+#'
+#' **summary_statistics**:
+#' - Basic stats (mean, std, min, max, percentiles) for all indices
+#' - Coverage percentage and pixel counts
+#'
+#' ### 3. metadata (List)
+#' Processing information: crop_type, indices_used, processing_date, spatial properties
+#'
+#' ## Example Interpretation:
+#'
+#' ```r
+#' result <- analyze_crop_vegetation(data, crop_type = "corn")
+#'
+#' # Stress Assessment
+#' stress <- result$analysis_results$stress_analysis$NDVI
+#' cat(sprintf("Healthy: %.1f%%, Stressed: %.1f%%\n",
+#'             stress$healthy_percentage,
+#'             stress$severe_stress_percentage))
+#'
+#' # Growth Stage
+#' stage <- result$analysis_results$growth_analysis$predicted_growth_stage
+#' cat(sprintf("Growth stage: %s\n", stage))
+#'
+#' # Yield Potential
+#' yield <- result$analysis_results$yield_analysis
+#' cat(sprintf("Yield potential: %s (score: %.2f)\n",
+#'             yield$yield_potential_class,
+#'             yield$composite_yield_index))
+#' ```
+#'
+#' ## Important Notes:
+#'
+#' - **Composite Yield Index** is a vegetation-based proxy, not a direct yield prediction
+#' - Thresholds are based on literature and may need regional calibration
+#' - Results should be validated with ground truth data
+#' - For detailed output documentation, see package vignette
 #'
 #' ## Analysis Types:
 #' - **comprehensive**: All analyses (stress, growth, yield)
@@ -2388,9 +2506,9 @@ get_index_formulas <- function(indices) {
   formulas <- setNames(rep("", length(indices)), indices)
 
   formula_db <- list(
-    # Basic vegetation indices
+    # ==================== BASIC VEGETATION INDICES (10) ====================
     "NDVI" = "(NIR - Red) / (NIR + Red)",
-    "SAVI" = "((NIR - Red) / (NIR + Red + L)) * (1 + L), L=0.5",
+    "SAVI" = "((NIR - Red) / (NIR + Red + L)) * (1 + L), where L=0.5",
     "MSAVI" = "0.5 * (2*NIR + 1 - sqrt((2*NIR + 1)^2 - 8*(NIR - Red)))",
     "OSAVI" = "(NIR - Red) / (NIR + Red + 0.16)",
     "EVI" = "2.5 * ((NIR - Red) / (NIR + 6*Red - 7.5*Blue + 1))",
@@ -2400,33 +2518,67 @@ get_index_formulas <- function(indices) {
     "GNDVI" = "(NIR - Green) / (NIR + Green)",
     "WDVI" = "NIR - 0.5 * Red",
 
-    # Enhanced indices
+    # ==================== ENHANCED/IMPROVED INDICES (12) ====================
     "ARVI" = "(NIR - (2*Red - Blue)) / (NIR + (2*Red - Blue))",
     "RDVI" = "(NIR - Red) / sqrt(NIR + Red)",
-    "PVI" = "(NIR - a*Red - b) / sqrt(1 + a^2), a=1.5, b=10",
+    "PVI" = "(NIR - a*Red - b) / sqrt(1 + a^2), where a=1.5, b=10",
     "IPVI" = "NIR / (NIR + Red)",
     "TNDVI" = "sqrt(((NIR - Red) / (NIR + Red)) + 0.5)",
+    "GEMI" = "eta * (1 - 0.25*eta) - (Red - 0.125) / (1 - Red), where eta = (2*(NIR^2 - Red^2) + 1.5*NIR + 0.5*Red) / (NIR + Red + 0.5)",
     "VARI" = "(Green - Red) / (Green + Red - Blue)",
+    "TSAVI" = "(a * (NIR - a*Red - b)) / (Red + a*NIR - a*b + X*(1 + a^2)), where a=1.5, b=10, X=0.08",
+    "ATSAVI" = "(a * (NIR - a*Red - b)) / (a*NIR + Red - a*b + X*(1 + a^2)), where a=1.22, b=0.03, X=0.08",
+    "GESAVI" = "((NIR - Red) / (NIR + Red + Z)) * (1 + Z), where Z=0.5",
+    "MTVI" = "1.2 * (1.2*(NIR - Green) - 2.5*(Red - Green))",
+    "CTVI" = "((NDVI + 0.5) / |NDVI + 0.5|) * sqrt(|NDVI + 0.5|), where NDVI = (NIR - Red) / (NIR + Red)",
 
-    # Water indices
+    # ==================== RED EDGE AND ADVANCED INDICES (10) ====================
+    "NDRE" = "(NIR - RedEdge) / (NIR + RedEdge)",
+    "MTCI" = "(RedEdge - Red) / (NIR - Red)",
+    "IRECI" = "(RedEdge - Red) / (RedEdge / NIR)",
+    "S2REP" = "705 + 35 * ((Red + RedEdge)/2 - Red) / (RedEdge - Red)",
+    "PSRI" = "(Red - Green) / RedEdge",
+    "CRI1" = "(1 / Green) - (1 / Red)",
+    "CRI2" = "(1 / Green) - (1 / RedEdge)",
+    "ARI1" = "(1 / Green) - (1 / RedEdge)",
+    "ARI2" = "NIR * ((1 / Green) - (1 / RedEdge))",
+    "MCARI" = "((RedEdge - Red) - 0.2*(RedEdge - Green)) * (RedEdge / Red)",
+
+    # ==================== STRESS AND CHLOROPHYLL INDICES (12) ====================
+    "PRI" = "(Green - NIR) / (Green + NIR)",
+    "SIPI" = "(NIR - Red) / (NIR - Green)",
+    "CCI" = "(RedEdge - Red) / (RedEdge + Red)",
+    "NDNI" = "(log(1/NIR) - log(1/SWIR1)) / (log(1/NIR) + log(1/SWIR1))",
+    "CARI" = "RedEdge * (Red / Green)",
+    "TCARI" = "3 * ((RedEdge - Red) - 0.2*(RedEdge - Green) * (RedEdge / Red))",
+    "MTVI1" = "1.2 * (1.2*(NIR - Green) - 2.5*(Red - Green))",
+    "MTVI2" = "1.5 * (1.2*(NIR - Green) - 2.5*(Red - Green)) / sqrt((2*NIR + 1)^2 - (6*NIR - 5*sqrt(Red)) - 0.5)",
+    "TVI" = "0.5 * (120*(NIR - Green) - 200*(Red - Green))",
+    "NPCI" = "(Red - Blue) / (Red + Blue)",
+    "RARS" = "Red / NIR",
+    "NPQI" = "(Red - Blue) / (Red + Blue)",
+
+    # ==================== WATER AND MOISTURE INDICES (8) ====================
     "NDWI" = "(Green - NIR) / (Green + NIR)",
     "MNDWI" = "(Green - SWIR1) / (Green + SWIR1)",
     "NDMI" = "(NIR - SWIR1) / (NIR + SWIR1)",
+    "MSI" = "SWIR1 / NIR",
+    "NDII" = "(NIR - SWIR1) / (NIR + SWIR1)",
+    "WI" = "NIR / SWIR1",
+    "SRWI" = "NIR / SWIR1",
+    "LSWI" = "(NIR - SWIR1) / (NIR + SWIR1)",
 
-    # Red edge indices
-    "NDRE" = "(NIR - RedEdge) / (NIR + RedEdge)",
-    "MTCI" = "(RedEdge - Red) / (NIR - Red)",
-    "PSRI" = "(Red - Green) / RedEdge",
-
-    # Stress indices
-    "PRI" = "(Green - NIR) / (Green + NIR)",
-    "SIPI" = "(NIR - Red) / (NIR - Green)",
-
-    # Specialized indices
+    # ==================== SPECIALIZED APPLICATIONS (10) ====================
+    "LAI" = "3.618 * EVI - 0.118, where EVI = 2.5 * ((NIR - Red) / (NIR + 6*Red - 7.5*Blue + 1))",
+    "FAPAR" = "-0.161 + 1.257 * NDVI, where NDVI = (NIR - Red) / (NIR + Red)",
+    "FCOVER" = "-2.274 + 4.336*NDVI - 1.33*NDVI^2, where NDVI = (NIR - Red) / (NIR + Red)",
     "NBR" = "(NIR - SWIR2) / (NIR + SWIR2)",
     "BAI" = "1 / ((0.1 - Red)^2 + (0.06 - NIR)^2)",
-    "LAI" = "3.618 * EVI - 0.118",
-    "FAPAR" = "-0.161 + 1.257 * NDVI"
+    "NDSI" = "(Green - SWIR1) / (Green + SWIR1)",
+    "GRVI" = "(Green - Red) / (Green + Red)",
+    "VIG" = "(Green - Red) / (Green + Red)",
+    "CI" = "(Red - Green) / Red",
+    "GBNDVI" = "(NIR - (Green + Blue)) / (NIR + Green + Blue)"
   )
 
   for (idx in indices) {
@@ -2440,6 +2592,7 @@ get_index_formulas <- function(indices) {
   return(formulas)
 }
 
+
 #' Get index typical ranges
 #' @keywords internal
 get_index_ranges <- function(indices) {
@@ -2447,26 +2600,79 @@ get_index_ranges <- function(indices) {
   ranges <- setNames(rep("", length(indices)), indices)
 
   range_db <- list(
-    # Basic vegetation indices
-    "NDVI" = "[-1, 1]", "SAVI" = "[-1, 1.5]", "MSAVI" = "[0, 2]", "OSAVI" = "[-1, 1]",
-    "EVI" = "[-1, 3]", "EVI2" = "[-1, 3]", "DVI" = "[-2, 2]", "RVI" = "[0, 30]",
-    "GNDVI" = "[-1, 1]", "WDVI" = "[-2, 2]",
+    # ==================== BASIC VEGETATION INDICES (10) ====================
+    "NDVI" = "[-1, 1]",
+    "SAVI" = "[-1, 1.5]",
+    "MSAVI" = "[0, 2]",
+    "OSAVI" = "[-1, 1]",
+    "EVI" = "[-1, 3]",
+    "EVI2" = "[-1, 3]",
+    "DVI" = "[-2, 2]",
+    "RVI" = "[0, 30]",
+    "GNDVI" = "[-1, 1]",
+    "WDVI" = "[-2, 2]",
 
-    # Enhanced indices
-    "ARVI" = "[-1, 1]", "RDVI" = "[-2, 2]", "PVI" = "[-2, 2]", "IPVI" = "[0, 1]",
-    "TNDVI" = "[0, 1.2]", "VARI" = "[-1, 1]",
+    # ==================== ENHANCED/IMPROVED INDICES (12) ====================
+    "ARVI" = "[-1, 1]",
+    "RDVI" = "[-2, 2]",
+    "PVI" = "[-2, 2]",
+    "IPVI" = "[0, 1]",
+    "TNDVI" = "[0, 1.2]",
+    "GEMI" = "[-1, 1]",
+    "VARI" = "[-1, 1]",
+    "TSAVI" = "[-1, 1.5]",
+    "ATSAVI" = "[-1, 1.5]",
+    "GESAVI" = "[-1, 1.5]",
+    "MTVI" = "[-2, 2]",
+    "CTVI" = "[-1, 1.5]",
 
-    # Water indices
-    "NDWI" = "[-1, 1]", "MNDWI" = "[-1, 1]", "NDMI" = "[-1, 1]", "MSI" = "[0, 5]",
+    # ==================== RED EDGE AND ADVANCED INDICES (10) ====================
+    "NDRE" = "[-1, 1]",
+    "MTCI" = "[0, 8]",
+    "IRECI" = "[-2, 5]",
+    "S2REP" = "[680, 780]",  # Wavelength in nm
+    "PSRI" = "[-1, 1]",
+    "CRI1" = "[-10, 10]",
+    "CRI2" = "[-10, 10]",
+    "ARI1" = "[-10, 10]",
+    "ARI2" = "[-10, 10]",
+    "MCARI" = "[-2, 2]",
 
-    # Red edge indices
-    "NDRE" = "[-1, 1]", "MTCI" = "[0, 8]", "PSRI" = "[-1, 1]",
+    # ==================== STRESS AND CHLOROPHYLL INDICES (12) ====================
+    "PRI" = "[-1, 1]",
+    "SIPI" = "[0, 2]",
+    "CCI" = "[-1, 1]",
+    "NDNI" = "[-1, 1]",
+    "CARI" = "[0, 5]",
+    "TCARI" = "[-2, 5]",
+    "MTVI1" = "[-2, 2]",
+    "MTVI2" = "[-2, 5]",
+    "TVI" = "[-100, 100]",
+    "NPCI" = "[-1, 1]",
+    "RARS" = "[0, 5]",
+    "NPQI" = "[-1, 1]",
 
-    # Stress indices
-    "PRI" = "[-1, 1]", "SIPI" = "[0, 2]",
+    # ==================== WATER AND MOISTURE INDICES (8) ====================
+    "NDWI" = "[-1, 1]",
+    "MNDWI" = "[-1, 1]",
+    "NDMI" = "[-1, 1]",
+    "MSI" = "[0, 5]",
+    "NDII" = "[-1, 1]",
+    "WI" = "[0, 10]",
+    "SRWI" = "[0, 10]",
+    "LSWI" = "[-1, 1]",
 
-    # Specialized indices
-    "NBR" = "[-1, 1]", "BAI" = "[0, 1000]", "LAI" = "[0, 15]", "FAPAR" = "[0, 1]"
+    # ==================== SPECIALIZED APPLICATIONS (10) ====================
+    "LAI" = "[0, 15]",
+    "FAPAR" = "[0, 1]",
+    "FCOVER" = "[0, 1]",
+    "NBR" = "[-1, 1]",
+    "BAI" = "[0, 1000]",
+    "NDSI" = "[-1, 1]",
+    "GRVI" = "[-1, 1]",
+    "VIG" = "[-1, 1]",
+    "CI" = "[-1, 1]",
+    "GBNDVI" = "[-1, 1]"
   )
 
   for (idx in indices) {
@@ -2487,7 +2693,7 @@ get_index_references <- function(indices) {
   references <- setNames(rep("", length(indices)), indices)
 
   ref_db <- list(
-    # Basic vegetation indices
+    # ==================== BASIC VEGETATION INDICES (10) ====================
     "NDVI" = "Rouse et al. (1974)",
     "SAVI" = "Huete (1988)",
     "MSAVI" = "Qi et al. (1994)",
@@ -2497,32 +2703,69 @@ get_index_references <- function(indices) {
     "DVI" = "Richardson & Wiegand (1977)",
     "RVI" = "Birth & McVey (1968)",
     "GNDVI" = "Gitelson et al. (1996)",
+    "WDVI" = "Clevers (1988)",
 
-    # Enhanced indices
+    # ==================== ENHANCED/IMPROVED INDICES (12) ====================
     "ARVI" = "Kaufman & Tanre (1992)",
     "RDVI" = "Roujean & Breon (1995)",
     "PVI" = "Richardson & Wiegand (1977)",
+    "IPVI" = "Crippen (1990)",
+    "TNDVI" = "Deering et al. (1975)",
+    "GEMI" = "Pinty & Verstraete (1992)",
     "VARI" = "Gitelson et al. (2002)",
+    "TSAVI" = "Baret & Guyot (1991)",
+    "ATSAVI" = "Baret et al. (1992)",
+    "GESAVI" = "Gilabert et al. (2002)",
+    "MTVI" = "Haboudane et al. (2004)",
+    "CTVI" = "Perry & Lautenschlager (1984)",
 
-    # Water indices
+    # ==================== RED EDGE AND ADVANCED INDICES (10) ====================
+    "NDRE" = "Gitelson & Merzlyak (1994)",
+    "MTCI" = "Dash & Curran (2004)",
+    "IRECI" = "Frampton et al. (2013)",
+    "S2REP" = "Frampton et al. (2013)",
+    "PSRI" = "Merzlyak et al. (1999)",
+    "CRI1" = "Gitelson et al. (2002)",
+    "CRI2" = "Gitelson et al. (2002)",
+    "ARI1" = "Gitelson et al. (2001)",
+    "ARI2" = "Gitelson et al. (2001)",
+    "MCARI" = "Daughtry et al. (2000)",
+
+    # ==================== STRESS AND CHLOROPHYLL INDICES (12) ====================
+    "PRI" = "Gamon et al. (1992)",
+    "SIPI" = "Penuelas et al. (1995)",
+    "CCI" = "Barnes et al. (2000)",
+    "NDNI" = "Serrano et al. (2002)",
+    "CARI" = "Kim et al. (1994)",
+    "TCARI" = "Haboudane et al. (2002)",
+    "MTVI1" = "Haboudane et al. (2004)",
+    "MTVI2" = "Haboudane et al. (2004)",
+    "TVI" = "Broge & Leblanc (2001)",
+    "NPCI" = "Penuelas et al. (1994)",
+    "RARS" = "Chappelle et al. (1992)",
+    "NPQI" = "Barnes et al. (1992)",
+
+    # ==================== WATER AND MOISTURE INDICES (8) ====================
     "NDWI" = "McFeeters (1996)",
     "MNDWI" = "Xu (2006)",
     "NDMI" = "Gao (1996)",
+    "MSI" = "Hunt & Rock (1989)",
+    "NDII" = "Hardisky et al. (1983)",
+    "WI" = "Gao (1996)",
+    "SRWI" = "Zarco-Tejada et al. (2003)",
+    "LSWI" = "Xiao et al. (2002)",
 
-    # Red edge indices
-    "NDRE" = "Gitelson & Merzlyak (1994)",
-    "MTCI" = "Dash & Curran (2004)",
-    "PSRI" = "Merzlyak et al. (1999)",
-
-    # Stress indices
-    "PRI" = "Gamon et al. (1992)",
-    "SIPI" = "Penuelas et al. (1995)",
-
-    # Specialized indices
+    # ==================== SPECIALIZED APPLICATIONS (10) ====================
+    "LAI" = "Baret & Guyot (1991)",
+    "FAPAR" = "Myneni & Williams (1994)",
+    "FCOVER" = "Baret et al. (2007)",
     "NBR" = "Lopez Garcia & Caselles (1991)",
     "BAI" = "Chuvieco et al. (2002)",
-    "LAI" = "Baret & Guyot (1991)",
-    "FAPAR" = "Myneni & Williams (1994)"
+    "NDSI" = "Hall et al. (1995)",
+    "GRVI" = "Tucker (1979)",
+    "VIG" = "Gitelson et al. (2002)",
+    "CI" = "Escadafal & Huete (1991)",
+    "GBNDVI" = "Wang et al. (2007)"
   )
 
   for (idx in indices) {

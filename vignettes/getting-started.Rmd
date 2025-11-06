@@ -125,6 +125,70 @@ custom_area <- get_region_boundary(c(-84.5, 39.0, -82.0, 41.0))
 franklin_county <- get_region_boundary("Ohio:Franklin")
 ```
 
+
+
+
+
+
+## Band Naming and Satellite Support
+
+### Automatic Band Detection
+
+geospatialsuite automatically detects bands from major satellite platforms:
+
+| Satellite | Bands Supported | Example Band Names |
+|-----------|-----------------|-------------------|
+| Landsat 8/9 | 7 bands | B1-B7 (B4=Red, B5=NIR) |
+| Sentinel-2 | 10 bands | B01-B12 (B04=Red, B08=NIR, B05=RedEdge) |
+| MODIS | 7 bands | band1-band7 |
+| Generic | Any | red, nir, blue, green, swir1, swir2 |
+
+### Case-Insensitive Matching
+
+**All band names are case-insensitive:**
+- `"red"` = `"RED"` = `"Red"` = `"rEd"`
+- "B4"` = `"b4"` = `"B04"` = `"b04"`
+```{r band-naming-example, eval=FALSE}
+# These are all equivalent
+ndvi1 <- calculate_vegetation_index(red = red_band, nir = nir_band, index_type = "NDVI")
+ndvi2 <- calculate_vegetation_index(Red = red_band, NIR = nir_band, index_type = "NDVI")
+ndvi3 <- calculate_vegetation_index(RED = red_band, nir = nir_band, index_type = "NDVI")
+```
+
+### Working with Different Satellites
+```{r satellite-examples, eval=FALSE}
+# Landsat 8/9 (auto-detected)
+landsat <- rast("LC08_stack.tif")  # Has B1-B7
+ndvi <- calculate_vegetation_index(
+  spectral_data = landsat,
+  index_type = "NDVI",
+  auto_detect_bands = TRUE
+)
+
+# Sentinel-2 (auto-detected, includes red edge)
+sentinel <- rast("S2_stack.tif")  # Has B01-B12
+ndre <- calculate_vegetation_index(
+  spectral_data = sentinel,
+  index_type = "NDRE",  # Red edge index
+  auto_detect_bands = TRUE
+)
+
+# Custom names (rename first)
+custom <- rast("custom_satellite.tif")
+names(custom) <- c("red", "nir", "blue", "green")
+evi <- calculate_vegetation_index(
+  spectral_data = custom,
+  index_type = "EVI",
+  auto_detect_bands = TRUE
+)
+```
+
+For complete documentation, see the full band naming guide in the package documentation.
+
+
+
+
+
 ## Basic Workflows
 
 ### 1. Simple Vegetation Analysis

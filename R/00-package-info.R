@@ -63,6 +63,22 @@
 #' # One-line mapping (auto-detects everything!)
 #' quick_map("mydata.shp")
 #'
+#' # Auto-geocode data without coordinates
+#' census_data <- data.frame(
+#'   state = c("Ohio", "Pennsylvania", "Michigan"),
+#'   median_income = c(58642, 61744, 59584)
+#' )
+#' spatial_data <- auto_geocode_data(census_data)
+#' quick_map(spatial_data, variable = "median_income")
+#'
+#' # Works with HUC codes too (any format: HUC_8, HUC-8, huc8)
+#' watershed_data <- data.frame(
+#'   HUC_8 = c("04100009", "04100012"),
+#'   water_quality = c(72, 65)
+#' )
+#' huc_spatial <- auto_geocode_data(watershed_data)
+#' quick_map(huc_spatial)
+#'
 #' # Calculate multiple vegetation indices
 #' indices <- calculate_multiple_indices(
 #'   red = red_band, nir = nir_band,
@@ -118,7 +134,7 @@
 # Package startup message - UPDATED
 .onAttach <- function(libname, pkgname) {
   packageStartupMessage("==================================================")
-  packageStartupMessage("GeoSpatialSuite v0.1.0 - Reliable Spatiotemporal Analysis")
+  packageStartupMessage("GeoSpatialSuite v0.1.1 - Reliable Spatiotemporal Analysis")
   packageStartupMessage("==================================================")
   packageStartupMessage("Universal - 60+ Vegetation Indices - Robust & Simple")
   packageStartupMessage("")
@@ -157,4 +173,4 @@ utils::globalVariables(c(".", "STATEFP", "STUSPS", "NAME", "GEOID", "Var1", "Var
                          "watershed_id", "longitude", "latitude", "dataset_source",
                          "quality_category", "station_id", "Date", "TIME", "var1.pred",
                          "NDVI_enhanced", "NDVI_fallback", "crop_mask_binary", "crop_mask_preserve",
-                         "NDWI_water_mask", "MNDWI_water_mask", "consensus_water_mask"))
+                         "NDWI_water_mask", "MNDWI_water_mask", "consensus_water_mask", "full_address"))

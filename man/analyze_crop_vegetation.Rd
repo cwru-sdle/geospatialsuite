@@ -63,6 +63,99 @@ Handles test scenarios properly with better input validation.
 \item \strong{yield}: Yield prediction support
 }
 }
+
+\subsection{Output Structure:}{
+
+The function returns a list with three main components:
+\subsection{1. vegetation_indices (SpatRaster)}{
+
+Multi-layer raster with calculated indices (NDVI, EVI, etc.)
+}
+
+\subsection{2. analysis_results (List)}{
+
+\strong{stress_analysis} (if requested):
+\itemize{
+\item Percentage of pixels in each stress category
+\item Categories: healthy (NDVI 0.6-1.0), moderate stress (0.4-0.6), severe stress (0.0-0.4)
+\item Includes mean, median, std_dev, and thresholds used
+}
+
+\strong{growth_analysis} (if requested):
+\itemize{
+\item Predicted growth stage based on NDVI patterns
+\item Stage confidence (0-1 scale)
+\item Detailed statistics for each index
+\item Growth stages: emergence, vegetative, reproductive, maturity (crop-specific)
+}
+
+\strong{yield_analysis} (if requested):
+\itemize{
+\item \strong{Composite Yield Index}: Normalized 0-1 score combining multiple indices
+\itemize{
+\item 0.0 = Very low yield potential
+\item 0.5 = Medium yield potential
+\item 1.0 = Maximum yield potential
+}
+\item \strong{Yield Potential Class}: Categorical (Low, Medium, High, Very High)
+\item \strong{Index Contributions}: How each index contributed to composite score
+\item Calculation: Each index (NDVI, EVI, GNDVI, DVI, RVI) is normalized to 0-1,
+then averaged to create composite score
+}
+
+\strong{summary_statistics}:
+\itemize{
+\item Basic stats (mean, std, min, max, percentiles) for all indices
+\item Coverage percentage and pixel counts
+}
+}
+
+\subsection{3. metadata (List)}{
+
+Processing information: crop_type, indices_used, processing_date, spatial properties
+}
+
+}
+
+\subsection{Example Interpretation:}{
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{result <- analyze_crop_vegetation(data, crop_type = "corn")
+
+# Stress Assessment
+stress <- result$analysis_results$stress_analysis$NDVI
+cat(sprintf("Healthy: \%.1f\%\%, Stressed: \%.1f\%\%\\n",
+            stress$healthy_percentage,
+            stress$severe_stress_percentage))
+
+# Growth Stage
+stage <- result$analysis_results$growth_analysis$predicted_growth_stage
+cat(sprintf("Growth stage: \%s\\n", stage))
+
+# Yield Potential
+yield <- result$analysis_results$yield_analysis
+cat(sprintf("Yield potential: \%s (score: \%.2f)\\n",
+            yield$yield_potential_class,
+            yield$composite_yield_index))
+}\if{html}{\out{</div>}}
+}
+
+\subsection{Important Notes:}{
+\itemize{
+\item \strong{Composite Yield Index} is a vegetation-based proxy, not a direct yield prediction
+\item Thresholds are based on literature and may need regional calibration
+\item Results should be validated with ground truth data
+\item For detailed output documentation, see package vignette
+}
+}
+
+\subsection{Analysis Types:}{
+\itemize{
+\item \strong{comprehensive}: All analyses (stress, growth, yield)
+\item \strong{stress}: Focus on stress detection indices
+\item \strong{growth}: Growth stage analysis
+\item \strong{yield}: Yield prediction support
+}
+}
 }
 \examples{
 \dontrun{

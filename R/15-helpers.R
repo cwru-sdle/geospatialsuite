@@ -310,7 +310,7 @@ add_lines_to_leaflet <- function(map_obj, spatial_data, fill_variable, popup_var
   return(map_obj)
 }
 
-#' Run enhanced terrain analysis workflow - IMPLEMENTED
+#' Run enhanced terrain analysis workflow
 #' @keywords internal
 run_enhanced_terrain_analysis_workflow <- function(config, output_folder) {
   message("Running enhanced terrain analysis workflow...")
@@ -364,7 +364,7 @@ run_enhanced_terrain_analysis_workflow <- function(config, output_folder) {
   return(terrain_results)
 }
 
-#' Run enhanced temporal workflow - IMPLEMENTED
+#' Run enhanced temporal workflow
 #' @keywords internal
 run_enhanced_temporal_workflow <- function(config, output_folder) {
   message("Running enhanced temporal workflow...")
@@ -416,7 +416,7 @@ run_enhanced_temporal_workflow <- function(config, output_folder) {
   return(results)
 }
 
-#' Run enhanced mosaic workflow - IMPLEMENTED
+#' Run enhanced mosaic workflow
 #' @keywords internal
 run_enhanced_mosaic_workflow <- function(config, output_folder) {
   message("Running enhanced mosaic workflow...")
@@ -454,7 +454,7 @@ run_enhanced_mosaic_workflow <- function(config, output_folder) {
   return(results)
 }
 
-#' Run multi-dataset workflow - IMPLEMENTED
+#' Run multi-dataset workflow
 #' @keywords internal
 run_multi_dataset_workflow <- function(config, output_folder) {
   message("Running multi-dataset workflow...")
@@ -642,12 +642,477 @@ load_vector_data_safe <- function(file_path) {
   }
 }
 
+
+
+
+# ==================== GEOGRAPHIC ENTITY DETECTION & GEOCODING ==================== #
+
+#' Normalize column names for robust matching
+#' @keywords internal
+normalize_column_name <- function(x) {
+  tolower(gsub("[_\\s-]", "", x))
+}
+
+#' Detect and geocode geographic entity columns
+#' @param data_input Data frame with potential geographic identifiers
+#' @return List with detected column and type, or NULL if none found
+#' @keywords internal
+detect_geographic_entities <- function(data_input) {
+
+  # Normalize column names: lowercase, remove spaces, underscores, hyphens
+  column_names_normalized <- normalize_column_name(names(data_input))
+  column_names_original <- names(data_input)
+
+  # Define patterns for different geographic entities (all normalized)
+  patterns <- list(
+    state = c("state", "statename", "st", "stateabbr", "statecode", "stusps", "stateab"),
+    county = c("county", "countyname", "cnty", "cty", "countyfips"),
+    fips = c("fips", "fipscode", "geoid", "geoidfips", "geofips", "geocode"),
+    huc = c("huc", "huc2", "huc4", "huc6", "huc8", "huc10", "huc12",
+            "huc14", "watershed", "watershedid", "hydrologicunitcode",
+            "hydrologicunit", "basinid", "subbasin"),
+    zipcode = c("zip", "zipcode", "postal", "postalcode", "postcode"),
+    city = c("city", "cityname", "municipality", "town", "townname")
+  )
+
+  # Check each pattern type
+  for (entity_type in names(patterns)) {
+    pattern_list <- patterns[[entity_type]]
+
+    # Check each specific pattern
+    for (pattern in pattern_list) {
+      # Find exact matches first
+      exact_matches <- which(column_names_normalized == pattern)
+
+      if (length(exact_matches) > 0) {
+        return(list(
+          column = column_names_original[exact_matches[1]],
+          type = entity_type,
+          original_column = column_names_original[exact_matches[1]]
+        ))
+      }
+
+      # If no exact match, try partial matches (but be careful with short patterns)
+      if (nchar(pattern) >= 3) {
+        partial_matches <- grep(pattern, column_names_normalized, fixed = TRUE)
+
+        if (length(partial_matches) > 0) {
+          return(list(
+            column = column_names_original[partial_matches[1]],
+            type = entity_type,
+            original_column = column_names_original[partial_matches[1]]
+          ))
+        }
+      }
+    }
+  }
+
+  return(NULL)
+}
+
+#' Detect HUC level from column name or data
+#' @param column_name Name of the HUC column
+#' @param data_values Sample HUC values
+#' @return Character string of HUC type (e.g., "huc08", "huc12")
+#' @keywords internal
+detect_huc_level <- function(column_name, data_values) {
+
+  # Normalize column name
+  col_normalized <- normalize_column_name(column_name)
+
+  # Check column name for HUC level
+  huc_patterns <- c(
+    "huc2" = 2, "huc4" = 4, "huc6" = 6, "huc8" = 8,
+    "huc10" = 10, "huc12" = 12, "huc14" = 14
+  )
+
+  for (pattern in names(huc_patterns)) {
+    if (grepl(pattern, col_normalized)) {
+      return(sprintf("huc%02d", huc_patterns[pattern]))
+    }
+  }
+
+  # If not in column name, detect from data length
+  # Remove any non-digit characters and get typical length
+  clean_values <- gsub("[^0-9]", "", as.character(data_values))
+  typical_length <- as.numeric(names(sort(table(nchar(clean_values)), decreasing = TRUE)[1]))
+
+  if (!is.na(typical_length)) {
+    if (typical_length == 2) return("huc02")
+    if (typical_length == 4) return("huc04")
+    if (typical_length == 6) return("huc06")
+    if (typical_length == 8) return("huc08")
+    if (typical_length == 10) return("huc10")
+    if (typical_length == 12) return("huc12")
+    if (typical_length == 14) return("huc14")
+  }
+
+  # Default to HUC8 (most common)
+  return("huc08")
+}
+
+#' Helper to detect state column
+#' @keywords internal
+detect_state_column <- function(data) {
+  state_patterns <- c("state", "st", "statename", "stateabbr", "statename")
+  column_names_normalized <- normalize_column_name(names(data))
+
+  for (pattern in state_patterns) {
+    matches <- which(column_names_normalized == pattern)
+    if (length(matches) > 0) {
+      return(names(data)[matches[1]])
+    }
+  }
+
+  return(NULL)
+}
+
+#' Geocode geographic entities to coordinates
+#' @param data_input Data frame with geographic entity column
+#' @param entity_info List from detect_geographic_entities
+#' @param verbose Print messages
+#' @return sf object with geocoded locations
+#' @keywords internal
+geocode_entities <- function(data_input, entity_info, verbose = FALSE) {
+
+  if (verbose) {
+    message(sprintf("Detected %s data in column: %s",
+                    entity_info$type, entity_info$column))
+  }
+
+  entity_col <- entity_info$column
+  entity_type <- entity_info$type
+
+  # Load required packages conditionally
+  require_tigris <- requireNamespace("tigris", quietly = TRUE)
+
+  if (!require_tigris && entity_type %in% c("state", "county", "fips")) {
+    stop("Package 'tigris' is required for geocoding US geographic entities.\n",
+         "Install it with: install.packages('tigris')", call. = FALSE)
+  }
+
+  # Geocode based on entity type
+  result <- switch(entity_type,
+                   state = geocode_states(data_input, entity_col, verbose),
+                   county = geocode_counties(data_input, entity_col, verbose),
+                   fips = geocode_fips(data_input, entity_col, verbose),
+                   huc = geocode_hucs(data_input, entity_col, verbose),
+                   zipcode = geocode_zipcodes(data_input, entity_col, verbose),
+                   city = geocode_cities(data_input, entity_col, verbose),
+                   stop(sprintf("Geocoding not yet implemented for type: %s", entity_type))
+  )
+
+  return(result)
+}
+
+#' Geocode US states
+#' @keywords internal
+geocode_states <- function(data, column, verbose) {
+  if (verbose) message("Geocoding states...")
+
+  # Get state boundaries
+  states <- tigris::states(cb = TRUE, progress_bar = FALSE)
+
+  # Clean input data: trim whitespace, handle case
+  data$state_clean <- trimws(as.character(data[[column]]))
+
+  # Create matching keys (both uppercase for comparison)
+  states$match_name <- toupper(states$NAME)
+  states$match_abbr <- toupper(states$STUSPS)
+
+  # Also create lowercase versions for flexible matching
+  data$state_upper <- toupper(data$state_clean)
+
+  # Try matching by full name first
+  result <- merge(data, states,
+                  by.x = "state_upper",
+                  by.y = "match_name",
+                  all.x = TRUE)
+
+  # For unmatched, try abbreviation
+  unmatched_idx <- which(is.na(result$geometry))
+
+  if (length(unmatched_idx) > 0) {
+    unmatched_data <- data[unmatched_idx, ]
+
+    result2 <- merge(unmatched_data, states,
+                     by.x = "state_upper",
+                     by.y = "match_abbr",
+                     all.x = TRUE)
+
+    # Update only the matched ones
+    matched_in_result2 <- which(!is.na(result2$geometry))
+    if (length(matched_in_result2) > 0) {
+      result[unmatched_idx[matched_in_result2], ] <- result2[matched_in_result2, ]
+    }
+  }
+
+  # Convert to sf and get centroids
+  result_sf <- sf::st_as_sf(result)
+  result_sf <- sf::st_centroid(result_sf)
+
+  # Clean up temporary columns
+  result_sf$state_clean <- NULL
+  result_sf$state_upper <- NULL
+  result_sf$match_name <- NULL
+  result_sf$match_abbr <- NULL
+
+  # Report results
+  matched <- sum(!is.na(sf::st_coordinates(result_sf)[,1]))
+  if (verbose) {
+    message(sprintf("Matched %d/%d states", matched, nrow(data)))
+
+    # Show which states failed
+    if (matched < nrow(data)) {
+      failed_states <- data[[column]][is.na(sf::st_coordinates(result_sf)[,1])]
+      message(sprintf("Failed to match: %s", paste(unique(failed_states), collapse = ", ")))
+    }
+  }
+
+  return(result_sf)
+}
+
+#' Geocode US counties
+#' @keywords internal
+geocode_counties <- function(data, column, verbose) {
+  if (verbose) message("Geocoding counties...")
+
+  # Try to detect state column for county matching
+  state_col <- detect_state_column(data)
+
+  if (is.null(state_col)) {
+    # Get all US counties
+    counties <- tigris::counties(cb = TRUE, progress_bar = FALSE)
+  } else {
+    # Get counties for specific states
+    states <- unique(data[[state_col]])
+    counties_list <- lapply(states, function(st) {
+      tryCatch({
+        tigris::counties(state = st, cb = TRUE, progress_bar = FALSE)
+      }, error = function(e) {
+        if (verbose) warning(sprintf("Could not load counties for state: %s", st))
+        return(NULL)
+      })
+    })
+    counties_list <- Filter(Negate(is.null), counties_list)
+
+    if (length(counties_list) == 0) {
+      stop("Could not load counties for any specified states", call. = FALSE)
+    }
+
+    counties <- do.call(rbind, counties_list)
+  }
+
+  # Clean and match
+  data[[column]] <- trimws(toupper(as.character(data[[column]])))
+  counties$match_name <- toupper(counties$NAME)
+
+  result <- merge(data, counties,
+                  by.x = column,
+                  by.y = "match_name",
+                  all.x = TRUE)
+
+  result_sf <- sf::st_as_sf(result)
+  result_sf <- sf::st_centroid(result_sf)
+
+  if (verbose) {
+    matched <- sum(!is.na(sf::st_coordinates(result_sf)[,1]))
+    message(sprintf("Matched %d/%d counties", matched, nrow(data)))
+  }
+
+  return(result_sf)
+}
+
+#' Geocode FIPS codes
+#' @keywords internal
+geocode_fips <- function(data, column, verbose) {
+  if (verbose) message("Geocoding FIPS codes...")
+
+  # Standardize FIPS codes (ensure 5 digits with leading zeros)
+  data$fips_clean <- sprintf("%05d", as.numeric(gsub("[^0-9]", "", data[[column]])))
+
+  # Get county boundaries by FIPS
+  counties <- tigris::counties(cb = TRUE, progress_bar = FALSE)
+  counties$GEOID <- sprintf("%05d", as.numeric(counties$GEOID))
+
+  result <- merge(data, counties,
+                  by.x = "fips_clean",
+                  by.y = "GEOID",
+                  all.x = TRUE)
+
+  result_sf <- sf::st_as_sf(result)
+  result_sf <- sf::st_centroid(result_sf)
+
+  # Clean up
+  result_sf$fips_clean <- NULL
+
+  if (verbose) {
+    matched <- sum(!is.na(sf::st_coordinates(result_sf)[,1]))
+    message(sprintf("Matched %d/%d FIPS codes", matched, nrow(data)))
+  }
+
+  return(result_sf)
+}
+
+#' Geocode HUC watershed codes
+#' @keywords internal
+geocode_hucs <- function(data, column, verbose) {
+  if (verbose) message("Geocoding HUC codes...")
+
+  # nhdplusTools is needed for HUC geocoding
+  if (!requireNamespace("nhdplusTools", quietly = TRUE)) {
+    stop("Package 'nhdplusTools' is required for HUC geocoding.\n",
+         "Install it with: install.packages('nhdplusTools')", call. = FALSE)
+  }
+
+  # Detect HUC level
+  huc_level <- detect_huc_level(column, data[[column]])
+
+  if (verbose) {
+    message(sprintf("Detected HUC level: %s", huc_level))
+  }
+
+  # Clean HUC codes (remove any non-numeric characters, hyphens, etc.)
+  data$huc_clean <- gsub("[^0-9]", "", as.character(data[[column]]))
+
+  # Get HUC boundaries
+  hucs_list <- list()
+  failed_hucs <- character()
+
+  for (i in seq_len(nrow(data))) {
+    huc_code <- data$huc_clean[i]
+
+    tryCatch({
+      huc_boundary <- nhdplusTools::get_huc(id = huc_code, type = huc_level)
+      hucs_list[[i]] <- cbind(data[i, , drop = FALSE], huc_boundary)
+    }, error = function(e) {
+      if (verbose) warning(sprintf("Could not find HUC: %s (cleaned: %s)",
+                                   data[[column]][i], huc_code))
+      failed_hucs <<- c(failed_hucs, data[[column]][i])
+      hucs_list[[i]] <<- NULL
+    })
+  }
+
+  # Combine results
+  valid_hucs <- Filter(Negate(is.null), hucs_list)
+
+  if (length(valid_hucs) == 0) {
+    stop("Could not geocode any HUC codes. Failed HUCs: ",
+         paste(failed_hucs, collapse = ", "), call. = FALSE)
+  }
+
+  result_sf <- do.call(rbind, valid_hucs)
+  result_sf$huc_clean <- NULL  # Remove temporary column
+
+  # Convert to centroids for point representation
+  result_sf <- sf::st_centroid(result_sf)
+
+  if (verbose) {
+    message(sprintf("Matched %d/%d HUC codes", length(valid_hucs), nrow(data)))
+    if (length(failed_hucs) > 0) {
+      message(sprintf("Failed to match: %s", paste(failed_hucs, collapse = ", ")))
+    }
+  }
+
+  return(result_sf)
+}
+
+#' Geocode ZIP codes
+#' @keywords internal
+geocode_zipcodes <- function(data, column, verbose) {
+  if (verbose) message("Geocoding ZIP codes...")
+
+  # zipcodeR package for ZIP geocoding
+  if (!requireNamespace("zipcodeR", quietly = TRUE)) {
+    stop("Package 'zipcodeR' is required for ZIP code geocoding.\n",
+         "Install it with: install.packages('zipcodeR')", call. = FALSE)
+  }
+
+  # Get ZIP code database
+  zip_data <- zipcodeR::zip_code_db
+
+  # Standardize ZIP codes
+  data$zip_clean <- sprintf("%05d", as.numeric(gsub("[^0-9]", "", data[[column]])))
+
+  # Merge with coordinates
+  result <- merge(data, zip_data,
+                  by.x = "zip_clean",
+                  by.y = "zipcode",
+                  all.x = TRUE)
+
+  # Convert to sf
+  result_sf <- sf::st_as_sf(result,
+                            coords = c("lng", "lat"),
+                            crs = 4326,
+                            remove = FALSE)
+
+  # Clean up
+  result_sf$zip_clean <- NULL
+
+  if (verbose) {
+    matched <- sum(!is.na(result_sf$lng))
+    message(sprintf("Matched %d/%d ZIP codes", matched, nrow(data)))
+  }
+
+  return(result_sf)
+}
+
+#' Geocode city names
+#' @keywords internal
+geocode_cities <- function(data, column, verbose) {
+  if (verbose) message("Geocoding cities...")
+
+  # tidygeocoder for city geocoding
+  if (!requireNamespace("tidygeocoder", quietly = TRUE)) {
+    stop("Package 'tidygeocoder' is required for city geocoding.\n",
+         "Install it with: install.packages('tidygeocoder')", call. = FALSE)
+  }
+
+  # Detect state column for better matching
+  state_col <- detect_state_column(data)
+
+  if (!is.null(state_col)) {
+    data$full_address <- paste(data[[column]], data[[state_col]], "USA", sep = ", ")
+  } else {
+    data$full_address <- paste(data[[column]], "USA", sep = ", ")
+  }
+
+  # Geocode
+  result <- tidygeocoder::geocode(data, address = full_address, method = "osm", quiet = !verbose)
+
+  # Convert to sf
+  result_sf <- sf::st_as_sf(result,
+                            coords = c("long", "lat"),
+                            crs = 4326,
+                            remove = FALSE)
+
+  result_sf$full_address <- NULL
+
+  if (verbose) {
+    matched <- sum(!is.na(result_sf$long))
+    message(sprintf("Matched %d/%d cities", matched, nrow(data)))
+  }
+
+  return(result_sf)
+}
+
+
+
+
+
+
+
+# ==================== ENHANCED PROCESS VECTOR DATA ==================== #
+
 #' Process vector data from data frame
-#' @param data_input Data frame with potential coordinate columns
+#' @param data_input Data frame with potential coordinate columns OR geographic entities
 #' @param coord_cols Coordinate column names
+#' @param try_geocoding Attempt to geocode if no coordinates found (default: TRUE)
+#' @param verbose Print messages
 #' @return sf object
 #' @keywords internal
-process_vector_data <- function(data_input, coord_cols = c("lon", "lat")) {
+process_vector_data <- function(data_input, coord_cols = c("lon", "lat"),
+                                try_geocoding = TRUE, verbose = FALSE) {
 
   if (inherits(data_input, "sf")) {
     return(data_input)
@@ -687,17 +1152,452 @@ process_vector_data <- function(data_input, coord_cols = c("lon", "lat")) {
     y_col <- coord_cols[2]
   }
 
-  if (is.null(x_col) || is.null(y_col)) {
+  # If coordinates found, use them
+  if (!is.null(x_col) && !is.null(y_col)) {
+    if (verbose) {
+      message(sprintf("Using coordinate columns: %s, %s", x_col, y_col))
+    }
+
+    # Create sf object from coordinates
+    sf_data <- sf::st_as_sf(data_input,
+                            coords = c(x_col, y_col),
+                            crs = 4326)
+    return(sf_data)
+  }
+
+  # No coordinates found - try geocoding if enabled
+  if (try_geocoding) {
+    if (verbose) {
+      message("No coordinate columns found. Attempting to detect geographic entities...")
+    }
+
+    entity_info <- detect_geographic_entities(data_input)
+
+    if (!is.null(entity_info)) {
+      # Geocode the detected entities
+      sf_data <- geocode_entities(data_input, entity_info, verbose)
+      return(sf_data)
+
+    } else {
+      stop("Could not find coordinate columns or geographic entities to geocode.\n",
+           "Available columns: ", paste(names(data_input), collapse = ", "),
+           "\n\nSupported geographic entities: state, county, FIPS, HUC, ZIP code, city",
+           call. = FALSE)
+    }
+
+  } else {
     stop("Could not find coordinate columns. Available columns: ",
          paste(names(data_input), collapse = ", "), call. = FALSE)
   }
+}
 
-  # Convert to sf
-  sf_data <- sf::st_as_sf(data_input,
-                          coords = c(x_col, y_col),
-                          crs = 4326)
+# ==================== USER-FACING FUNCTIONS ==================== #
 
-  return(sf_data)
+#' Auto-geocode data with geographic identifiers
+#'
+#' @description
+#' Automatically detects and geocodes data containing US geographic identifiers
+#' (states, counties, FIPS codes, HUC watershed codes, ZIP codes, or city names)
+#' without requiring latitude/longitude coordinates.
+#'
+#' @param data Data frame, file path (CSV, shapefile, etc.), or sf object
+#' @param detect_columns Auto-detect geographic entity columns (default: TRUE)
+#' @param entity_column Explicitly specify the column containing geographic entities (optional)
+#' @param entity_type Explicitly specify entity type: "state", "county", "fips", "huc", "zipcode", "city" (optional)
+#' @param verbose Print detailed progress messages
+#'
+#' @return sf object with geocoded point or polygon geometries
+#'
+#' @details
+#' Supported geographic entities:
+#' \itemize{
+#'   \item \strong{States}: Full names or 2-letter abbreviations (e.g., "Ohio", "OH")
+#'   \item \strong{Counties}: County names, optionally with state
+#'   \item \strong{FIPS codes}: 5-digit Federal Information Processing Standards codes
+#'   \item \strong{HUC codes}: Hydrologic Unit Codes (HUC8, HUC10, HUC12)
+#'   \item \strong{ZIP codes}: 5-digit US postal codes
+#'   \item \strong{Cities}: City names, works best with state column
+#' }
+#'
+#' Column name variations supported:
+#' \itemize{
+#'   \item HUC columns: HUC_8, HUC-8, huc8, Huc 8, etc.
+#'   \item State columns: State, STATE, state_name, StateName, ST, etc.
+#'   \item All entity types handle spaces, hyphens, underscores, and mixed case
+#' }
+#'
+#' Required packages (installed automatically when needed):
+#' \itemize{
+#'   \item \code{tigris}: For US Census boundaries (states, counties, FIPS)
+#'   \item \code{nhdplusTools}: For HUC watershed boundaries
+#'   \item \code{zipcodeR}: For ZIP code centroids
+#'   \item \code{tidygeocoder}: For city name geocoding
+#' }
+#'
+#' @examples
+#' \dontrun{
+#' # Auto-detect and geocode - simplest usage
+#' geodata <- auto_geocode_data("mydata.csv")
+#'
+#' # With state names
+#' state_data <- data.frame(
+#'   state = c("California", "Texas", "New York"),
+#'   population = c(39538223, 29145505, 20201249)
+#' )
+#' state_sf <- auto_geocode_data(state_data)
+#'
+#' # With FIPS codes
+#' fips_data <- data.frame(
+#'   fips = c("39049", "39035", "39113"),  # Ohio counties
+#'   unemployment_rate = c(4.2, 3.8, 5.1)
+#' )
+#' county_sf <- auto_geocode_data(fips_data)
+#'
+#' # With HUC codes (handles various formats)
+#' watershed_data <- data.frame(
+#'   HUC_8 = c("04100009", "04100012", "04110002"),
+#'   water_quality_index = c(72, 65, 80)
+#' )
+#' huc_sf <- auto_geocode_data(watershed_data)
+#'
+#' # Explicit specification
+#' zip_sf <- auto_geocode_data(
+#'   my_data,
+#'   entity_column = "postal_code",
+#'   entity_type = "zipcode"
+#' )
+#'
+#' # Then use with your other GeoSpatialSuite functions
+#' quick_map(state_sf, variable = "population")
+#' }
+#'
+#' @export
+auto_geocode_data <- function(data, detect_columns = TRUE, entity_column = NULL,
+                              entity_type = NULL, verbose = TRUE) {
+
+  # Load data if file path provided
+  if (is.character(data) && length(data) == 1) {
+    if (verbose) message(sprintf("Loading data from: %s", basename(data)))
+
+    file_ext <- tolower(tools::file_ext(data))
+
+    if (file_ext == "csv") {
+      data <- read.csv(data, stringsAsFactors = FALSE)
+    } else if (file_ext %in% c("shp", "gpkg", "geojson")) {
+      return(sf::st_read(data, quiet = !verbose))
+    } else {
+      stop("Unsupported file format. Use CSV, shapefile, GeoPackage, or GeoJSON",
+           call. = FALSE)
+    }
+  }
+
+  # Check if already spatial
+  if (inherits(data, "sf")) {
+    if (verbose) message("Data is already spatial (sf object)")
+    return(data)
+  }
+
+  if (!is.data.frame(data)) {
+    stop("data must be a data frame, file path, or sf object", call. = FALSE)
+  }
+
+  # If entity info explicitly provided, use it
+  if (!is.null(entity_column) && !is.null(entity_type)) {
+    if (verbose) {
+      message(sprintf("Using specified column '%s' as %s", entity_column, entity_type))
+    }
+
+    entity_info <- list(
+      column = entity_column,
+      type = entity_type,
+      original_column = entity_column
+    )
+
+    result <- geocode_entities(data, entity_info, verbose)
+    return(result)
+  }
+
+  # Auto-detect and geocode
+  if (detect_columns) {
+    result <- process_vector_data(data, try_geocoding = TRUE, verbose = verbose)
+    return(result)
+  }
+
+  stop("Could not geocode data. Either enable detect_columns=TRUE or specify entity_column and entity_type",
+       call. = FALSE)
+}
+
+#' Preview geographic entity detection
+#'
+#' @description
+#' Test what geographic entities will be detected in your data without
+#' actually performing the geocoding. Useful for debugging and verification.
+#'
+#' @param data Data frame to analyze
+#' @param show_sample Show sample values (default: TRUE)
+#' @param n_sample Number of sample values to show (default: 5)
+#'
+#' @return List with detection results
+#'
+#' @examples
+#' \dontrun{
+#' # Check what will be detected
+#' my_data <- data.frame(
+#'   HUC_8 = c("04100009", "04100012"),
+#'   State = c("Ohio", "PA"),
+#'   value = c(100, 200)
+#' )
+#'
+#' preview_geocoding(my_data)
+#' }
+#'
+#' @export
+preview_geocoding <- function(data, show_sample = TRUE, n_sample = 5) {
+
+  if (!is.data.frame(data)) {
+    stop("data must be a data frame", call. = FALSE)
+  }
+
+  # Check for coordinates first
+  potential_x_cols <- c("lon", "longitude", "x", "lng", "long", "LongitudeMeasure")
+  potential_y_cols <- c("lat", "latitude", "y", "LatitudeMeasure")
+
+  x_col <- NULL
+  y_col <- NULL
+
+  for (col in potential_x_cols) {
+    if (col %in% names(data)) {
+      x_col <- col
+      break
+    }
+  }
+
+  for (col in potential_y_cols) {
+    if (col %in% names(data)) {
+      y_col <- col
+      break
+    }
+  }
+
+  result <- list(
+    has_coordinates = !is.null(x_col) && !is.null(y_col),
+    coordinate_columns = if (!is.null(x_col)) c(x_col, y_col) else NULL,
+    geographic_entities = NULL,
+    message = NULL
+  )
+
+  if (result$has_coordinates) {
+    result$message <- sprintf("\U2713 Found coordinate columns: %s, %s", x_col, y_col)
+
+    if (show_sample) {
+      result$sample_coordinates <- head(data[, c(x_col, y_col)], n_sample)
+    }
+
+  } else {
+    # Try to detect geographic entities
+    entity_info <- detect_geographic_entities(data)
+
+    if (!is.null(entity_info)) {
+      result$geographic_entities <- entity_info
+      result$message <- sprintf("\U2713 Detected %s data in column: '%s'",
+                                entity_info$type, entity_info$column)
+
+      if (show_sample) {
+        sample_values <- head(unique(data[[entity_info$column]]), n_sample)
+        result$sample_values <- sample_values
+
+        # For HUCs, also detect level
+        if (entity_info$type == "huc") {
+          huc_level <- detect_huc_level(entity_info$column, data[[entity_info$column]])
+          result$huc_level <- huc_level
+          result$message <- paste0(result$message, sprintf(" (detected as %s)", huc_level))
+        }
+      }
+
+    } else {
+      result$message <- "\U2717 No coordinate columns or geographic entities detected"
+      result$available_columns <- names(data)
+    }
+  }
+
+  # Print nicely formatted output
+  cat("Geographic Entity Detection Results\n")
+  cat("===================================\n\n")
+  cat(result$message, "\n\n")
+
+  if (result$has_coordinates && show_sample) {
+    cat("Sample Coordinates:\n")
+    print(result$sample_coordinates)
+
+  } else if (!is.null(result$geographic_entities) && show_sample) {
+    cat("Sample Values:\n")
+    print(result$sample_values)
+
+  } else if (is.null(result$coordinate_columns) && is.null(result$geographic_entities)) {
+    cat("Available Columns:\n")
+    cat(paste(result$available_columns, collapse = ", "), "\n\n")
+    cat("Supported geographic entities:\n")
+    cat("  - States (full names or abbreviations)\n")
+    cat("  - Counties\n")
+    cat("  - FIPS codes\n")
+    cat("  - HUC codes (HUC-8, HUC_8, huc8, etc.)\n")
+    cat("  - ZIP codes\n")
+    cat("  - City names\n")
+  }
+
+  return(invisible(result))
+}
+
+
+# ==================== EXISTING HELPER FUNCTIONS (KEEP ALL BELOW) ==================== #
+
+#' Classify data input type
+#' @param data_input Input data of various types
+#' @param verbose Print diagnostic messages
+#' @return List with type, class, and data object
+#' @keywords internal
+classify_data_input <- function(data_input, verbose = FALSE) {
+
+  result <- list(
+    type = NULL,
+    class = class(data_input)[1],
+    data = NULL,
+    path = NULL
+  )
+
+  if (is.character(data_input)) {
+    # File path(s) provided
+    if (length(data_input) == 1) {
+      if (dir.exists(data_input)) {
+        # Directory provided
+        if (verbose) message("Directory detected, searching for spatial files...")
+
+        # Look for raster files first
+        raster_files <- list.files(data_input, pattern = "\\.(tif|tiff|nc|img)$",
+                                   full.names = TRUE, ignore.case = TRUE)
+        if (length(raster_files) > 0) {
+          result$data <- terra::rast(raster_files[1])
+          result$type <- "raster"
+          result$class <- "SpatRaster"
+          result$path <- raster_files[1]
+        } else {
+          # Look for vector files
+          vector_files <- list.files(data_input, pattern = "\\.(shp|gpkg|geojson|csv)$",
+                                     full.names = TRUE, ignore.case = TRUE)
+          if (length(vector_files) > 0) {
+            result$data <- load_vector_data_safe(vector_files[1])
+            result$type <- "vector"
+            result$class <- "sf"
+            result$path <- vector_files[1]
+          } else {
+            stop("No recognized spatial files found in directory", call. = FALSE)
+          }
+        }
+
+      } else if (file.exists(data_input)) {
+        # Single file provided
+        result$path <- data_input
+
+        # Determine file type by extension
+        file_ext <- tolower(tools::file_ext(data_input))
+
+        if (file_ext %in% c("tif", "tiff", "nc", "img")) {
+          # Raster file
+          result$data <- terra::rast(data_input)
+          result$type <- "raster"
+          result$class <- "SpatRaster"
+
+        } else if (file_ext %in% c("shp", "gpkg", "geojson")) {
+          # Vector file
+          result$data <- sf::st_read(data_input, quiet = !verbose)
+          result$type <- "vector"
+          result$class <- "sf"
+
+        } else if (file_ext == "csv") {
+          # CSV file - try to convert to spatial
+          result$data <- load_vector_data_safe(data_input)
+          result$type <- "vector"
+          result$class <- "sf"
+
+        } else {
+          stop(sprintf("Unsupported file format: %s", file_ext), call. = FALSE)
+        }
+
+      } else {
+        stop(sprintf("File or directory does not exist: %s", data_input), call. = FALSE)
+      }
+
+    } else {
+      # Multiple files provided
+      if (verbose) message("Multiple files provided")
+
+      # Check first file to determine type
+      first_ext <- tolower(tools::file_ext(data_input[1]))
+
+      if (first_ext %in% c("tif", "tiff", "nc", "img")) {
+        # Multiple raster files - stack them
+        result$data <- terra::rast(data_input)
+        result$type <- "raster"
+        result$class <- "SpatRaster"
+        result$path <- data_input[1]
+      } else {
+        # Multiple vector files - use first one
+        result$data <- load_vector_data_safe(data_input[1])
+        result$type <- "vector"
+        result$class <- "sf"
+        result$path <- data_input[1]
+      }
+    }
+
+  } else if (inherits(data_input, "SpatRaster")) {
+    # Terra SpatRaster object
+    result$data <- data_input
+    result$type <- "raster"
+    result$class <- "SpatRaster"
+    result$path <- NULL
+
+  } else if (inherits(data_input, "sf")) {
+    # sf object
+    result$data <- data_input
+    result$type <- "vector"
+    result$class <- "sf"
+    result$path <- NULL
+
+  } else if (is.data.frame(data_input)) {
+    # Regular data frame - try to convert to sf
+    result$data <- process_vector_data(data_input)
+    result$type <- "vector"
+    result$class <- "sf"
+    result$path <- NULL
+
+  } else {
+    stop("Unsupported data input type", call. = FALSE)
+  }
+
+  if (verbose) {
+    message(sprintf("Data classified as: %s (%s)", result$type, result$class))
+  }
+
+  return(result)
+}
+
+#' Load vector data safely with coordinate detection
+#' @param file_path Path to vector file
+#' @return sf object
+#' @keywords internal
+load_vector_data_safe <- function(file_path) {
+
+  file_ext <- tolower(tools::file_ext(file_path))
+
+  if (file_ext == "csv") {
+    # Handle CSV files with coordinate detection
+    df <- read.csv(file_path)
+    return(process_vector_data(df))
+
+  } else {
+    # Handle other vector formats
+    return(sf::st_read(file_path, quiet = TRUE))
+  }
 }
 
 #' Auto-detect best spatial join method

@@ -4,14 +4,28 @@
 \alias{process_vector_data}
 \title{Process vector data from data frame}
 \usage{
-process_vector_data(data_input, coord_cols = c("lon", "lat"))
+process_vector_data(
+  data_input,
+  coord_cols = c("lon", "lat"),
+  try_geocoding = TRUE,
+  verbose = FALSE
+)
 
-process_vector_data(data_input, coord_cols = c("lon", "lat"))
+process_vector_data(
+  data_input,
+  coord_cols = c("lon", "lat"),
+  try_geocoding = TRUE,
+  verbose = FALSE
+)
 }
 \arguments{
-\item{data_input}{Data frame with potential coordinate columns}
+\item{data_input}{Data frame with potential coordinate columns OR geographic entities}
 
 \item{coord_cols}{Coordinate column names}
+
+\item{try_geocoding}{Attempt to geocode if no coordinates found (default: TRUE)}
+
+\item{verbose}{Print messages}
 }
 \value{
 sf object

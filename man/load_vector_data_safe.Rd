@@ -5,14 +5,20 @@
 \title{Load vector data safely with coordinate detection}
 \usage{
 load_vector_data_safe(file_path)
+
+load_vector_data_safe(file_path)
 }
 \arguments{
 \item{file_path}{Path to vector file}
 }
 \value{
 sf object
+
+sf object
 }
 \description{
+Load vector data safely with coordinate detection
+
 Load vector data safely with coordinate detection
 }
 \keyword{internal}

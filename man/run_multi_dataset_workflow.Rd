@@ -2,11 +2,11 @@
 % Please edit documentation in R/15-helpers.R
 \name{run_multi_dataset_workflow}
 \alias{run_multi_dataset_workflow}
-\title{Run multi-dataset workflow - IMPLEMENTED}
+\title{Run multi-dataset workflow}
 \usage{
 run_multi_dataset_workflow(config, output_folder)
 }
 \description{
-Run multi-dataset workflow - IMPLEMENTED
+Run multi-dataset workflow
 }
 \keyword{internal}

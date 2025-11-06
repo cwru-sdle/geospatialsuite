@@ -67,6 +67,22 @@ support for any geographic region and robust error handling.
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{# One-line mapping (auto-detects everything!)
 quick_map("mydata.shp")
 
+# Auto-geocode data without coordinates
+census_data <- data.frame(
+  state = c("Ohio", "Pennsylvania", "Michigan"),
+  median_income = c(58642, 61744, 59584)
+)
+spatial_data <- auto_geocode_data(census_data)
+quick_map(spatial_data, variable = "median_income")
+
+# Works with HUC codes too (any format: HUC_8, HUC-8, huc8)
+watershed_data <- data.frame(
+  HUC_8 = c("04100009", "04100012"),
+  water_quality = c(72, 65)
+)
+huc_spatial <- auto_geocode_data(watershed_data)
+quick_map(huc_spatial)
+
 # Calculate multiple vegetation indices
 indices <- calculate_multiple_indices(
   red = red_band, nir = nir_band,

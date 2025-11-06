@@ -1,7 +1,8 @@
 Package: geospatialsuite
 Title: Comprehensive Geospatiotemporal Analysis and Multimodal Integration
     Toolkit
-Version: 0.1.0
+Version: 0.1.1
+Date: 2025-11-04
 Authors@R: c(
     person("Olatunde D.", "Akanbi", , "olatunde.akanbi@case.edu", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0001-7719-2619")),
@@ -26,7 +27,8 @@ Description: A comprehensive toolkit for geospatiotemporal analysis
     any geographic region and robust error handling. Methods include
     vegetation indices calculations (Rouse et al. 1974), NDVI and enhanced
     vegetation indices (Huete et al. 1997)
-    <doi:10.1016/S0034-4257(97)00104-1>, spatial interpolation techniques
+    <doi:10.1016/S0034-4257(97)00104-1>, (Akanbi et al. 2024) 
+    <doi:10.1007/s41651-023-00164-y>, spatial interpolation techniques
     (Cressie 1993, ISBN:9780471002556), water quality indices (McFeeters
     1996) <doi:10.1080/01431169608948714>, and crop data layer analysis
     (USDA NASS 2024)
@@ -63,10 +65,14 @@ Suggests:
     knitr,
     pkgnet,
     rmarkdown,
+    kableExtra,
+    nhdplusTools,
+    zipcodeR,
+    tidygeocoder,
     testthat (>= 3.0.0)
 VignetteBuilder: 
     knitr
 Config/testthat/edition: 3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3

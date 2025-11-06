@@ -11,6 +11,6 @@ run_enhanced_temporal_workflow(config, output_folder)
 \description{
 Run enhanced temporal workflow
 
-Run enhanced temporal workflow - IMPLEMENTED
+Run enhanced temporal workflow
 }
 \keyword{internal}

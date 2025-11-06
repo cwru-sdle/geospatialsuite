@@ -1,0 +1,69 @@
+citHeader("To cite the 'geospatialsuite' package in publications, please use the following:")
+
+bibentry(
+  bibtype  = "Manual",
+  title    = "geospatialsuite: Comprehensive Geospatiotemporal Analysis and Multimodal Integration Toolkit",
+  author   = c(
+    person("Olatunde D.", "Akanbi", , "olatunde.akanbi@case.edu", role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0000-0001-7719-2619")),
+    person("Vibha", "Mandayam", role = "aut",
+           comment = c(ORCID = "0009-0008-8628-9904")),
+    person("Yinghui", "Wu", role = "aut",
+           comment = c(ORCID = "0000-0003-3991-5155")),
+    person("Jeffrey", "Yarus", role = "aut",
+           comment = c(ORCID = "0000-0002-9331-9568")),
+    person("Erika I.", "Barcelos", , "erika.barcelos@case.edu", role = c("aut", "cph"),
+           comment = c(ORCID = "0000-0002-9273-8488")),
+    person("Roger H.", "French", , "roger.french@case.edu", role = c("aut", "cph"),
+           comment = c(ORCID = "0000-0002-6162-0532"))
+  ),
+  year     = "2025",
+  note     = "R package version 0.1.1",
+  url      = "https://github.com/cwru-sdle/geospatialsuite"
+)
+
+bibentry(
+  bibtype  = "Article",
+  title    = "GeoSpatialSuite: Comprehensive Geospatiotemporal Analysis and Multimodal Integration Toolkit for R",
+  author   = c(
+    person("Olatunde D.", "Akanbi", , "olatunde.akanbi@case.edu", role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0000-0001-7719-2619")),
+    person("Vibha", "Mandayam", role = "aut",
+           comment = c(ORCID = "0009-0008-8628-9904")),
+    person("Yinghui", "Wu", role = "aut",
+           comment = c(ORCID = "0000-0003-3991-5155")),
+    person("Jeffrey", "Yarus", role = "aut",
+           comment = c(ORCID = "0000-0002-9331-9568")),
+    person("Erika I.", "Barcelos", , "erika.barcelos@case.edu", role = c("aut", "cph"),
+           comment = c(ORCID = "0000-0002-9273-8488")),
+    person("Roger H.", "French", , "roger.french@case.edu", role = c("aut", "cph"),
+           comment = c(ORCID = "0000-0002-6162-0532"))
+  ),
+  journal  = "Journal of Open Source Software",
+  year     = "2025",
+  note     = "Under review",
+  url      = "https://joss.theoj.org/papers/8147cac49f5caae89b8bd2b0d91c56fe"
+)
+
+bibentry(
+  bibtype  = "Article",
+  key      = "akanbi2024integrating",
+  title    = "Integrating multiscale geospatial analysis for monitoring crop growth, nutrient distribution, and hydrological dynamics in large-scale agricultural systems",
+  author   = c(
+    person("Olatunde D.", "Akanbi"),
+    person("Deepa C.", "Bhuvanagiri"),
+    person("Erika I.", "Barcelos"),
+    person("Arafath", "Nihar"),
+    person("Brian", "Gonzalez Hernandez"),
+    person("Jeffrey M.", "Yarus"),
+    person("Roger H.", "French")
+  ),
+  journal  = "Journal of Geovisualization and Spatial Analysis",
+  year     = "2024",
+  volume   = "8",
+  number   = "1",
+  pages    = "9",
+  publisher = "Springer",
+  doi      = "10.1007/s41651-023-00164-y"
+)
+

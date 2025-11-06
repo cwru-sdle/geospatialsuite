@@ -118,6 +118,55 @@ arvi <- calculate_vegetation_index(spectral_data = c("red.tif", "nir.tif", "blue
 \item Date matching between red/NIR
 \item \strong{Use for}: Multi-temporal analysis, time series trends
 }
+
+#' ## Band Naming Conventions:
+
+The function supports case-insensitive band detection:
+\itemize{
+\item \strong{Generic names}: "red"/"RED"/"Red", "nir"/"NIR", "blue"/"BLUE", "green"/"GREEN"
+\item \strong{Landsat 8/9}: B1-B7 (e.g., B4=Red, B5=NIR)
+\item \strong{Sentinel-2}: B01-B12 (e.g., B04=Red, B08=NIR, B05=RedEdge)
+\item \strong{MODIS}: band1-band7
+}
+}
+
+\subsection{Satellite-Specific Examples:}{
+
+\strong{Landsat 8/9:}
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{# Bands automatically detected
+ndvi <- calculate_vegetation_index(
+  spectral_data = "LC08_stack.tif",  # Has bands named B1-B7
+  index_type = "NDVI",
+  auto_detect_bands = TRUE
+)
+}\if{html}{\out{</div>}}
+
+\strong{Sentinel-2:}
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{# Red Edge indices need Sentinel-2
+ndre <- calculate_vegetation_index(
+  spectral_data = sentinel_data,  # Has B01-B12
+  index_type = "NDRE",
+  auto_detect_bands = TRUE
+)
+}\if{html}{\out{</div>}}
+
+\strong{Custom band names:}
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{# Rename your bands first
+names(my_raster) <- c("red", "nir", "blue", "green")
+
+# Or specify explicitly
+ndvi <- calculate_vegetation_index(
+  red = my_raster[[1]],
+  nir = my_raster[[4]],
+  index_type = "NDVI"
+)
+}\if{html}{\out{</div>}}
+
+For complete band naming documentation, see:
+\code{vignette("vegetation-indices", package = "geospatialsuite")}
 }
 
 }
