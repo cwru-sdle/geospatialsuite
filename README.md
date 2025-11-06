@@ -659,6 +659,30 @@ citation("geospatialsuite")
 - **Issues & Bug Reports**:
   <https://github.com/cwru-sdle/geospatialsuite/issues>
 
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing
+Guidelines](CONTRIBUTING.md) for details on:
+
+- Reporting bugs and issues
+- Suggesting enhancements
+- Submitting pull requests
+- Code style and testing requirements
+
+### Code of Conduct
+
+This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By
+participating, you are expected to uphold this code.
+
+### Getting Help
+
+- 📖 **Documentation**: Check our
+  [vignettes](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/)
+- 🐛 **Bug Reports**: [GitHub
+  Issues](https://github.com/cwru-sdle/geospatialsuite/issues)
+- 💬 **Questions**: Contact maintainers or open a discussion issue
+- 📧 **Email**: <olatunde.akanbi@case.edu>
+
 ## 📝 License
 
 MIT License - see [LICENSE](LICENSE) file for details.
