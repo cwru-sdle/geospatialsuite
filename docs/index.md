@@ -418,7 +418,7 @@ city names - Flexible column naming (HUC_8, HUC-8, huc8 all work!)
 
 Works with any spatial data combination - no need to learn different
 functions for different data types. The
-[`universal_spatial_join()`](https://cwru-sdle.github.io/geospatialsuite/reference/universal_spatial_join.md)
+[`universal_spatial_join()`](https://exelegch.github.io/geospatialsuite-docs/reference/universal_spatial_join.md)
 function automatically handles: - Vector-to-vector joins -
 Vector-to-raster extractions  
 - Raster-to-raster operations - Multi-dataset integrations
@@ -440,7 +440,7 @@ Vector-to-raster extractions
   and
   [`terra::plotRGB()`](https://rspatial.github.io/terra/reference/plotRGB.html)
 - **Quick mapping** with
-  [`quick_map()`](https://cwru-sdle.github.io/geospatialsuite/reference/quick_map.md)
+  [`quick_map()`](https://exelegch.github.io/geospatialsuite-docs/reference/quick_map.md)
   function for instant visualization
 - **Multiple color schemes**: viridis, plasma, ndvi, terrain,
   categorical
@@ -451,7 +451,7 @@ Vector-to-raster extractions
 
 - **60+ vegetation indices** including latest research developments
 - **Complete spatial operations** through
-  [`universal_spatial_join()`](https://cwru-sdle.github.io/geospatialsuite/reference/universal_spatial_join.md)
+  [`universal_spatial_join()`](https://exelegch.github.io/geospatialsuite-docs/reference/universal_spatial_join.md)
 - **Robust error handling** with informative messages and recovery
   strategies
 - **Cross-platform compatibility** (Windows, macOS, Linux)
@@ -460,9 +460,9 @@ Vector-to-raster extractions
 
 Designed specifically for reproducible research with: - Comprehensive
 testing suite
-([`test_geospatialsuite_package_simple()`](https://cwru-sdle.github.io/geospatialsuite/reference/test_geospatialsuite_package_simple.md)) -
+([`test_geospatialsuite_package_simple()`](https://exelegch.github.io/geospatialsuite-docs/reference/test_geospatialsuite_package_simple.md)) -
 Function availability checking
-([`test_function_availability()`](https://cwru-sdle.github.io/geospatialsuite/reference/test_function_availability.md)) -
+([`test_function_availability()`](https://exelegch.github.io/geospatialsuite-docs/reference/test_function_availability.md)) -
 Quality control and filtering options - Integration with modern R
 spatial ecosystem
 
@@ -651,7 +651,7 @@ citation("geospatialsuite")
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing
-Guidelines](https://cwru-sdle.github.io/geospatialsuite/CONTRIBUTING.md)
+Guidelines](https://exelegch.github.io/geospatialsuite-docs/CONTRIBUTING.md)
 for details on:
 
 - Reporting bugs and issues
@@ -662,7 +662,7 @@ for details on:
 ### Code of Conduct
 
 This project adheres to a [Code of
-Conduct](https://cwru-sdle.github.io/geospatialsuite/CODE_OF_CONDUCT.md).
+Conduct](https://exelegch.github.io/geospatialsuite-docs/CODE_OF_CONDUCT.md).
 By participating, you are expected to uphold this code.
 
 ### Getting Help
@@ -677,8 +677,8 @@ By participating, you are expected to uphold this code.
 ## 📝 License
 
 MIT License - see
-[LICENSE](https://cwru-sdle.github.io/geospatialsuite/LICENSE) file for
-details.
+[LICENSE](https://exelegch.github.io/geospatialsuite-docs/LICENSE) file
+for details.
 
 ## 🙏 Acknowledgments
 

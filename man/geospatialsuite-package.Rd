@@ -143,7 +143,7 @@ No complex visualization dependencies required!
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://cwru-sdle.github.io/geospatialsuite/}
+  \item \url{https://exelegch.github.io/geospatialsuite-docs/}
   \item \url{https://github.com/cwru-sdle/geospatialsuite}
   \item Report bugs at \url{https://github.com/cwru-sdle/geospatialsuite/issues}
 }

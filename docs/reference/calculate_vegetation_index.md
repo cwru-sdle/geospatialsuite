@@ -153,7 +153,7 @@ SpatRaster of vegetation index
 
 - **Use for**: Single-date analysis, comparing different indices
 
-#### [`calculate_ndvi_enhanced()`](https://cwru-sdle.github.io/geospatialsuite/reference/calculate_ndvi_enhanced.md):
+#### [`calculate_ndvi_enhanced()`](https://exelegch.github.io/geospatialsuite-docs/reference/calculate_ndvi_enhanced.md):
 
 - Time series support
 
@@ -211,7 +211,7 @@ The function supports case-insensitive band detection:
     )
 
 For complete band naming documentation, see:
-[`vignette("vegetation-indices", package = "geospatialsuite")`](https://cwru-sdle.github.io/geospatialsuite/articles/vegetation-indices.md)
+[`vignette("vegetation-indices", package = "geospatialsuite")`](https://exelegch.github.io/geospatialsuite-docs/articles/vegetation-indices.md)
 
 ## Examples
 

@@ -239,13 +239,13 @@ Additional attributes include:
 
 ## See also
 
-- [`universal_spatial_join`](https://cwru-sdle.github.io/geospatialsuite/reference/universal_spatial_join.md)
+- [`universal_spatial_join`](https://exelegch.github.io/geospatialsuite-docs/reference/universal_spatial_join.md)
   for spatial data integration
 
-- [`calculate_spatial_correlation`](https://cwru-sdle.github.io/geospatialsuite/reference/calculate_spatial_correlation.md)
+- [`calculate_spatial_correlation`](https://exelegch.github.io/geospatialsuite-docs/reference/calculate_spatial_correlation.md)
   for spatial correlation analysis
 
-- [`create_spatial_map`](https://cwru-sdle.github.io/geospatialsuite/reference/create_spatial_map.md)
+- [`create_spatial_map`](https://exelegch.github.io/geospatialsuite-docs/reference/create_spatial_map.md)
   for visualization
 
 ## Examples

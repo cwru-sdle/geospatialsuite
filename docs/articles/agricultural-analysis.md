@@ -788,15 +788,15 @@ for (rec in workflow_output$recommendations) {
 geospatialsuite provides comprehensive agricultural analysis through:
 
 1.  **CDL Integration**:
-    [`get_comprehensive_cdl_codes()`](https://cwru-sdle.github.io/geospatialsuite/reference/get_comprehensive_cdl_codes.md),
-    [`analyze_cdl_crops_dynamic()`](https://cwru-sdle.github.io/geospatialsuite/reference/analyze_cdl_crops_dynamic.md)
+    [`get_comprehensive_cdl_codes()`](https://exelegch.github.io/geospatialsuite-docs/reference/get_comprehensive_cdl_codes.md),
+    [`analyze_cdl_crops_dynamic()`](https://exelegch.github.io/geospatialsuite-docs/reference/analyze_cdl_crops_dynamic.md)
 2.  **Crop Monitoring**:
-    [`analyze_crop_vegetation()`](https://cwru-sdle.github.io/geospatialsuite/reference/analyze_crop_vegetation.md),
-    [`calculate_ndvi_enhanced()`](https://cwru-sdle.github.io/geospatialsuite/reference/calculate_ndvi_enhanced.md)
+    [`analyze_crop_vegetation()`](https://exelegch.github.io/geospatialsuite-docs/reference/analyze_crop_vegetation.md),
+    [`calculate_ndvi_enhanced()`](https://exelegch.github.io/geospatialsuite-docs/reference/calculate_ndvi_enhanced.md)
 3.  **Stress Detection**: Multi-index analysis with threshold
     classification
 4.  **Water Management**:
-    [`calculate_water_index()`](https://cwru-sdle.github.io/geospatialsuite/reference/calculate_water_index.md)
+    [`calculate_water_index()`](https://exelegch.github.io/geospatialsuite-docs/reference/calculate_water_index.md)
     for irrigation planning
 5.  **Yield Assessment**: Composite index calculations and trend
     analysis

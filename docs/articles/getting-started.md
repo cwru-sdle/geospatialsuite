@@ -582,17 +582,17 @@ test_geospatialsuite_package_simple()
     #> [1] 100
     #> 
     #> $summary$duration_seconds
-    #> [1] 0.3
+    #> [1] 0.31
     #> 
     #> $summary$version
     #> [1] "0.1.0"
     #> 
     #> 
     #> $test_output_dir
-    #> [1] "/tmp/Rtmp7Kxe8L"
+    #> [1] "/tmp/Rtmp5LM8fw"
     #> 
     #> $timestamp
-    #> [1] "2026-01-01 16:35:37 EST"
+    #> [1] "2026-01-01 18:41:48 EST"
     #> 
     #> $test_approach
     #> [1] "simplified_robust"
@@ -606,29 +606,29 @@ geospatialsuite provides:
 
 **Data Loading:**
 
-- [`load_raster_data()`](https://cwru-sdle.github.io/geospatialsuite/reference/load_raster_data.md) -
+- [`load_raster_data()`](https://exelegch.github.io/geospatialsuite-docs/reference/load_raster_data.md) -
   Load .tif files with validation
-- [`load_sample_data()`](https://cwru-sdle.github.io/geospatialsuite/reference/load_sample_data.md) -
+- [`load_sample_data()`](https://exelegch.github.io/geospatialsuite-docs/reference/load_sample_data.md) -
   Access built-in samples
 
 **Analysis:**
 
-- [`calculate_vegetation_index()`](https://cwru-sdle.github.io/geospatialsuite/reference/calculate_vegetation_index.md) -
+- [`calculate_vegetation_index()`](https://exelegch.github.io/geospatialsuite-docs/reference/calculate_vegetation_index.md) -
   60+ indices
-- [`calculate_multiple_indices()`](https://cwru-sdle.github.io/geospatialsuite/reference/calculate_multiple_indices.md) -
+- [`calculate_multiple_indices()`](https://exelegch.github.io/geospatialsuite-docs/reference/calculate_multiple_indices.md) -
   Batch processing
 - Auto band detection feature
 
 **Spatial Operations:**
 
-- [`universal_spatial_join()`](https://cwru-sdle.github.io/geospatialsuite/reference/universal_spatial_join.md) -
+- [`universal_spatial_join()`](https://exelegch.github.io/geospatialsuite-docs/reference/universal_spatial_join.md) -
   Extract values, automatic CRS handling
 
 **Visualization:**
 
-- [`quick_map()`](https://cwru-sdle.github.io/geospatialsuite/reference/quick_map.md) -
+- [`quick_map()`](https://exelegch.github.io/geospatialsuite-docs/reference/quick_map.md) -
   One-line mapping
-- [`create_spatial_map()`](https://cwru-sdle.github.io/geospatialsuite/reference/create_spatial_map.md) -
+- [`create_spatial_map()`](https://exelegch.github.io/geospatialsuite-docs/reference/create_spatial_map.md) -
   Custom maps
 
 All with robust error handling and simplified workflows!

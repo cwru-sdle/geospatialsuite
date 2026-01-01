@@ -340,13 +340,13 @@ Most common use case - extract raster values to point locations:
 
 ## See also
 
-- [`raster_to_raster_ops`](https://cwru-sdle.github.io/geospatialsuite/reference/raster_to_raster_ops.md)
+- [`raster_to_raster_ops`](https://exelegch.github.io/geospatialsuite-docs/reference/raster_to_raster_ops.md)
   for specialized raster operations
 
-- [`multiscale_operations`](https://cwru-sdle.github.io/geospatialsuite/reference/multiscale_operations.md)
+- [`multiscale_operations`](https://exelegch.github.io/geospatialsuite-docs/reference/multiscale_operations.md)
   for multi-scale analysis
 
-- [`process_vector_data`](https://cwru-sdle.github.io/geospatialsuite/reference/process_vector_data.md)
+- [`process_vector_data`](https://exelegch.github.io/geospatialsuite-docs/reference/process_vector_data.md)
   for vector data preprocessing
 
 ## Examples

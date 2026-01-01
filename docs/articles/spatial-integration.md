@@ -6,7 +6,7 @@
 
 Spatial data integration is essential for combining information from
 different sources and scales. The geospatialsuite package provides the
-[`universal_spatial_join()`](https://cwru-sdle.github.io/geospatialsuite/reference/universal_spatial_join.md)
+[`universal_spatial_join()`](https://exelegch.github.io/geospatialsuite-docs/reference/universal_spatial_join.md)
 function that handles all major spatial data combinations with automatic
 method detection and robust error handling.
 
@@ -77,7 +77,7 @@ test_function_availability()
 ## Universal Spatial Join Overview
 
 The
-[`universal_spatial_join()`](https://cwru-sdle.github.io/geospatialsuite/reference/universal_spatial_join.md)
+[`universal_spatial_join()`](https://exelegch.github.io/geospatialsuite-docs/reference/universal_spatial_join.md)
 function automatically detects data types and selects the appropriate
 spatial operation:
 
@@ -1054,15 +1054,15 @@ geospatialsuite:
 
 ### Key Functions Used
 
-- [`universal_spatial_join()`](https://cwru-sdle.github.io/geospatialsuite/reference/universal_spatial_join.md) -
+- [`universal_spatial_join()`](https://exelegch.github.io/geospatialsuite-docs/reference/universal_spatial_join.md) -
   Core integration function with auto-detection
-- [`raster_to_raster_ops()`](https://cwru-sdle.github.io/geospatialsuite/reference/raster_to_raster_ops.md) -
+- [`raster_to_raster_ops()`](https://exelegch.github.io/geospatialsuite-docs/reference/raster_to_raster_ops.md) -
   Mathematical operations between rasters
-- [`multiscale_operations()`](https://cwru-sdle.github.io/geospatialsuite/reference/multiscale_operations.md) -
+- [`multiscale_operations()`](https://exelegch.github.io/geospatialsuite-docs/reference/multiscale_operations.md) -
   Multi-scale analysis capabilities
-- [`spatial_interpolation_comprehensive()`](https://cwru-sdle.github.io/geospatialsuite/reference/spatial_interpolation_comprehensive.md) -
+- [`spatial_interpolation_comprehensive()`](https://exelegch.github.io/geospatialsuite-docs/reference/spatial_interpolation_comprehensive.md) -
   Fill missing data spatially
-- [`integrate_terrain_analysis()`](https://cwru-sdle.github.io/geospatialsuite/reference/integrate_terrain_analysis.md) -
+- [`integrate_terrain_analysis()`](https://exelegch.github.io/geospatialsuite-docs/reference/integrate_terrain_analysis.md) -
   Specialized terrain integration
 
 ## Acknowledgments

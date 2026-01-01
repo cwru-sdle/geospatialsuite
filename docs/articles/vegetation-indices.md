@@ -482,16 +482,16 @@ cat("NDVI range:", ndvi_stats[1,1], "to", ndvi_stats[2,1], "\n")
 This vignette covered:
 
 - Using geospatialsuite’s
-  [`calculate_vegetation_index()`](https://cwru-sdle.github.io/geospatialsuite/reference/calculate_vegetation_index.md)
+  [`calculate_vegetation_index()`](https://exelegch.github.io/geospatialsuite-docs/reference/calculate_vegetation_index.md)
   for 60+ indices
 - Using
-  [`calculate_multiple_indices()`](https://cwru-sdle.github.io/geospatialsuite/reference/calculate_multiple_indices.md)
+  [`calculate_multiple_indices()`](https://exelegch.github.io/geospatialsuite-docs/reference/calculate_multiple_indices.md)
   for batch processing
 - Auto band detection with `auto_detect_bands = TRUE`
 - Loading satellite data with
-  [`load_raster_data()`](https://cwru-sdle.github.io/geospatialsuite/reference/load_raster_data.md)
+  [`load_raster_data()`](https://exelegch.github.io/geospatialsuite-docs/reference/load_raster_data.md)
 - Spatial extraction with
-  [`universal_spatial_join()`](https://cwru-sdle.github.io/geospatialsuite/reference/universal_spatial_join.md)
+  [`universal_spatial_join()`](https://exelegch.github.io/geospatialsuite-docs/reference/universal_spatial_join.md)
 - Multi-temporal analysis workflows
 - Field-level analysis
 - Best practices for index selection

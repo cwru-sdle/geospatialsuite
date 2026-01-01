@@ -20,7 +20,7 @@ download_sample_data(
 - dataset:
 
   Name of dataset to download. See
-  [`list_sample_datasets()`](https://cwru-sdle.github.io/geospatialsuite/reference/list_sample_datasets.md)
+  [`list_sample_datasets()`](https://exelegch.github.io/geospatialsuite-docs/reference/list_sample_datasets.md)
   for available options. Use "all" to list all datasets.
 
 - dest_dir:

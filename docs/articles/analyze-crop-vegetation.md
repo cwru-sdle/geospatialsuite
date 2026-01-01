@@ -7,7 +7,7 @@
 ### Overview
 
 The
-[`analyze_crop_vegetation()`](https://cwru-sdle.github.io/geospatialsuite/reference/analyze_crop_vegetation.md)
+[`analyze_crop_vegetation()`](https://exelegch.github.io/geospatialsuite-docs/reference/analyze_crop_vegetation.md)
 function returns a nested list with three main components containing
 comprehensive crop analysis results.
 

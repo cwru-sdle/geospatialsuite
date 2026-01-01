@@ -23,7 +23,7 @@ test_package_minimal(verbose = TRUE)
 ### Quick Start: One-Line Mapping
 
 The
-[`quick_map()`](https://cwru-sdle.github.io/geospatialsuite/reference/quick_map.md)
+[`quick_map()`](https://exelegch.github.io/geospatialsuite-docs/reference/quick_map.md)
 function auto-detects your data type and creates appropriate
 visualizations with minimal code:
 
@@ -49,7 +49,7 @@ quick_map(sample_points, variable = "ndvi", title = "NDVI Distribution")
 ### Universal Spatial Map Function
 
 The
-[`create_spatial_map()`](https://cwru-sdle.github.io/geospatialsuite/reference/create_spatial_map.md)
+[`create_spatial_map()`](https://exelegch.github.io/geospatialsuite-docs/reference/create_spatial_map.md)
 function provides comprehensive mapping with extensive customization
 options:
 
@@ -110,7 +110,7 @@ print(plasma_map)
 #### Fast Raster Plotting
 
 The
-[`plot_raster_fast()`](https://cwru-sdle.github.io/geospatialsuite/reference/plot_raster_fast.md)
+[`plot_raster_fast()`](https://exelegch.github.io/geospatialsuite-docs/reference/plot_raster_fast.md)
 function provides efficient raster visualization using terra’s native
 plotting:
 
@@ -690,7 +690,7 @@ for (format_name in names(formats_test)) {
 geospatialsuite’s mapping capabilities provide:
 
 1.  **Auto-detection**:
-    [`quick_map()`](https://cwru-sdle.github.io/geospatialsuite/reference/quick_map.md)
+    [`quick_map()`](https://exelegch.github.io/geospatialsuite-docs/reference/quick_map.md)
     for instant visualization
 2.  **Flexibility**: Support for points, polygons, lines, and rasters
 3.  **Customization**: Multiple color schemes and styling options
@@ -701,19 +701,19 @@ geospatialsuite’s mapping capabilities provide:
 
 #### Key Functions Summary
 
-- [`quick_map()`](https://cwru-sdle.github.io/geospatialsuite/reference/quick_map.md):
+- [`quick_map()`](https://exelegch.github.io/geospatialsuite-docs/reference/quick_map.md):
   One-line mapping with auto-detection
-- [`create_spatial_map()`](https://cwru-sdle.github.io/geospatialsuite/reference/create_spatial_map.md):
+- [`create_spatial_map()`](https://exelegch.github.io/geospatialsuite-docs/reference/create_spatial_map.md):
   Comprehensive mapping with customization
-- [`plot_raster_fast()`](https://cwru-sdle.github.io/geospatialsuite/reference/plot_raster_fast.md):
+- [`plot_raster_fast()`](https://exelegch.github.io/geospatialsuite-docs/reference/plot_raster_fast.md):
   Efficient raster visualization
-- [`plot_rgb_raster()`](https://cwru-sdle.github.io/geospatialsuite/reference/plot_rgb_raster.md):
+- [`plot_rgb_raster()`](https://exelegch.github.io/geospatialsuite-docs/reference/plot_rgb_raster.md):
   RGB composite mapping
-- [`create_interactive_map()`](https://cwru-sdle.github.io/geospatialsuite/reference/create_interactive_map.md):
+- [`create_interactive_map()`](https://exelegch.github.io/geospatialsuite-docs/reference/create_interactive_map.md):
   Web-based interactive maps
-- [`create_comparison_map()`](https://cwru-sdle.github.io/geospatialsuite/reference/create_comparison_map.md):
+- [`create_comparison_map()`](https://exelegch.github.io/geospatialsuite-docs/reference/create_comparison_map.md):
   Before/after comparisons
-- [`create_ndvi_map()`](https://cwru-sdle.github.io/geospatialsuite/reference/create_ndvi_map.md):
+- [`create_ndvi_map()`](https://exelegch.github.io/geospatialsuite-docs/reference/create_ndvi_map.md):
   Specialized vegetation mapping
 
 The mapping system is designed to work reliably with minimal

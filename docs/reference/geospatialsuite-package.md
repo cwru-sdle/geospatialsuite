@@ -36,7 +36,7 @@ geographic region and robust error handling.
 #### Reliable Visualization:
 
 - **Universal mapping** with auto-detection
-  ([`quick_map()`](https://cwru-sdle.github.io/geospatialsuite/reference/quick_map.md)
+  ([`quick_map()`](https://exelegch.github.io/geospatialsuite-docs/reference/quick_map.md)
   function)
 
 - **Terra-based plotting** using reliable terra::plot() and
@@ -147,7 +147,7 @@ No complex visualization dependencies required!
 
 Useful links:
 
-- <https://cwru-sdle.github.io/geospatialsuite/>
+- <https://exelegch.github.io/geospatialsuite-docs/>
 
 - <https://github.com/cwru-sdle/geospatialsuite>
 

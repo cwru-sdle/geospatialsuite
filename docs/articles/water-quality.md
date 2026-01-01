@@ -652,21 +652,21 @@ This vignette demonstrated:
 
 ### Key Functions Used
 
-- [`calculate_water_index()`](https://cwru-sdle.github.io/geospatialsuite/reference/calculate_water_index.md) -
+- [`calculate_water_index()`](https://exelegch.github.io/geospatialsuite-docs/reference/calculate_water_index.md) -
   Single water index calculation
-- [`calculate_multiple_water_indices()`](https://cwru-sdle.github.io/geospatialsuite/reference/calculate_multiple_water_indices.md) -
+- [`calculate_multiple_water_indices()`](https://exelegch.github.io/geospatialsuite-docs/reference/calculate_multiple_water_indices.md) -
   Multiple indices at once
-- [`analyze_water_bodies()`](https://cwru-sdle.github.io/geospatialsuite/reference/analyze_water_bodies.md) -
+- [`analyze_water_bodies()`](https://exelegch.github.io/geospatialsuite-docs/reference/analyze_water_bodies.md) -
   Comprehensive water body analysis
-- [`analyze_water_quality_comprehensive()`](https://cwru-sdle.github.io/geospatialsuite/reference/analyze_water_quality_comprehensive.md) -
+- [`analyze_water_quality_comprehensive()`](https://exelegch.github.io/geospatialsuite-docs/reference/analyze_water_quality_comprehensive.md) -
   Field data analysis
-- [`list_water_indices()`](https://cwru-sdle.github.io/geospatialsuite/reference/list_water_indices.md) -
+- [`list_water_indices()`](https://exelegch.github.io/geospatialsuite-docs/reference/list_water_indices.md) -
   Available indices information
-- [`universal_spatial_join()`](https://cwru-sdle.github.io/geospatialsuite/reference/universal_spatial_join.md) -
+- [`universal_spatial_join()`](https://exelegch.github.io/geospatialsuite-docs/reference/universal_spatial_join.md) -
   Spatial data integration
-- [`create_spatial_map()`](https://cwru-sdle.github.io/geospatialsuite/reference/create_spatial_map.md)
+- [`create_spatial_map()`](https://exelegch.github.io/geospatialsuite-docs/reference/create_spatial_map.md)
   and
-  [`quick_map()`](https://cwru-sdle.github.io/geospatialsuite/reference/quick_map.md) -
+  [`quick_map()`](https://exelegch.github.io/geospatialsuite-docs/reference/quick_map.md) -
   Visualization
 
 ## Acknowledgments

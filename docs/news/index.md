@@ -18,16 +18,16 @@ CRAN release: 2025-11-05
   - `sample_boundary.shp` - Study area polygon
   - `sample_coordinates.csv` - Tabular data with coordinates
 - New
-  [`download_sample_data()`](https://cwru-sdle.github.io/geospatialsuite/reference/download_sample_data.md)
+  [`download_sample_data()`](https://exelegch.github.io/geospatialsuite-docs/reference/download_sample_data.md)
   function for accessing sample data
 - New
-  [`get_sample_data()`](https://cwru-sdle.github.io/geospatialsuite/reference/get_sample_data.md)
+  [`get_sample_data()`](https://exelegch.github.io/geospatialsuite-docs/reference/get_sample_data.md)
   helper to get file paths
 - New
-  [`list_sample_datasets()`](https://cwru-sdle.github.io/geospatialsuite/reference/list_sample_datasets.md)
+  [`list_sample_datasets()`](https://exelegch.github.io/geospatialsuite-docs/reference/list_sample_datasets.md)
   to browse available datasets
 - New
-  [`load_sample_data()`](https://cwru-sdle.github.io/geospatialsuite/reference/load_sample_data.md)
+  [`load_sample_data()`](https://exelegch.github.io/geospatialsuite-docs/reference/load_sample_data.md)
   convenience function to load data directly
 - All README examples now work out-of-the-box
 - All vignettes updated with working code using sample data
@@ -95,9 +95,9 @@ CRAN release: 2025-09-16
 
 #### Visualization
 
-- [`quick_map()`](https://cwru-sdle.github.io/geospatialsuite/reference/quick_map.md)
+- [`quick_map()`](https://exelegch.github.io/geospatialsuite-docs/reference/quick_map.md)
   for one-line mapping with auto-detection
-- [`create_spatial_map()`](https://cwru-sdle.github.io/geospatialsuite/reference/create_spatial_map.md)
+- [`create_spatial_map()`](https://exelegch.github.io/geospatialsuite-docs/reference/create_spatial_map.md)
   for publication-quality maps
 - Support for leaflet interactive maps
 - Multiple color schemes for different applications
