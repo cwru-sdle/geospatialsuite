@@ -2,7 +2,7 @@
 % Please edit documentation in R/99-testing.R
 \name{test_geospatialsuite_package_simple}
 \alias{test_geospatialsuite_package_simple}
-\title{Test GeoSpatialSuite with simplified, robust tests}
+\title{Test geospatialsuite with simplified, robust tests}
 \usage{
 test_geospatialsuite_package_simple(
   test_output_dir = tempdir(),

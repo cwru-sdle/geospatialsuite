@@ -1,0 +1,16 @@
+pandoc: '3.4'
+pkgdown: 2.2.0
+pkgdown_sha: ~
+articles:
+  agricultural-analysis: agricultural-analysis.html
+  analyze-crop-vegetation: analyze-crop-vegetation.html
+  getting-started: getting-started.html
+  spatial-analysis: spatial-analysis.html
+  spatial-integration: spatial-integration.html
+  vegetation-indices: vegetation-indices.html
+  water-quality: water-quality.html
+  workflows-case-studies: workflows-case-studies.html
+last_built: 2026-01-01T21:34Z
+urls:
+  reference: https://cwru-sdle.github.io/geospatialsuite/reference
+  article: https://cwru-sdle.github.io/geospatialsuite/articles

@@ -37,7 +37,7 @@ Can be NULL for scaling operations with scale_factor.}
 \item \strong{"extract"}: Extract raster values to vector features
 \item \strong{"overlay"}: Spatial intersection/overlay of vectors
 \item \strong{"resample"}: Resample raster to match target geometry
-\item \strong{"zonal"}: Calculate zonal statistics (raster → vector)
+\item \strong{"zonal"}: Calculate zonal statistics (raster â†’ vector)
 \item \strong{"nearest"}: Nearest neighbor spatial join
 \item \strong{"interpolate"}: Spatial interpolation (IDW, kriging)
 \item \strong{"temporal"}: Time-aware spatial join
@@ -115,10 +115,10 @@ Can be NULL for scaling operations with scale_factor.}
 \value{
 Spatial data object with joined attributes. Return type depends on operation:
 \describe{
-\item{extract (vector → raster)}{sf object with new columns containing extracted raster values. Original geometry preserved, new columns named "extracted_" followed by the raster layer name}
-\item{zonal (raster → vector)}{sf object with new columns containing zonal statistics. Original geometry preserved, new columns named "zonal_" followed by the statistic name and raster layer name}
-\item{resample (raster → raster)}{SpatRaster with resampled/processed data matching target resolution or scale factor}
-\item{overlay (vector → vector)}{sf object with intersected/overlaid features combining attributes from both datasets}
+\item{extract (vector â†’ raster)}{sf object with new columns containing extracted raster values. Original geometry preserved, new columns named "extracted_" followed by the raster layer name}
+\item{zonal (raster â†’ vector)}{sf object with new columns containing zonal statistics. Original geometry preserved, new columns named "zonal_" followed by the statistic name and raster layer name}
+\item{resample (raster â†’ raster)}{SpatRaster with resampled/processed data matching target resolution or scale factor}
+\item{overlay (vector â†’ vector)}{sf object with intersected/overlaid features combining attributes from both datasets}
 \item{nearest}{sf object with attributes from nearest features joined}
 }
 
@@ -149,10 +149,10 @@ Most common use case - extract raster values to point locations:
 \subsection{Supported Operations:}{
 \subsection{Data Type Combinations:}{
 \itemize{
-\item \strong{Vector → Raster}: Extract raster values to points/polygons/lines
-\item \strong{Raster → Vector}: Calculate zonal statistics for polygons
-\item \strong{Raster → Raster}: Resample, overlay, mathematical operations
-\item \strong{Vector → Vector}: Spatial intersections, overlays, nearest neighbor
+\item \strong{Vector â†’ Raster}: Extract raster values to points/polygons/lines
+\item \strong{Raster â†’ Vector}: Calculate zonal statistics for polygons
+\item \strong{Raster â†’ Raster}: Resample, overlay, mathematical operations
+\item \strong{Vector â†’ Vector}: Spatial intersections, overlays, nearest neighbor
 }
 }
 

@@ -1,4 +1,4 @@
-#' Test GeoSpatialSuite with simplified, robust tests
+#' Test geospatialsuite with simplified, robust tests
 #'
 #' @description
 #' Simplified testing function that focuses on core functionality with
@@ -23,7 +23,7 @@
 test_geospatialsuite_package_simple <- function(test_output_dir = tempdir(),
                                                 verbose = FALSE) {
 
-  message("Testing GeoSpatialSuite v0.1.0 - Simplified Tests")
+  message("Testing geospatialsuite v0.1.0 - Simplified Tests")
   message("==============================================")
 
   # Create test output directory
@@ -295,7 +295,7 @@ test_geospatialsuite_package_simple <- function(test_output_dir = tempdir(),
 
   # Final message
   if (passed_tests == total_tests) {
-    message("\n ALL TESTS PASSED! GeoSpatialSuite is working correctly.")
+    message("\n ALL TESTS PASSED! geospatialsuite is working correctly.")
     message("Core functionality verified")
     message(" Reliable terra-based operations")
     message("Simple, robust implementation")
@@ -495,7 +495,7 @@ test_package_minimal <- function(verbose = FALSE) {
 #' Called primarily for side effects (printing diagnostic messages).
 #' @export
 quick_diagnostic <- function() {
-  message("GeoSpatialSuite Quick Diagnostic")
+  message("geospatialsuite Quick Diagnostic")
   message("================================")
 
   # Check R version

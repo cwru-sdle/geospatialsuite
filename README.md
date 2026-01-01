@@ -3,11 +3,11 @@
 
 <div align="center">
 
-<img src="img/logo.png" alt="GeoSpatialSuite Logo" width="200"/>
+<img src="man/figures/logo.png" alt="geospatialsuite Logo" width="200"/>
 
 </div>
 
-# GeoSpatialSuite 🌍
+# geospatialsuite 🌍
 
 <!-- badges: start -->
 
@@ -22,7 +22,7 @@ MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.or
 > **Comprehensive Geospatiotemporal Analysis and Multimodal Integration
 > Toolkit for R**
 
-GeoSpatialSuite is a powerful R package for geospatial analysis
+geospatialsuite is a powerful R package for geospatial analysis
 featuring **60+ vegetation indices**, **universal spatial analysis**,
 **auto-geocoding without coordinates**, **efficient raster
 visualization**, and **comprehensive workflows** for agricultural
@@ -34,14 +34,14 @@ research, environmental monitoring, and remote sensing applications.
 - [Quick Links](#-quick-links)
 - [Installation](#-installation)
 - [Quick Start](#-quick-start)
-- [Auto-Geocoding](#️-auto-geocoding-without-coordinates)
+- [Auto-Geocoding](#-auto-geocoding-without-coordinates)
 - [Documentation](#-documentation)
 - [Real-World Examples](#-real-world-examples)
-- [What Makes GeoSpatialSuite
+- [What Makes geospatialsuite
   Special](#-what-makes-geospatialsuite-special)
 - [Supported Vegetation Indices](#-supported-vegetation-indices)
 - [Performance](#-performance)
-- [System Requirements](#️-system-requirements)
+- [System Requirements](#-system-requirements)
 - [Citation](#-citation)
 - [Contact](#-contact)
 - [License](#-license)
@@ -151,6 +151,11 @@ test_function_availability(verbose = TRUE)
 ### Basic Usage Examples
 
 ``` r
+# Load built-in sample data
+red <- load_sample_data("sample_red.rds")
+nir <- load_sample_data("sample_nir.rds")
+blue <- load_sample_data("sample_blue.rds")
+
 # 1. One-line mapping (auto-detects everything!)
 quick_map("mydata.shp")
 
@@ -161,27 +166,27 @@ result <- universal_spatial_join(
   method = "extract"
 )
 
-# 3. Calculate vegetation indices
+# 3. Calculate vegetation indices with sample data
 ndvi <- calculate_vegetation_index(
-  red = red_band, 
-  nir = nir_band, 
+  red = red, 
+  nir = nir, 
   index_type = "NDVI",
   verbose = TRUE
 )
 
 # 4. Enhanced NDVI with quality filtering
 enhanced_ndvi <- calculate_ndvi_enhanced(
-  red = red_band,
-  nir = nir_band,
+  red = red,
+  nir = nir,
   quality_filter = TRUE,
   mask_invalid = TRUE
 )
 
 # 5. Multiple indices at once
 indices <- calculate_multiple_indices(
-  red = red_band, 
-  nir = nir_band, 
-  blue = blue_band,
+  red = red, 
+  nir = nir, 
+  blue = blue,
   indices = c("NDVI", "EVI", "SAVI"),
   output_stack = TRUE
 )
@@ -190,7 +195,7 @@ indices <- calculate_multiple_indices(
 ## 🗺️ Auto-Geocoding Without Coordinates
 
 **NEW!** Work with data that doesn’t have latitude/longitude
-coordinates. GeoSpatialSuite automatically detects and geocodes
+coordinates. geospatialsuite automatically detects and geocodes
 geographic identifiers:
 
 ``` r
@@ -243,7 +248,7 @@ abbreviations) - ✅ Counties - ✅ FIPS codes - ✅ HUC watershed codes
   Package overview and quick start examples
 - [**Analyze Crop
   Vegetation**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/analyze-crop-vegetation.html) -
-  Using analyze_crop_vegetation() in GeoSpatialSuite ⭐ NEW!
+  Using analyze_crop_vegetation() in geospatialsuite ⭐ NEW!
 - [**Universal Spatial
   Analysis**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/spatial-analysis.html) -
   Core spatial join capabilities
@@ -418,7 +423,7 @@ results <- run_comprehensive_geospatial_workflow(config)
 quick_map(results$vegetation_data, title = "Vegetation Analysis Results")
 ```
 
-## 🌟 What Makes GeoSpatialSuite Special
+## 🌟 What Makes geospatialsuite Special
 
 ### 1. **Auto-Geocoding Revolution** ⭐ NEW!
 
@@ -472,7 +477,7 @@ and filtering options - Integration with modern R spatial ecosystem
 
 ## ⚡ Performance
 
-GeoSpatialSuite is optimized for:
+geospatialsuite is optimized for:
 
 - **Large rasters**: Efficient memory usage with terra backend
 - **Multiple datasets**: Parallel processing capabilities for vegetation
@@ -586,7 +591,7 @@ platforms*
 
 </details>
 
-## 🛠️ System Requirements
+## 🛠 System Requirements
 
 ### Required Dependencies
 
@@ -645,7 +650,7 @@ install.packages(c(
 
 ## 📄 Citation
 
-If you use GeoSpatialSuite in your research, please cite:
+If you use geospatialsuite in your research, please cite:
 
 ``` r
 citation("geospatialsuite")

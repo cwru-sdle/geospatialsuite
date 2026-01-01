@@ -1,11 +1,13 @@
 ---
-title: "Universal Spatial Mapping with GeoSpatialSuite"
-author: "GeoSpatialSuite Development Team"
+title: "Universal Spatial Mapping with geospatialsuite"
+author: "geospatialsuite Development Team"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Universal Spatial Mapping}
+  %\VignetteIndexEntry{Universal Spatial Mapping with geospatialsuite}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+---
+
 ---
 
 ```{r, include = FALSE}
@@ -15,13 +17,14 @@ knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE,
   fig.width = 8,
-  fig.height = 6
+  fig.height = 6,
+  eval = TRUE 
 )
 ```
 
-# Universal Spatial Mapping with GeoSpatialSuite
+# Universal Spatial Mapping with geospatialsuite
 
-This vignette demonstrates the powerful and flexible mapping capabilities of GeoSpatialSuite, including auto-detection mapping, custom visualizations, and publication-quality outputs.
+This vignette demonstrates the powerful and flexible mapping capabilities of geospatialsuite, including auto-detection mapping, custom visualizations, and publication-quality outputs.
 
 ## Loading the Package
 
@@ -83,7 +86,7 @@ print(basic_map)
 
 ### Custom Color Schemes
 
-GeoSpatialSuite provides specialized color schemes for different applications:
+geospatialsuite provides specialized color schemes for different applications:
 
 ```{r color-schemes, eval=FALSE}
 # NDVI-specific colors
@@ -452,7 +455,7 @@ if (exists("sample_raster")) {
 ### ggplot2 Integration
 
 ```{r ggplot-integration, eval=FALSE}
-# GeoSpatialSuite maps work well with ggplot2
+# geospatialsuite maps work well with ggplot2
 library(ggplot2)
 
 # Extract ggplot object for further customization
@@ -691,7 +694,7 @@ for (format_name in names(formats_test)) {
 
 ## Summary
 
-GeoSpatialSuite's mapping capabilities provide:
+geospatialsuite's mapping capabilities provide:
 
 1. **Auto-detection**: `quick_map()` for instant visualization
 2. **Flexibility**: Support for points, polygons, lines, and rasters
@@ -715,5 +718,5 @@ The mapping system is designed to work reliably with minimal dependencies while 
 
 ## Acknowledgments
 
-This work was developed by the GeoSpatialSuite team with contributions from:
+This work was developed by the geospatialsuite team with contributions from:
 Olatunde D. Akanbi, Erika I. Barcelos, and Roger H. French.

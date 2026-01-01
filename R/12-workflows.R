@@ -709,7 +709,7 @@ generate_enhanced_analysis_summary <- function(results, config) {
     paste("Analysis Type:", config$analysis_type),
     paste("Date:", Sys.time()),
     paste("Region:", if(is.character(config$region_boundary)) config$region_boundary else "Custom boundary"),
-    paste("GeoSpatialSuite Version: 0.1.0"),
+    paste("geospatialsuite Version: 0.1.0"),
     "",
     "RESULTS OVERVIEW:",
     "----------------"
@@ -738,7 +738,7 @@ generate_enhanced_analysis_summary <- function(results, config) {
                      "- Simplified workflows for stability",
                      "- No complex dependencies required",
                      "",
-                     "Analysis completed with GeoSpatialSuite!"
+                     "Analysis completed with geospatialsuite!"
   )
 
   return(summary_lines)
@@ -751,9 +751,9 @@ generate_html_summary <- function(summary_report, results, output_file) {
   # Create basic HTML summary
   html_content <- c(
     "<!DOCTYPE html>",
-    "<html><head><title>GeoSpatialSuite Analysis Summary</title></head>",
+    "<html><head><title>geospatialsuite Analysis Summary</title></head>",
     "<body>",
-    "<h1>GeoSpatialSuite Analysis Summary</h1>",
+    "<h1>geospatialsuite Analysis Summary</h1>",
     paste0("<p>", summary_report, "</p>"),
     "</body></html>"
   )

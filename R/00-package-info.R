@@ -17,7 +17,7 @@
 #' @author Erika I. Barcelos \email{erika.barcelos@case.edu}
 #' @author Roger H. French \email{roger.french@case.edu}
 #' @description
-#' GeoSpatialSuite provides universal functions for geospatial analysis and reliable
+#' geospatialsuite provides universal functions for geospatial analysis and reliable
 #' visualization that work with any region for multimodal data. Features include
 #' 60+ vegetation indices, efficient terra-based visualization, universal spatial mapping,
 #' dynamic crop analysis, water quality assessment, and publication-quality mapping with
@@ -134,7 +134,7 @@
 # Package startup message - UPDATED
 .onAttach <- function(libname, pkgname) {
   packageStartupMessage("==================================================")
-  packageStartupMessage("GeoSpatialSuite v0.1.1 - Reliable Spatiotemporal Analysis")
+  packageStartupMessage("geospatialsuite v0.1.1 - Reliable Spatiotemporal Analysis")
   packageStartupMessage("==================================================")
   packageStartupMessage("Universal - 60+ Vegetation Indices - Robust & Simple")
   packageStartupMessage("")

@@ -1,11 +1,13 @@
 ---
 title: "Water Quality Assessment"
-author: "GeoSpatialSuite Development Team"
+author: "geospatialsuite Development Team"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Water Quality Assessment}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+---
+
 ---
 
 ```{r setup, include = FALSE}
@@ -15,14 +17,15 @@ knitr::opts_chunk$set(
   fig.width = 12,
   fig.height = 8,
   warning = FALSE,
-  message = FALSE
+  message = FALSE,
+  eval = TRUE  
 )
 ```
 
 
 ## Introduction
 
-The GeoSpatialSuite package provides comprehensive tools for water quality assessment using remote sensing data. This vignette demonstrates water detection indices, quality parameter monitoring, and basic trend analysis using the package's reliable functions.
+The geospatialsuite package provides comprehensive tools for water quality assessment using remote sensing data. This vignette demonstrates water detection indices, quality parameter monitoring, and basic trend analysis using the package's reliable functions.
 
 ## Learning Objectives
 
@@ -36,7 +39,7 @@ By the end of this vignette, you will be able to:
 
 ## Prerequisites
 
-```{r eval=FALSE}
+```{r}
 # Load required packages
 library(geospatialsuite)
 library(terra)
@@ -52,7 +55,7 @@ test_package_minimal()
 
 The package includes multiple water indices for different applications:
 
-```{r eval=FALSE}
+```{r}
 # Load sample bands (Green, NIR, SWIR1)
 green_band <- rast(nrows = 100, ncols = 100, 
                    xmin = -84, xmax = -83, ymin = 40, ymax = 41)
@@ -97,7 +100,7 @@ ndmi <- calculate_water_index(
 
 See all available water indices and their applications:
 
-```{r eval=FALSE}
+```{r}
 # List all available water indices
 water_indices_info <- list_water_indices(detailed = TRUE)
 print(water_indices_info)
@@ -111,7 +114,7 @@ moisture_monitoring <- list_water_indices(application_filter = "moisture_monitor
 
 Calculate multiple indices simultaneously for comprehensive analysis:
 
-```{r eval=FALSE}
+```{r}
 # Calculate multiple water indices at once
 water_analysis <- calculate_multiple_water_indices(
   green = green_band,
@@ -131,7 +134,7 @@ mndwi_layer <- water_analysis[["MNDWI"]]
 
 ### Comprehensive Water Body Characterization
 
-```{r eval=FALSE}
+```{r}
 # Perform complete water body analysis
 water_body_analysis <- analyze_water_bodies(
   green = green_band,
@@ -572,5 +575,5 @@ This vignette demonstrated:
 
 ## Acknowledgments
 
-This work was developed by the GeoSpatialSuite team with contributions from:
+This work was developed by the geospatialsuite team with contributions from:
 Olatunde D. Akanbi, Vibha Mandayam, Yinghui Wu, Jeffrey Yarus, Erika I. Barcelos, and Roger H. French.

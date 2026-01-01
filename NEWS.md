@@ -1,188 +1,88 @@
-# GeoSpatialSuite 0.1.1 (Development Version)
+# geospatialsuite 0.1.1
 
-## New Features
+## Major Improvements
 
-### Auto-Geocoding Without Coordinates ⭐
-- **`auto_geocode_data()`**: Automatically geocode data using geographic identifiers without requiring lat/lon coordinates
-  - Supports US states (full names or abbreviations)
-  - Supports US counties (with or without state)
-  - Supports FIPS codes (5-digit Federal codes)
-  - Supports HUC watershed codes (any format: HUC_8, HUC-8, huc8, etc.)
-  - Supports ZIP codes
-  - Supports city names (works best with state column)
-  - **Flexible column naming**: Handles spaces, hyphens, underscores, mixed case automatically
-- **`preview_geocoding()`**: Preview what will be detected before geocoding
-- **Enhanced `process_vector_data()`**: Now automatically attempts geocoding when coordinates not found
+### Working Examples and Sample Data
+* Added built-in sample datasets (~150KB) to `inst/extdata/`
+  - `sample_red.rds`, `sample_nir.rds`, `sample_blue.rds` - Spectral bands
+  - `sample_green.rds`, `sample_swir1.rds` - Additional bands
+  - `sample_multiband.rds` - Multi-band stack for auto-detection examples
+  - `sample_points.shp` - Sample field locations
+  - `sample_boundary.shp` - Study area polygon
+  - `sample_coordinates.csv` - Tabular data with coordinates
+* New `download_sample_data()` function for accessing sample data
+* New `get_sample_data()` helper to get file paths
+* New `list_sample_datasets()` to browse available datasets
+* New `load_sample_data()` convenience function to load data directly
+* All README examples now work out-of-the-box
+* All vignettes updated with working code using sample data
+* All function examples (.Rd files) updated to use built-in data
 
-### Internal Functions
-- `detect_geographic_entities()`: Robust detection of geographic identifier columns
-- `detect_huc_level()`: Automatically determines HUC level from column name or data
-- `geocode_states()`: Geocode US state names and abbreviations
-- `geocode_counties()`: Geocode US county names
-- `geocode_fips()`: Geocode 5-digit FIPS codes
-- `geocode_hucs()`: Geocode HUC watershed codes
-- `geocode_zipcodes()`: Geocode US ZIP codes
-- `geocode_cities()`: Geocode city names
+### Testing Improvements
+* Fixed EVI calculation warnings in test suite
+* Tests now provide all required bands (red, nir, blue) for EVI
+* Separated EVI tests from general vegetation index tests
+* Improved test coverage: 68 → 70+ tests
 
-## Documentation
+### Documentation Enhancements
+* Created pkgdown website for easy navigation
+* Organized 185 functions into 10 logical categories
+* Comprehensive vignettes rendered and searchable
+* Consistent package naming (`geospatialsuite`) across all documentation
+* Enhanced function documentation with working examples
+* Fixed encoding issues in vignettes (special characters now display correctly)
+* Removed unnecessary preambles from vignettes for cleaner presentation
 
-### New Vignettes
-- **Auto-Geocoding Without Coordinates**: Comprehensive guide to using geographic identifiers instead of coordinates
-  - Examples for all supported entity types
-  - Troubleshooting guide
-  - Integration with other package functions
-  - Performance tips
-
-### Updated Documentation
-- README now includes auto-geocoding examples
-- Updated package description to highlight geocoding features
-- Added geocoding examples to main vignette
-
-## Enhancements
-
-### Improved Spatial Data Processing
-- `process_vector_data()` now tries geocoding automatically when coordinates are missing
-- Better error messages that suggest supported geographic entity types
-- Verbose messaging shows exactly what was detected and geocoded
-
-### Dependencies
-- Added suggested packages for geocoding functionality:
-  - `tigris`: US Census boundaries (states, counties, FIPS)
-  - `nhdplusTools`: HUC watershed boundaries
-  - `zipcodeR`: ZIP code centroids
-  - `tidygeocoder`: City name geocoding
+### Package Structure
+* Added `R/16-data-download.R` for data access functions
+* Added sample data infrastructure in `inst/extdata/`
+* Added `_pkgdown.yml` for website configuration
+* Improved test utilities and helper functions
 
 ## Bug Fixes
-- None for this version (new feature release)
+* Fixed test warnings related to EVI calculations
+* Improved error handling in edge cases
+* Enhanced validation for spectral band inputs
+* Fixed special character encoding in vignettes and documentation
 
-## Breaking Changes
-- None (all changes are additions/enhancements)
+## Documentation
+* All examples now executable without external dependencies
+* Vignettes demonstrate real-world workflows with sample data
+* README provides quick-start guide with working code
+* Function reference organized by category on pkgdown site
+* Improved vignette readability with better structure and formatting
 
 ---
 
-# GeoSpatialSuite 0.1.0 - Initial CRAN Release
+# geospatialsuite 0.1.0
 
-## Major Features
+## Initial CRAN Release
 
-### Vegetation Analysis
-- **60+ vegetation indices** including NDVI, EVI, SAVI, ARVI, PRI, SIPI
-- Enhanced NDVI calculation with quality filtering
-- Multiple indices calculation in single operation
-- Automatic band detection from multi-band rasters
-- Support for Landsat, Sentinel-2, and MODIS platforms
-
-### Spatial Operations
-- Universal spatial join system (vector-raster, raster-raster, vector-vector)
-- Automatic CRS handling and reprojection
-- Comprehensive error handling and validation
-- Memory-efficient processing for large datasets
-- Support for multiple input formats (.tif, .shp, .gpkg, .geojson, .nc)
-
-### Water Analysis
-- Water detection indices (NDWI, MNDWI, NDMI, MSI)
-- Water quality assessment with threshold analysis
-- Specialized moisture and stress indices
+### Core Features
+* 60+ vegetation indices with automatic satellite band detection
+* Universal spatial join operations for any raster-vector combination
+* Robust raster visualization with built-in error handling
+* Water quality analysis with multiple indices (NDWI, MNDWI, NDMI)
+* Crop Data Layer (CDL) analysis and crop-specific assessments
+* Spatial interpolation techniques (IDW, Kriging, splines)
+* Terrain analysis capabilities
+* Temporal analysis for change detection
+* Comprehensive workflow functions
 
 ### Visualization
-- Universal mapping with `quick_map()` auto-detection
-- Terra-based plotting (reliable, minimal dependencies)
-- RGB composite creation with stretching algorithms
-- Interactive mapping with leaflet integration (optional)
-- Publication-quality static maps
+* `quick_map()` for one-line mapping with auto-detection
+* `create_spatial_map()` for publication-quality maps
+* Support for leaflet interactive maps
+* Multiple color schemes for different applications
 
-### Agricultural Applications
-- Dynamic Cropland Data Layer (CDL) analysis
-- Crop-specific analysis (corn, soybeans, wheat, etc.)
-- NDVI time series with classification
-- Stress detection and yield assessment
+### Data Integration
+* Universal region support (US states, countries, custom boundaries)
+* Automatic CRS handling and transformation
+* Multi-dataset integration capabilities
+* Robust error handling throughout
 
-### Reliability Features
-- Robust error handling throughout all functions
-- Smart fallback systems for optional dependencies
-- Comprehensive testing suite
-- Simplified workflow design
-- Performance optimization for large datasets
-
-## Technical Details
-
-### Dependencies
-- **Required**: terra, sf, ggplot2, dplyr, stats, utils
-- **Optional**: leaflet, viridis, RColorBrewer, rnaturalearth, tigris
-
-### System Requirements
-- R >= 3.5.0
-- GDAL >= 3.0 (through terra package)
-- PROJ >= 6.0 (through sf package)
-
-### Performance
-- Optimized for large raster processing
-- Parallel processing support where applicable
-- Memory-efficient algorithms
-- Chunked processing for massive datasets
-
-## Core Functions Added
-
-### Vegetation Analysis Functions
-- `calculate_vegetation_index()` - Single vegetation index calculation
-- `calculate_multiple_indices()` - Multiple indices at once
-- `calculate_ndvi_enhanced()` - Enhanced NDVI with quality filtering
-- `list_vegetation_indices()` - Browse available indices
-
-### Water Analysis Functions
-- `calculate_water_index()` - Water and moisture indices
-- `analyze_water_quality_comprehensive()` - Complete water quality analysis
-
-### Spatial Analysis Functions
-- `universal_spatial_join()` - Comprehensive spatial operations
-- `load_raster_data()` - Robust raster loading
-- `process_vector_data()` - Vector data processing with coordinate detection
-
-### Visualization Functions
-- `quick_map()` - One-line universal mapping
-- `create_spatial_map()` - Advanced mapping with customization
-- `plot_rgb_raster()` - RGB composite visualization
-
-### Utility Functions
-- `get_region_boundary()` - Load administrative boundaries
-- `test_geospatialsuite_package_simple()` - Package testing
-- `test_function_availability()` - Check available functions
-- `test_package_minimal()` - Minimal functionality test
-
-### Agricultural Functions
-- `analyze_crop_vegetation()` - Comprehensive crop analysis
-- `analyze_cdl_crops_dynamic()` - Dynamic CDL analysis
-- `get_comprehensive_cdl_codes()` - Get crop codes by category
-- `calculate_crop_stress()` - Stress detection algorithms
-
-### Advanced Functions
-- `spatial_interpolation()` - Spatial interpolation methods
-- `spatial_interpolation_comprehensive()` - Advanced interpolation
-- `temporal_analysis()` - Time series analysis
-- `terrain_analysis()` - Topographic analysis
-- `integrate_terrain_analysis()` - Terrain integration
-- `run_comprehensive_geospatial_workflow()` - Automated workflows
-- `run_enhanced_ndvi_crop_workflow()` - NDVI crop workflows
-
-## Known Issues
-- None at release
-
-## Future Plans
-- Time series analysis enhancements
-- Additional vegetation indices based on user feedback
-- Integration with more satellite data sources
-- Advanced machine learning applications
-- Cloud processing integration
-
----
-
-## Funding
-
-This material is based upon financial support by the National Science Foundation, EEC Division of Engineering Education and Centers, NSF Engineering Research Center for Advancing Sustainable and Distributed Fertilizer production (CASFER), NSF 20-553 Gen-4 Engineering Research Centers award 2133576.
-
-## Citation
-
-If you use GeoSpatialSuite in your research, please cite:
-
-```r
-citation("geospatialsuite")
-```
+### Documentation
+* Comprehensive vignettes covering all major use cases
+* 165+ documented functions
+* Real-world examples and case studies
+* Extensive testing suite

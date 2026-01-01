@@ -1,0 +1,363 @@
+url: https://cwru-sdle.github.io/geospatialsuite/
+
+template:
+  bootstrap: 5
+  bootswatch: flatly
+  bslib:
+    primary: "#0072B2"
+    border-radius: 0.5rem
+    btn-border-radius: 0.25rem
+
+development:
+  mode: auto
+
+navbar:
+  structure:
+    left: [intro, reference, articles, tutorials, news]
+    right: [search, github, joss]
+  components:
+    home:
+      icon: fas fa-home fa-lg
+      href: index.html
+    reference:
+      text: Functions
+      href: reference/index.html
+    articles:
+      text: Tutorials
+      menu:
+      - text: Getting Started
+        href: articles/getting-started.html
+      - text: -------
+      - text: Vegetation Analysis
+        href: articles/vegetation-indices.html
+      - text: Agricultural Applications
+        href: articles/agricultural-analysis.html
+      - text: Analyzing Crop Vegetation
+        href: articles/analyze-crop-vegetation.html
+      - text: -------
+      - text: Spatial Operations
+        href: articles/spatial-analysis.html
+      - text: Spatial Integration
+        href: articles/spatial-integration.html
+      - text: -------
+      - text: Water Quality Analysis
+        href: articles/water-quality.html
+      - text: -------
+      - text: Complete Workflows
+        href: articles/workflows-case-studies.html
+    news:
+      text: News
+      href: news/index.html
+    github:
+      icon: fab fa-github fa-lg
+      href: https://github.com/cwru-sdle/geospatialsuite
+      aria-label: GitHub
+    joss:
+      text: JOSS Paper
+      href: paper.html
+
+reference:
+  - title: "Package Documentation"
+    desc: "Overview of the geospatialsuite package"
+    contents:
+      - geospatialsuite-package
+
+  - title: "Core Vegetation Indices"
+    desc: "Calculate vegetation indices from spectral bands"
+    contents:
+      - calculate_vegetation_index
+      - calculate_multiple_indices
+      - calculate_ndvi_enhanced
+      - list_vegetation_indices
+      - get_available_indices
+      - calculate_vegetation_statistics
+      - calculate_comprehensive_vegetation_stats
+
+  - title: "Sample Data Access"
+    desc: "Built-in sample datasets for examples and testing"
+    contents:
+      - download_sample_data
+      - list_sample_datasets
+      - get_sample_data
+      - load_sample_data
+
+  - title: "Water Quality & Indices"
+    desc: "Water indices and quality assessment"
+    contents:
+      - calculate_water_index
+      - calculate_multiple_water_indices
+      - analyze_water_quality_comprehensive
+      - calculate_water_quality_statistics
+      - create_water_quality_plot
+      - create_water_quality_plot_robust
+      - analyze_water_bodies
+      - analyze_water_spatial_patterns
+      - analyze_water_temporal_patterns
+      - list_water_indices
+      - get_water_index_formulas
+      - get_water_index_requirements
+      - validate_water_index_output
+      - handle_water_index_edge_cases
+      - mask_invalid_water_values
+
+  - title: "Universal Spatial Operations"
+    desc: "Spatial join and integration functions"
+    contents:
+      - universal_spatial_join
+      - integrate_terrain_analysis
+      - integrate_multiple_datasets
+      - raster_to_raster_ops
+      - perform_extract_join
+      - perform_overlay_join
+      - perform_resample_join
+      - multiscale_operations
+
+  - title: "Crop & Agricultural Analysis"
+    desc: "CDL crop data analysis and monitoring"
+    contents:
+      - analyze_crop_vegetation
+      - create_crop_mask
+      - create_crop_map
+      - create_crop_area_map
+      - create_crop_diversity_map
+      - create_dominant_crop_map
+      - get_comprehensive_cdl_codes
+      - analyze_cdl_crops_dynamic
+      - analyze_yield_potential
+      - analyze_growth_stage
+      - analyze_seasonal_patterns
+      - select_crop_indices
+      - add_crop_statistics_overlay
+      - detect_vegetation_stress
+
+  - title: "Visualization & Mapping"
+    desc: "Create publication-quality maps"
+    contents:
+      - quick_map
+      - create_spatial_map
+      - plot_raster_fast
+      - plot_rgb_raster
+      - create_ndvi_map
+      - create_interactive_map
+      - create_interactive_map_safe
+      - save_interactive_map
+      - save_static_map
+      - create_comparison_map
+      - create_overlay_comparison
+      - create_base_plot_map
+      - create_ggplot_map_safe
+      - create_raster_map_reliable
+      - add_boundary_overlay
+      - add_points_to_leaflet
+      - add_lines_to_leaflet
+      - add_polygons_to_leaflet
+      - apply_color_scheme_ggplot
+      - save_plot_to_file
+
+  - title: "Spatial Interpolation"
+    desc: "Interpolation methods for spatial data"
+    contents:
+      - spatial_interpolation
+      - spatial_interpolation_comprehensive
+      - execute_interpolation_method
+      - execute_simple_interpolation
+      - execute_nn_interpolation
+      - execute_spline_interpolation
+      - execute_mice_interpolation
+      - compare_interpolation_methods
+      - select_optimal_method
+      - assess_data_for_interpolation
+      - perform_cross_validation
+      - save_interpolation_results
+      - compile_interpolation_results
+
+  - title: "Temporal Analysis"
+    desc: "Time series and change detection"
+    contents:
+      - calculate_temporal_statistics
+      - calculate_temporal_trend
+      - detect_temporal_changes
+      - analyze_temporal_changes
+      - extract_dates_universal
+      - match_rasters_by_date
+      - convert_julian_date
+      - is_valid_date
+      - save_temporal_results
+      - apply_temporal_smoothing
+
+  - title: "Terrain Analysis"
+    desc: "Topographic analysis from DEMs"
+    contents:
+      - calculate_advanced_terrain_metrics
+      - calculate_contributing_area
+
+  - title: "Raster Operations"
+    desc: "Raster processing and mosaicing"
+    contents:
+      - create_raster_mosaic
+      - select_rasters_for_region
+      - extract_aster_coordinates
+      - load_raster_data
+      - load_raster_safe
+      - load_and_stack_bands
+      - load_and_validate_band
+      - load_bands_from_directory
+      - mask_invalid_values
+      - check_raster_compatibility
+
+  - title: "Vector Data Processing"
+    desc: "Load and process vector data"
+    contents:
+      - process_vector_data
+      - load_vector_data_safe
+      - process_spatial_data_safe
+      - load_and_process_spatial_data
+      - convert_to_spatial_flexible
+      - classify_spatial_data
+
+  - title: "Geocoding & Auto-Detection"
+    desc: "Automatic geocoding and entity detection"
+    contents:
+      - auto_geocode_data
+      - preview_geocoding
+      - geocode_entities
+      - geocode_states
+      - geocode_counties
+      - geocode_cities
+      - geocode_fips
+      - geocode_hucs
+      - geocode_zipcodes
+      - detect_geographic_entities
+      - detect_coordinate_columns
+      - detect_state_column
+      - detect_huc_level
+      - detect_water_quality_columns
+
+  - title: "Band Detection & Mapping"
+    desc: "Automatic spectral band detection"
+    contents:
+      - auto_detect_spectral_bands
+      - extract_bands_from_raster
+      - map_custom_band_names
+      - get_satellite_band_info
+
+  - title: "Comprehensive Workflows"
+    desc: "End-to-end analysis pipelines"
+    contents:
+      - run_comprehensive_geospatial_workflow
+      - run_comprehensive_vegetation_workflow
+      - run_enhanced_ndvi_crop_workflow
+      - run_enhanced_temporal_workflow
+      - run_enhanced_terrain_analysis_workflow
+      - run_enhanced_water_quality_workflow
+      - run_enhanced_mosaic_workflow
+      - run_multi_dataset_workflow
+      - run_interactive_mapping_workflow
+
+  - title: "Statistics & Correlation"
+    desc: "Statistical analysis and correlation"
+    contents:
+      - calculate_spatial_correlation
+      - analyze_variable_correlations
+      - create_correlation_plots
+      - calculate_skewness
+      - perform_threshold_analysis
+
+  - title: "Quality Control & Validation"
+    desc: "Data validation and quality filters"
+    contents:
+      - validate_raster_input
+      - validate_vector_input
+      - validate_required_bands
+      - validate_numeric_range
+      - validate_method
+      - validate_method_compatibility
+      - validate_output
+      - validate_vegetation_analysis
+      - apply_quality_filter
+      - apply_water_quality_filters
+      - validation-helpers
+      - handle_outliers_in_data
+
+  - title: "Water Data Management"
+    desc: "Load and manage water quality data"
+    contents:
+      - load_water_quality_data_flexible
+      - load_single_water_dataset
+      - combine_water_datasets
+      - save_water_quality_results
+
+  - title: "Utilities & Helpers"
+    desc: "Helper functions and utilities"
+    contents:
+      - get_region_boundary
+      - check_required_packages
+      - classify_data_input
+      - detect_geometry_type
+      - normalize_column_name
+      - auto_detect_title
+      - auto_detect_variable
+      - auto_detect_method
+      - get_terra_colors
+      - get_reliable_colors
+      - get_summary_function
+
+  - title: "Index Information & Formulas"
+    desc: "Get information about vegetation and water indices"
+    contents:
+      - get_index_formulas
+      - get_index_ranges
+      - get_index_references
+      - get_interpretation_guidelines
+      - calculate_index_by_type
+      - handle_index_edge_cases
+
+  - title: "Results & Reporting"
+    desc: "Save and export analysis results"
+    contents:
+      - save_vegetation_analysis_results
+      - generate_statistics_report
+      - generate_html_summary
+      - generate_enhanced_analysis_summary
+
+  - title: "Testing & Validation"
+    desc: "Package testing and verification"
+    contents:
+      - test_geospatialsuite_package_simple
+      - test_package_minimal
+      - test_function_availability
+      - quick_diagnostic
+
+  - title: "Examples & Demonstrations"
+    desc: "Example workflows and use cases"
+    contents:
+      - geocoding_examples
+
+home:
+  title: geospatialsuite
+  description: Comprehensive Geospatiotemporal Analysis Toolkit for R
+
+authors:
+  Olatunde D. Akanbi:
+    href: https://orcid.org/0000-0001-7719-2619
+  Vibha Mandayam:
+    href: https://orcid.org/0009-0008-8628-9904
+  Yinghui Wu:
+    href: https://orcid.org/0000-0003-3991-5155
+  Jeffrey Yarus:
+    href: https://orcid.org/0000-0002-9331-9568
+  Erika I. Barcelos:
+    href: https://orcid.org/0000-0002-9273-8488
+  Roger H. French:
+    href: https://orcid.org/0000-0002-6162-0532
+
+footer:
+  structure:
+    left: developed_by
+    right: built_with
+  components:
+    developed_by: |
+      geospatialsuite is developed by the [SDLE Research Center](https://engineering.case.edu/centers/sdle)
+      at Case Western Reserve University, supported by NSF CASFER (Award 2133576).
+    built_with: |
+      Built with [pkgdown](https://pkgdown.r-lib.org/)

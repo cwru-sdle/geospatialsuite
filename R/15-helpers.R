@@ -1,4 +1,4 @@
-# Helper Functions for GeoSpatialSuite
+# Helper Functions for geospatialsuite
 # All missing functions now properly implemented
 
 #' Match rasters by date
@@ -1267,7 +1267,7 @@ process_vector_data <- function(data_input, coord_cols = c("lon", "lat"),
 #'   entity_type = "zipcode"
 #' )
 #'
-#' # Then use with your other GeoSpatialSuite functions
+#' # Then use with your other geospatialsuite functions
 #' quick_map(state_sf, variable = "population")
 #' }
 #'

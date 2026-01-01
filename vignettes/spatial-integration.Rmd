@@ -1,11 +1,13 @@
 ---
 title: "Spatial Data Integration"
 output: rmarkdown::html_vignette
-author: "GeoSpatialSuite Development Team"
+author: "geospatialsuite Development Team"
 vignette: >
   %\VignetteIndexEntry{Spatial Data Integration}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+---
+
 ---
 
 ```{r, include = FALSE}
@@ -15,14 +17,15 @@ knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE,
   fig.width = 8,
-  fig.height = 6
+  fig.height = 6,
+  eval = TRUE  
 )
 ```
 
 
 ## Introduction
 
-Spatial data integration is essential for combining information from different sources and scales. The GeoSpatialSuite package provides the `universal_spatial_join()` function that handles all major spatial data combinations with automatic method detection and robust error handling.
+Spatial data integration is essential for combining information from different sources and scales. The geospatialsuite package provides the `universal_spatial_join()` function that handles all major spatial data combinations with automatic method detection and robust error handling.
 
 ## Learning Objectives
 
@@ -37,7 +40,7 @@ By the end of this vignette, you will be able to:
 
 ## Prerequisites
 
-```{r eval=FALSE}
+```{r}
 # Load required packages
 library(geospatialsuite)
 library(terra)
@@ -51,10 +54,10 @@ test_function_availability()
 
 The `universal_spatial_join()` function automatically detects data types and selects the appropriate spatial operation:
 
-- **Vector → Raster**: Extract raster values to points/polygons
-- **Raster → Vector**: Calculate zonal statistics
-- **Raster → Raster**: Resample, align, or overlay
-- **Vector → Vector**: Spatial intersection and overlay
+- **Vector - Raster**: Extract raster values to points/polygons
+- **Raster  - Vector**: Calculate zonal statistics
+- **Raster - Raster**: Resample, align, or overlay
+- **Vector - Vector**: Spatial intersection and overlay
 
 ## Basic Spatial Joins
 
@@ -1007,7 +1010,7 @@ for (tip_name in names(optimization_tips)) {
 
 ## Summary
 
-This vignette demonstrated comprehensive spatial data integration using GeoSpatialSuite:
+This vignette demonstrated comprehensive spatial data integration using geospatialsuite:
 
 1. **Universal Spatial Joins**: Automatic method detection for any data combination
 2. **Vector-Raster Integration**: Extracting values and calculating zonal statistics  
@@ -1028,5 +1031,5 @@ This vignette demonstrated comprehensive spatial data integration using GeoSpati
 
 ## Acknowledgments
 
-This work was developed by the GeoSpatialSuite team with contributions from:
+This work was developed by the geospatialsuite team with contributions from:
 Olatunde D. Akanbi, Erika I. Barcelos, and Roger H. French.

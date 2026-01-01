@@ -456,7 +456,7 @@ analyze_cdl_crops_dynamic <- function(cdl_data, crop_selection, region_boundary 
                      } else {
                        # For projected coordinates, use resolution directly
                        pixel_size_m2 <- prod(raster_info$res)
-                       pixel_size_ha <- pixel_size_m2 / 10000  # Convert m² to hectares
+                       pixel_size_ha <- pixel_size_m2 / 10000  # Convert mÂ² to hectares
                      }
 
                      message(sprintf("Calculated pixel size: %.6f hectares", pixel_size_ha))

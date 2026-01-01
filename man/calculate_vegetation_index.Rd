@@ -22,6 +22,7 @@ calculate_vegetation_index(
   mask_invalid = TRUE,
   scale_factor = 1,
   auto_crs_fix = TRUE,
+  region_boundary = NULL,
   verbose = FALSE
 )
 }
@@ -60,6 +61,9 @@ directory path, or list of raster files}
 \item{scale_factor}{Scaling factor if needed (default: 1)}
 
 \item{auto_crs_fix}{Automatically fix CRS mismatches between bands}
+
+\item{region_boundary}{Optional boundary to crop and mask the result. Can be an sf object,
+file path to shapefile, or region name (if get_region_boundary() is available)}
 
 \item{verbose}{Print progress messages}
 }
@@ -193,6 +197,12 @@ pri <- calculate_vegetation_index(red = red_band, nir = nir_band, green = green_
 ndvi <- calculate_vegetation_index(spectral_data = sentinel_data,
                                   band_names = c("B4", "B3", "B2", "B8"),
                                   index_type = "NDVI")
+
+# With region boundary (auto CRS conversion and crop/mask)
+ndvi_ohio <- calculate_vegetation_index(red = red_band, nir = nir_band,
+                                       index_type = "NDVI",
+                                       region_boundary = boundary_sf,
+                                       verbose = TRUE)
 }
 
 }

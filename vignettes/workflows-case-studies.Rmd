@@ -1,11 +1,13 @@
 ---
 title: "Complete Workflows and Case Studies"
-author: "GeoSpatialSuite Development Team"
+author: "geospatialsuite Development Team"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Complete Workflows and Case Studies}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+---
+
 ---
 
 ```{r setup, include = FALSE}
@@ -15,7 +17,8 @@ knitr::opts_chunk$set(
   fig.width = 10,
   fig.height = 7,
   warning = FALSE,
-  message = FALSE
+  message = FALSE,
+  eval = TRUE  # Now TRUE by default
 )
 ```
 
@@ -23,7 +26,7 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-The GeoSpatialSuite package provides comprehensive workflow functions that integrate multiple analysis types into complete, automated pipelines. This vignette demonstrates how to build and execute advanced workflows for real-world geospatial analysis scenarios.
+The geospatialsuite package provides comprehensive workflow functions that integrate multiple analysis types into complete, automated pipelines. This vignette demonstrates how to build and execute advanced workflows for real-world geospatial analysis scenarios.
 
 ## Learning Objectives
 
@@ -38,7 +41,7 @@ By the end of this vignette, you will be able to:
 
 ## Prerequisites
 
-```{r eval=FALSE}
+```{r}
 # Load required packages
 library(geospatialsuite)
 library(terra)
@@ -255,6 +258,7 @@ water_quality_results <- list()
 parameters <- c("nitrate_mg_l", "phosphorus_mg_l", "turbidity_ntu", "dissolved_oxygen_mg_l")
 
 for (param in parameters) {
+  
   
   # Define parameter-specific thresholds
   thresholds <- switch(param,
@@ -757,6 +761,7 @@ project_structure <- create_reproducible_workflow("integrated_geospatial_analysi
 This comprehensive workflow vignette demonstrates:
 
 ### **Complete Case Studies:**
+
 1. **Precision Agriculture Analysis** - Field-scale management zones and variable-rate recommendations
 2. **Environmental Monitoring** - Water quality assessment with land use impact analysis  
 3. **Temporal Change Detection** - Multi-year trend analysis and change hotspot identification
@@ -769,6 +774,7 @@ This comprehensive workflow vignette demonstrates:
 - **Reporting**: Automated report generation and synthesis
 
 ### **Best Practices Demonstrated:**
+
 1. **Systematic approach** to complex geospatial problems
 2. **Quality control** and validation at each step
 3. **Reproducible workflows** with documented parameters
@@ -776,6 +782,7 @@ This comprehensive workflow vignette demonstrates:
 5. **Integrated assessment** combining multiple data types
 
 ### **Real-World Applications:**
+
 - **Agricultural consultancy** and precision farming services
 - **Environmental monitoring** and regulatory compliance
 - **Land management** and conservation planning
@@ -783,14 +790,15 @@ This comprehensive workflow vignette demonstrates:
 - **Policy development** and impact assessment
 
 ### **Scalability:**
-- Methods work from **field scale** (hectares) to **regional scale** (thousands of km²)
+
+- Methods work from **field scale** (hectares) to **regional scale** (thousands of kmÃ‚Â²)
 - **Temporal flexibility** from single time points to multi-decade series
 - **Universal applicability** - adapt to any geographic region or crop type
 - **Modular design** - use individual components or complete workflows
 
-The workflows in GeoSpatialSuite provide a **complete toolkit** for professional geospatial analysis, from data preparation through final reporting and recommendations!
+The workflows in geospatialsuite provide a **complete toolkit** for professional geospatial analysis, from data preparation through final reporting and recommendations!
 
 ## Acknowledgments
 
-This work was developed by the GeoSpatialSuite team with contributions from:
+This work was developed by the geospatialsuite team with contributions from:
 Olatunde D. Akanbi, Vibha Mandayam, Yinghui Wu, Jeffrey Yarus, Erika I. Barcelos, and Roger H. French.

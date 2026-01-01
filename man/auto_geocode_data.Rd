@@ -90,7 +90,7 @@ zip_sf <- auto_geocode_data(
   entity_type = "zipcode"
 )
 
-# Then use with your other GeoSpatialSuite functions
+# Then use with your other geospatialsuite functions
 quick_map(state_sf, variable = "population")
 }
 

@@ -16,10 +16,10 @@
 #' ## Supported Operations:
 #'
 #' ### Data Type Combinations:
-#' - **Vector → Raster**: Extract raster values to points/polygons/lines
-#' - **Raster → Vector**: Calculate zonal statistics for polygons
-#' - **Raster → Raster**: Resample, overlay, mathematical operations
-#' - **Vector → Vector**: Spatial intersections, overlays, nearest neighbor
+#' - **Vector â†’ Raster**: Extract raster values to points/polygons/lines
+#' - **Raster â†’ Vector**: Calculate zonal statistics for polygons
+#' - **Raster â†’ Raster**: Resample, overlay, mathematical operations
+#' - **Vector â†’ Vector**: Spatial intersections, overlays, nearest neighbor
 #'
 #' ### Input Format Support:
 #' - **File paths**: ".tif", ".shp", ".gpkg", ".geojson", ".nc"
@@ -64,7 +64,7 @@
 #'     \item \strong{"extract"}: Extract raster values to vector features
 #'     \item \strong{"overlay"}: Spatial intersection/overlay of vectors
 #'     \item \strong{"resample"}: Resample raster to match target geometry
-#'     \item \strong{"zonal"}: Calculate zonal statistics (raster → vector)
+#'     \item \strong{"zonal"}: Calculate zonal statistics (raster â†’ vector)
 #'     \item \strong{"nearest"}: Nearest neighbor spatial join
 #'     \item \strong{"interpolate"}: Spatial interpolation (IDW, kriging)
 #'     \item \strong{"temporal"}: Time-aware spatial join
@@ -133,10 +133,10 @@
 #' @return
 #' Spatial data object with joined attributes. Return type depends on operation:
 #' \describe{
-#'   \item{extract (vector → raster)}{sf object with new columns containing extracted raster values. Original geometry preserved, new columns named "extracted_" followed by the raster layer name}
-#'   \item{zonal (raster → vector)}{sf object with new columns containing zonal statistics. Original geometry preserved, new columns named "zonal_" followed by the statistic name and raster layer name}
-#'   \item{resample (raster → raster)}{SpatRaster with resampled/processed data matching target resolution or scale factor}
-#'   \item{overlay (vector → vector)}{sf object with intersected/overlaid features combining attributes from both datasets}
+#'   \item{extract (vector â†’ raster)}{sf object with new columns containing extracted raster values. Original geometry preserved, new columns named "extracted_" followed by the raster layer name}
+#'   \item{zonal (raster â†’ vector)}{sf object with new columns containing zonal statistics. Original geometry preserved, new columns named "zonal_" followed by the statistic name and raster layer name}
+#'   \item{resample (raster â†’ raster)}{SpatRaster with resampled/processed data matching target resolution or scale factor}
+#'   \item{overlay (vector â†’ vector)}{sf object with intersected/overlaid features combining attributes from both datasets}
 #'   \item{nearest}{sf object with attributes from nearest features joined}
 #' }
 #'

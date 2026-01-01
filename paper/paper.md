@@ -1,6 +1,5 @@
 ---
-title: 'GeoSpatialSuite: Comprehensive Geospatiotemporal Analysis and Multimodal Integration
-  Toolkit for R'
+title: 'geospatialsuite: Comprehensive Geospatiotemporal Analysis and Multimodal Integration Toolkit for R'
 tags:
 - R
 - geospatial analysis
@@ -12,11 +11,11 @@ tags:
 - sf
 - agricultural research
 - environmental monitoring
-date: "17 September 2025"
+date: "28 December 2025"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
-  pdf_document: default
 bibliography: paper.bib
 authors:
 - name: Olatunde D. Akanbi
@@ -49,9 +48,9 @@ affiliations:
 
 # Summary
 
-GeoSpatialSuite is a comprehensive R package for geospatiotemporal analysis that provides researchers with a unified toolkit for multimodal spatial data integration. The package features over 60 vegetation indices with automatic satellite band detection, universal spatial join operations that work with any raster-vector combination, robust raster visualization with built-in error handling, and rapid mapping capabilities through the `quick_map()` function. Designed for reliability and universal applicability, GeoSpatialSuite addresses critical needs in agricultural research, environmental monitoring, and remote sensing applications while maintaining computational efficiency for large datasets.
+Geospatialsuite is a comprehensive R package for geospatiotemporal analysis that provides researchers with a unified toolkit for multimodal spatial data integration. The package features over 60 vegetation indices with automatic satellite band detection, universal spatial join operations that work with any raster-vector combination, robust raster visualization with built-in error handling, and rapid mapping capabilities through the `quick_map()` function. Designed for reliability and universal applicability, geospatialsuite addresses critical needs in agricultural research, environmental monitoring, and remote sensing applications while maintaining computational efficiency for large datasets.
 
-The package seamlessly integrates with the modern R spatial ecosystem through `terra` [@hijmans2022terra] and `sf` [@pebesma2018simple], providing enhanced NDVI calculations with quality filtering, comprehensive water quality analysis using multiple indices (NDWI [@mcfeeters1996normalized], MNDWI [@xu2006modification], NDMI), crop data layer (CDL) analysis [@usda2024cdl], spatial interpolation techniques [@cressie1993statistics], and terrain analysis. Unlike existing solutions that are often limited by complex dependencies or geographic scope, GeoSpatialSuite emphasizes universal functionality—working seamlessly across different regions, satellite platforms (Landsat, Sentinel-2, MODIS), and data types with comprehensive error handling throughout. The package has enabled research in agricultural systems monitoring [@akanbi2024multiscale] and multimodal data integration [@akanbi2024integrating].
+The package seamlessly integrates with the modern R spatial ecosystem through `terra` [@hijmans2022terra] and `sf` [@pebesma2018simple], providing enhanced NDVI calculations with quality filtering, comprehensive water quality analysis using multiple indices (NDWI [@mcfeeters1996normalized], MNDWI [@xu2006modification], NDMI), crop data layer (CDL) analysis [@usda2024cdl], spatial interpolation techniques [@cressie1993statistics], and terrain analysis. Unlike existing solutions that are often limited by complex dependencies or geographic scope, geospatialsuite emphasizes universal functionality—working seamlessly across different regions, satellite platforms (Landsat, Sentinel-2, MODIS), and data types with comprehensive error handling throughout. The package has enabled research in agricultural systems monitoring [@akanbi2024multiscale] and multimodal data integration [@akanbi2024integrating].
 
 # Statement of Need
 
@@ -59,7 +58,7 @@ Geospatial analysis in environmental and agricultural research requires reliable
 
 Current solutions in the R ecosystem present several critical limitations: vegetation index packages typically cover only a subset of available indices and lack automatic band detection across different satellite platforms; spatial join operations often fail with edge cases or require extensive preprocessing; visualization tools frequently encounter memory issues with large rasters or produce inconsistent results; and multimodal data integration requires custom workflows that are difficult to reproduce, error-prone, and time-consuming to implement.
 
-GeoSpatialSuite addresses these fundamental challenges through several key innovations:
+geospatialsuite addresses these fundamental challenges through several key innovations:
 
 **Universal spatial operations with robust error handling**: The package provides a universal spatial join function that reliably handles any raster-vector combination with comprehensive error checking, automatic coordinate system handling, and graceful failure recovery. This eliminates the common frustrations researchers face when working with diverse spatial datasets.
 
@@ -67,25 +66,25 @@ GeoSpatialSuite addresses these fundamental challenges through several key innov
 
 **Reliable visualization for large datasets**: Built on `terra`'s efficient raster handling, the package provides publication-quality mapping through functions like `quick_map()` that handle large rasters without memory issues, automatic legend generation, and consistent color schemes. The visualization system includes robust error handling that prevents common plotting failures.
 
-![Example output from GeoSpatialSuite's `quick_map()` function demonstrating universal spatial mapping capabilities. The function automatically detects data types, coordinate systems, and optimal visualization parameters, requiring only a single line of code to produce publication-quality maps from any spatial data format.](../img/quick.png){#fig:quickmap width=90%}
+![Example output from geospatialsuite's `quick_map()` function demonstrating universal spatial mapping capabilities. The function automatically detects data types, coordinate systems, and optimal visualization parameters, requiring only a single line of code to produce publication-quality maps from any spatial data format.](../img/quick.png){#fig:quickmap width=90%}
 
 **Multimodal integration workflows**: Streamlined functions for combining satellite imagery, weather data, crop data layers, and administrative boundaries with built-in spatial and temporal alignment, quality checks, and standardized output formats. This addresses the type of complex geospatial analysis challenges found across diverse research domains [@gordon2025geospatial].
 
 The package architecture prioritizes reproducibility, computational efficiency, and ease of use through comprehensive documentation, extensive testing, and a consistent API design. This approach has proven essential in research funded by the National Science Foundation Engineering Research Center for Advancing Sustainable and Distributed Fertilizer Production (CASFER), where reliable geospatial analysis tools are critical for understanding agricultural systems at multiple scales [@akanbi2024multiscale; @akanbi2024leveraging].
 
-GeoSpatialSuite fills a critical gap by providing a single, well-documented package that handles the most common geospatial analysis challenges with the reliability and consistency required for reproducible science, while maintaining the flexibility needed for specialized research applications.
+geospatialsuite fills a critical gap by providing a single, well-documented package that handles the most common geospatial analysis challenges with the reliability and consistency required for reproducible science, while maintaining the flexibility needed for specialized research applications.
 
 # Software Architecture
 
-GeoSpatialSuite is organized into 10 functional categories comprising 165 functions (Figure 2), designed to provide comprehensive geospatial analysis capabilities while maintaining ease of use and reliability. The package architecture emphasizes modularity, with each functional category serving specific analytical needs while integrating seamlessly with other components.
+geospatialsuite is organized into 10 functional categories comprising 165 functions (Figure 2), designed to provide comprehensive geospatial analysis capabilities while maintaining ease of use and reliability. The package architecture emphasizes modularity, with each functional category serving specific analytical needs while integrating seamlessly with other components.
 
-![GeoSpatialSuite functional organization showing the 10 major categories of functions: Core Spatial Operations, Water Quality and Indices, Spatial Interpolation, Testing & Validation, Utility Functions, Temporal Analysis, Data Processing, Visualization & Mapping, Comprehensive Workflows, and Vegetation Analysis. \label{fig:architecture}](../img/fig2.png)
+![geospatialsuite functional organization showing the 10 major categories of functions: Core Spatial Operations, Water Quality and Indices, Spatial Interpolation, Testing & Validation, Utility Functions, Temporal Analysis, Data Processing, Visualization & Mapping, Comprehensive Workflows, and Vegetation Analysis. \label{fig:architecture}](../img/fig2.png)
 
 The core design philosophy centers on universal compatibility and robust error handling. Functions automatically detect data types, coordinate systems, and optimal processing methods, reducing the technical barrier for researchers while maintaining the flexibility needed for advanced applications. This architecture enables both novice users to quickly generate results and experienced researchers to implement sophisticated analytical workflows.
 
 # Availability
 
-GeoSpatialSuite is available on the Comprehensive R Archive Network (CRAN) at https://cran.r-project.org/web/packages/geospatialsuite/ and can be installed using `install.packages("geospatialsuite")`. The source code is actively maintained on GitHub with comprehensive documentation, examples, and issue tracking to support the research community.
+geospatialsuite is available on the Comprehensive R Archive Network (CRAN) at https://cran.r-project.org/web/packages/geospatialsuite/ and can be installed using `install.packages("geospatialsuite")`. The source code is actively maintained on GitHub with comprehensive documentation, examples, and issue tracking to support the research community.
 
 # Acknowledgements
 

@@ -6,7 +6,7 @@
 \alias{geospatialsuite-package}
 \title{geospatialsuite: Comprehensive Geospatiotemporal Analysis and Multimodal Integration Toolkit}
 \description{
-GeoSpatialSuite provides universal functions for geospatial analysis and reliable
+geospatialsuite provides universal functions for geospatial analysis and reliable
 visualization that work with any region for multimodal data. Features include
 60+ vegetation indices, efficient terra-based visualization, universal spatial mapping,
 dynamic crop analysis, water quality assessment, and publication-quality mapping with
@@ -139,6 +139,15 @@ The package works reliably with just the core dependencies:
 
 No complex visualization dependencies required!
 }
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://cwru-sdle.github.io/geospatialsuite/}
+  \item \url{https://github.com/cwru-sdle/geospatialsuite}
+  \item Report bugs at \url{https://github.com/cwru-sdle/geospatialsuite/issues}
+}
+
 }
 \author{
 Olatunde D. Akanbi \email{olatunde.akanbi@case.edu}

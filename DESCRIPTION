@@ -2,7 +2,7 @@ Package: geospatialsuite
 Title: Comprehensive Geospatiotemporal Analysis and Multimodal Integration
     Toolkit
 Version: 0.1.1
-Date: 2025-11-04
+Date: 2025-12-28
 Authors@R: c(
     person("Olatunde D.", "Akanbi", , "olatunde.akanbi@case.edu", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0001-7719-2619")),
@@ -39,6 +39,8 @@ Description: A comprehensive toolkit for geospatiotemporal analysis
     Fertilizer production (CASFER), NSF 20-553 Gen-4 Engineering Research
     Centers award 2133576.
 License: MIT + file LICENSE
+URL: https://cwru-sdle.github.io/geospatialsuite/, https://github.com/cwru-sdle/geospatialsuite
+BugReports: https://github.com/cwru-sdle/geospatialsuite/issues
 Depends: 
     R (>= 3.5.0)
 Imports:

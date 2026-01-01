@@ -74,7 +74,7 @@
 #' # Check what will be detected without actually geocoding
 #' my_data <- data.frame(
 #'   State = c("Ohio", "Michigan"),
-#'   HUC-8 = c("04100009", "04100012"),
+#'   HUC8 = c("04100009", "04100012"),
 #'   value = c(100, 200)
 #' )
 #'
@@ -97,7 +97,7 @@
 #' )
 #'
 #' # ========================================
-#' # Example 8: Integration with other GeoSpatialSuite functions
+#' # Example 8: Integration with other geospatialsuite functions
 #' # ========================================
 #' # Geocode, then use with spatial analysis
 #' state_sf <- auto_geocode_data(state_data)
