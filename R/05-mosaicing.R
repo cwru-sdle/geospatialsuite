@@ -100,24 +100,34 @@ create_raster_mosaic <- function(input_data, method = "merge", region_boundary =
 #'
 #' @description
 #' Intelligently select raster files that overlap with a specified region.
+#' For ASTER files (GDEM and WBD), uses filename-based coordinate extraction
+#' for fast filtering without loading full rasters.
 #'
 #' @param input_folder Directory containing raster files
 #' @param region_boundary Region boundary or bounding box
+#' @param overlap Logical. If TRUE (default), checks for actual overlap with region.
+#'   If FALSE, only includes tiles whose centroid falls within region.
+#'   Only applies to ASTER files; non-ASTER files always use overlap detection.
 #' @param buffer_size Buffer around region (in degrees)
 #'
 #' @return Character vector of relevant file paths
 #'
 #' @examples
 #' \donttest{
-#' # Select ASTER files for Michigan
+#' # Select ASTER files for Michigan using overlap detection
 #' michigan_files <- select_rasters_for_region("/aster/files", "Michigan")
+#'
+#' # Use centroid-based selection (faster, fewer tiles)
+#' michigan_files_centroid <- select_rasters_for_region("/aster/files", "Michigan", 
+#'                                                       overlap = FALSE)
 #'
 #' # Select with custom buffer
 #' nevada_files <- select_rasters_for_region("/data", "Nevada", buffer_size = 0.2)
 #' }
 #'
 #' @export
-select_rasters_for_region <- function(input_folder, region_boundary, buffer_size = 0.1) {
+select_rasters_for_region <- function(input_folder, region_boundary, 
+                                      overlap = TRUE, buffer_size = 0.1) {
 
   message("Selecting rasters for specified region...")
 
@@ -148,16 +158,34 @@ select_rasters_for_region <- function(input_folder, region_boundary, buffer_size
   for (file in all_files) {
     tryCatch({
       # Extract coordinates from ASTER filenames if applicable
-      if (grepl("ASTGTMV", basename(file))) {
-        coords <- extract_aster_coordinates(basename(file))
-        if (!is.null(coords)) {
-          if (coords$lat >= bbox_coords[2] && coords$lat <= bbox_coords[4] &&
-              coords$lon >= bbox_coords[1] && coords$lon <= bbox_coords[3]) {
-            selected_files <- c(selected_files, file)
+      # Supports both GDEM (ASTGTMV) and WBD (ASTWBDV) formats
+      if (grepl("AST(GTM|WBD)V", basename(file))) {
+        
+        if (overlap) {
+          # Use bounding box overlap detection
+          aster_bbox <- extract_aster_coordinates(basename(file), boundingbox = TRUE)
+          if (!is.null(aster_bbox)) {
+            lon_overlap <- (aster_bbox$lon_max >= bbox_coords[1]) & 
+                          (bbox_coords[3] >= aster_bbox$lon_min)
+            lat_overlap <- (aster_bbox$lat_max >= bbox_coords[2]) & 
+                          (bbox_coords[4] >= aster_bbox$lat_min)
+            
+            if (unname(lon_overlap & lat_overlap)) {
+              selected_files <- c(selected_files, file)
+            }
+          }
+        } else {
+          # Use centroid-based selection (faster, fewer tiles)
+          coords <- extract_aster_coordinates(basename(file))
+          if (!is.null(coords)) {
+            if (coords$lat >= bbox_coords[2] && coords$lat <= bbox_coords[4] &&
+                coords$lon >= bbox_coords[1] && coords$lon <= bbox_coords[3]) {
+              selected_files <- c(selected_files, file)
+            }
           }
         }
       } else {
-        # Check actual raster extent
+        # Check actual raster extent for non-ASTER files
         r <- terra::rast(file)
         r_extent <- as.vector(terra::ext(r))
 
@@ -182,29 +210,47 @@ select_rasters_for_region <- function(input_folder, region_boundary, buffer_size
 #'
 #' @description
 #' Internal function to extract lat/lon coordinates from ASTER filenames.
+#' Supports both ASTER GDEM (ASTGTMV003) and WBD (ASTWBDV001) formats.
 #'
-#' @param filename ASTER filename
+#' @param filename ASTER filename (e.g., "ASTGTMV003_N40W084_dem.tif" or "ASTWBDV001_N40W084_dem.tif")
+#' @param boundingbox Logical. If TRUE, returns bounding box coordinates instead of centroid
 #'
-#' @return List with lat and lon coordinates, or NULL if pattern not matched
+#' @return List with coordinates (lat/lon if boundingbox=FALSE, or lat_min/lat_max/lon_min/lon_max if boundingbox=TRUE),
+#'   or NULL if pattern not matched
 #'
 #' @keywords internal
-extract_aster_coordinates <- function(filename) {
-  # Pattern for ASTER files: ASTGTMV003_N40W084_dem.tif
-  pattern <- "ASTGTMV003_([NS])([0-9]{2})([EW])([0-9]{3})_"
+extract_aster_coordinates <- function(filename, boundingbox = FALSE) {
+  # Pattern for ASTER files: ASTGTMV003_N40W084_dem.tif, ASTWBDV001_N40W084_dem.tif
+  pattern <- "AST(GTM|WBD)V([0-9]{3})_([NS])([0-9]{2})([EW])([0-9]{3})_"
 
   if (grepl(pattern, filename)) {
     matches <- regmatches(filename, regexec(pattern, filename))[[1]]
 
-    lat_dir <- matches[2]
-    lat_val <- as.numeric(matches[3])
-    lon_dir <- matches[4]
-    lon_val <- as.numeric(matches[5])
+    lat_dir <- matches[4]
+    lat_val <- as.numeric(matches[5])
+    lon_dir <- matches[6]
+    lon_val <- as.numeric(matches[7])
 
     # Convert to decimal degrees
     lat <- ifelse(lat_dir == "S", -lat_val, lat_val)
     lon <- ifelse(lon_dir == "W", -lon_val, lon_val)
-
-    return(list(lat = lat, lon = lon))
+    
+    if (boundingbox) {
+      # Calculate bounding box (ASTER tiles are 1x1 degree)
+      lat_centroid <- lat + 0.5
+      lon_centroid <- lon + 0.5
+      
+      # Use slightly larger than 0.5 to ensure overlap detection
+      lat_min <- lat_centroid - 0.5001389
+      lat_max <- lat_centroid + 0.5001389
+      lon_min <- lon_centroid - 0.5001389
+      lon_max <- lon_centroid + 0.5001389
+      
+      return(list(lat_min = lat_min, lat_max = lat_max, 
+                  lon_min = lon_min, lon_max = lon_max))
+    } else {
+      return(list(lat = lat, lon = lon))
+    }
   }
 
   return(NULL)
