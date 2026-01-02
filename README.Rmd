@@ -49,6 +49,7 @@ geospatialsuite is a powerful R package for geospatial analysis featuring **60+ 
 ## 🔗 Quick Links
 
 - **CRAN**: https://cran.r-project.org/package=geospatialsuite
+- **Documentation**: https://exelegch.github.io/geospatialsuite-docs/
 - **GitHub**: https://github.com/cwru-sdle/geospatialsuite
 - **Bug Reports**: https://github.com/cwru-sdle/geospatialsuite/issues
 

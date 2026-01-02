@@ -50,6 +50,7 @@ research, environmental monitoring, and remote sensing applications.
 ## 🔗 Quick Links
 
 - **CRAN**: <https://cran.r-project.org/package=geospatialsuite>
+- **Documentation**: <https://exelegch.github.io/geospatialsuite-docs/>
 - **GitHub**: <https://github.com/cwru-sdle/geospatialsuite>
 - **Bug Reports**: <https://github.com/cwru-sdle/geospatialsuite/issues>
 
