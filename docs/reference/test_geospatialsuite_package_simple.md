@@ -85,7 +85,7 @@ test_results <- test_geospatialsuite_package_simple(verbose = TRUE)
 #>  SIMPLIFIED TEST SUMMARY
 #> ====================
 #> Tests passed: 8/8 (100.0%)
-#> Duration: 0.21 seconds
+#> Duration: 0.23 seconds
 #> 
 #> Detailed Results:
 #>   basic_ndvi_test: PASS

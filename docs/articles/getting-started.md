@@ -589,10 +589,10 @@ test_geospatialsuite_package_simple()
     #> 
     #> 
     #> $test_output_dir
-    #> [1] "/tmp/RtmpdTIcPU"
+    #> [1] "/tmp/RtmpeyNWSn"
     #> 
     #> $timestamp
-    #> [1] "2026-01-06 10:39:03 EST"
+    #> [1] "2026-01-06 11:02:52 EST"
     #> 
     #> $test_approach
     #> [1] "simplified_robust"
