@@ -42,10 +42,13 @@ test_that("workflow integration works", {
   nir_raster <- create_test_raster()
   terra::values(nir_raster) <- runif(terra::ncell(nir_raster), 0.4, 0.8)
 
+  blue_raster <- create_test_raster()
+  terra::values(blue_raster) <- runif(terra::ncell(blue_raster), 0.05, 0.15)
+
   # Test that NDVI calculation works in workflow context
   config <- list(
     analysis_type = "ndvi_crop_analysis",
-    input_data = list(red = red_raster, nir = nir_raster),
+    input_data = list(red = red_raster, nir = nir_raster, blue = blue_raster),
     region_boundary = c(-84, 40, -83, 41),
     output_folder = tempdir()
   )

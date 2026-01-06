@@ -41,7 +41,7 @@ test_results <- test_geospatialsuite_package_simple()
 #>  SIMPLIFIED TEST SUMMARY
 #> ====================
 #> Tests passed: 8/8 (100.0%)
-#> Duration: 0.19 seconds
+#> Duration: 0.21 seconds
 #> 
 #>  ALL TESTS PASSED! geospatialsuite is working correctly.
 #> Core functionality verified

@@ -166,6 +166,7 @@ run_enhanced_ndvi_crop_workflow <- function(config, output_folder = tempdir()) {
   # Extract configuration with error handling
   red_data <- config$red_data %||% config$input_data$red %||% config$input_data
   nir_data <- config$nir_data %||% config$input_data$nir %||% config$input_data
+  blue_data <- config$blue_data %||% config$input_data$blue
   region_boundary <- config$region_boundary
   cdl_data <- config$cdl_data
   crop_codes <- config$crop_codes
@@ -212,9 +213,11 @@ run_enhanced_ndvi_crop_workflow <- function(config, output_folder = tempdir()) {
 
   if (length(indices) > 1 && inherits(red_data, "SpatRaster") && inherits(nir_data, "SpatRaster")) {
     tryCatch({
+      # Pass blue band if available (needed for EVI)
       additional_indices <- calculate_multiple_indices(
         red = red_data,
         nir = nir_data,
+        blue = blue_data,  # Will be NULL if not provided, which is fine
         indices = setdiff(indices, "NDVI")[1:min(2, length(setdiff(indices, "NDVI")))], # Limit for reliability
         output_stack = TRUE,
         region_boundary = region_boundary,

@@ -467,7 +467,7 @@ calculate_vegetation_index <- function(spectral_data = NULL, red = NULL, nir = N
     if (verbose) message("Applying region boundary...")
 
     tryCatch({
-      # Get the boundary (could be sf object, file path, or state/county name)
+      # Get the boundary (could be sf object, file path, state/county name, or bounding box)
       if (is.character(region_boundary)) {
         # For strings, check if it looks like a file path (has extension) or a region name
         has_extension <- grepl("\\.(shp|geojson|gpkg|kml|json)$", tolower(region_boundary))
@@ -484,8 +484,12 @@ calculate_vegetation_index <- function(spectral_data = NULL, red = NULL, nir = N
       } else if (inherits(region_boundary, c("sf", "sfc"))) {
         if (verbose) message("Using provided sf object as boundary")
         boundary <- region_boundary
+      } else if (is.numeric(region_boundary) && length(region_boundary) == 4) {
+        # Numeric bounding box - pass to get_region_boundary()
+        if (verbose) message("Creating boundary from bounding box")
+        boundary <- get_region_boundary(region_boundary, verbose = verbose)
       } else {
-        stop("region_boundary must be either an sf object, file path, or region name", call. = FALSE)
+        stop("region_boundary must be either an sf object, file path, region name, or numeric bounding box (length 4)", call. = FALSE)
       }
 
       # Check and fix CRS mismatch
@@ -1102,7 +1106,7 @@ calculate_multiple_indices <- function(spectral_data = NULL, indices = c("NDVI",
     if (verbose) message("Applying region boundary...")
 
     tryCatch({
-      # Get the boundary
+      # Get the boundary (could be sf object, file path, region name, or bounding box)
       if (is.character(region_boundary)) {
         # For strings, check if it looks like a file path or a region name
         has_extension <- grepl("\\.(shp|geojson|gpkg|kml|json)$", tolower(region_boundary))
@@ -1119,8 +1123,12 @@ calculate_multiple_indices <- function(spectral_data = NULL, indices = c("NDVI",
       } else if (inherits(region_boundary, c("sf", "sfc"))) {
         if (verbose) message("Using provided sf object as boundary")
         boundary <- region_boundary
+      } else if (is.numeric(region_boundary) && length(region_boundary) == 4) {
+        # Numeric bounding box - pass to get_region_boundary()
+        if (verbose) message("Creating boundary from bounding box")
+        boundary <- get_region_boundary(region_boundary, verbose = verbose)
       } else {
-        stop("region_boundary must be either an sf object, file path, or region name", call. = FALSE)
+        stop("region_boundary must be either an sf object, file path, region name, or numeric bounding box (length 4)", call. = FALSE)
       }
 
       index_results <- lapply(index_results, function(idx_raster) {
