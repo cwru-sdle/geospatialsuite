@@ -10,10 +10,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<meta name="author" content="GeoSpatialSuite Development Team" />
+<meta name="author" content="geospatialsuite Development Team" />
 
 
-<title>Universal Spatial Mapping with GeoSpatialSuite</title>
+<title>Universal Spatial Mapping with geospatialsuite</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -61,7 +61,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
 { counter-reset: source-line 0; }
@@ -338,15 +338,16 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 <h1 class="title toc-ignore">Universal Spatial Mapping with
-GeoSpatialSuite</h1>
-<h4 class="author">GeoSpatialSuite Development Team</h4>
+geospatialsuite</h1>
+<h4 class="author">geospatialsuite Development Team</h4>
 
 
 
+<hr />
 <div id="universal-spatial-mapping-with-geospatialsuite" class="section level1">
-<h1>Universal Spatial Mapping with GeoSpatialSuite</h1>
+<h1>Universal Spatial Mapping with geospatialsuite</h1>
 <p>This vignette demonstrates the powerful and flexible mapping
-capabilities of GeoSpatialSuite, including auto-detection mapping,
+capabilities of geospatialsuite, including auto-detection mapping,
 custom visualizations, and publication-quality outputs.</p>
 <div id="loading-the-package" class="section level2">
 <h2>Loading the Package</h2>
@@ -403,7 +404,7 @@ mapping with extensive customization options:</p>
 </div>
 <div id="custom-color-schemes" class="section level3">
 <h3>Custom Color Schemes</h3>
-<p>GeoSpatialSuite provides specialized color schemes for different
+<p>geospatialsuite provides specialized color schemes for different
 applications:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># NDVI-specific colors</span></span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>ndvi_map <span class="ot">&lt;-</span> <span class="fu">create_spatial_map</span>(</span>
@@ -745,7 +746,7 @@ raster visualization using terra’s native plotting:</p>
 <h2>Integration with Other Packages</h2>
 <div id="ggplot2-integration" class="section level3">
 <h3>ggplot2 Integration</h3>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="co"># GeoSpatialSuite maps work well with ggplot2</span></span>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="co"># geospatialsuite maps work well with ggplot2</span></span>
 <span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
 <span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a></span>
 <span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a><span class="co"># Extract ggplot object for further customization</span></span>
@@ -967,7 +968,7 @@ raster visualization using terra’s native plotting:</p>
 </div>
 <div id="summary" class="section level2">
 <h2>Summary</h2>
-<p>GeoSpatialSuite’s mapping capabilities provide:</p>
+<p>geospatialsuite’s mapping capabilities provide:</p>
 <ol style="list-style-type: decimal">
 <li><strong>Auto-detection</strong>: <code>quick_map()</code> for
 instant visualization</li>
@@ -1001,7 +1002,7 @@ dependencies while providing extensive customization when needed.</p>
 </div>
 <div id="acknowledgments" class="section level2">
 <h2>Acknowledgments</h2>
-<p>This work was developed by the GeoSpatialSuite team with
+<p>This work was developed by the geospatialsuite team with
 contributions from: Olatunde D. Akanbi, Erika I. Barcelos, and Roger H.
 French.</p>
 </div>

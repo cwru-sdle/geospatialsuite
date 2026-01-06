@@ -5,708 +5,335 @@ knitr::opts_chunk$set(
   fig.width = 8,
   fig.height = 6,
   warning = FALSE,
-  message = FALSE
+  message = FALSE,
+  eval = TRUE
 )
 
-## ----eval=FALSE---------------------------------------------------------------
-# library(geospatialsuite)
-# 
-# # See all available vegetation indices
-# all_indices <- list_vegetation_indices()
-# print(all_indices)
-# 
-# # View detailed information with formulas
-# detailed_indices <- list_vegetation_indices(detailed = TRUE)
-# head(detailed_indices)
-# 
-# # Filter by category
-# basic_indices <- list_vegetation_indices(category = "basic")
-# stress_indices <- list_vegetation_indices(category = "stress")
+## ----load-packages------------------------------------------------------------
+library(geospatialsuite)
+library(terra)
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Simple NDVI from individual bands
-# ndvi <- calculate_vegetation_index(
-#   red = "landsat_red.tif",
-#   nir = "landsat_nir.tif",
-#   index_type = "NDVI",
+## ----quick-start--------------------------------------------------------------
+# Load sample spectral bands
+red <- load_sample_data("sample_red.rds")
+nir <- load_sample_data("sample_nir.rds")
+blue <- load_sample_data("sample_blue.rds")
+
+# Calculate NDVI using geospatialsuite
+ndvi <- calculate_vegetation_index(
+  red = red,
+  nir = nir,
+  index_type = "NDVI"
+)
+
+# Visualize
+plot(ndvi, main = "Normalized Difference Vegetation Index (NDVI)",
+     col = terrain.colors(100))
+
+## ----ndvi-example-------------------------------------------------------------
+# Calculate NDVI with geospatialsuite
+ndvi <- calculate_vegetation_index(
+  red = red,
+  nir = nir,
+  index_type = "NDVI"
+)
+
+# Summary statistics
+summary(values(ndvi))
+
+# Classify vegetation density
+vegetation_classes <- classify(ndvi,
+  rcl = matrix(c(-Inf, 0.2, 1,
+                 0.2, 0.6, 2,
+                 0.6, Inf, 3), 
+               ncol = 3, byrow = TRUE)
+)
+
+plot(vegetation_classes, 
+     main = "Vegetation Density Classes",
+     col = c("brown", "yellow", "darkgreen"),
+     legend = FALSE)
+legend("topright", 
+       legend = c("Sparse", "Moderate", "Dense"),
+       fill = c("brown", "yellow", "darkgreen"))
+
+## ----evi-example--------------------------------------------------------------
+# Calculate EVI using geospatialsuite
+evi <- calculate_vegetation_index(
+  red = red,
+  nir = nir,
+  blue = blue,
+  index_type = "EVI"
+)
+
+# Compare NDVI and EVI
+par(mfrow = c(1, 2))
+plot(ndvi, main = "NDVI", col = terrain.colors(100))
+plot(evi, main = "EVI", col = terrain.colors(100))
+par(mfrow = c(1, 1))
+
+## ----savi-example-------------------------------------------------------------
+# Calculate SAVI with geospatialsuite
+savi <- calculate_vegetation_index(
+  red = red,
+  nir = nir,
+  index_type = "SAVI"
+)
+
+plot(savi, main = "Soil Adjusted Vegetation Index (SAVI)",
+     col = terrain.colors(100))
+
+## ----multiple-indices---------------------------------------------------------
+# geospatialsuite can calculate multiple indices at once
+indices <- calculate_multiple_indices(
+  red = red,
+  nir = nir,
+  blue = blue,
+  indices = c("NDVI", "EVI", "SAVI", "GNDVI", "NDRE"),
+  output_stack = TRUE
+)
+
+# Plot all indices
+plot(indices, main = names(indices))
+
+# Access individual indices
+ndvi_layer <- indices$NDVI
+evi_layer <- indices$EVI
+
+## ----multiband-workflow-------------------------------------------------------
+# Load multi-band raster
+multiband <- load_sample_data("sample_multiband.rds")
+
+# Check available bands
+names(multiband)
+
+# geospatialsuite's auto-detect feature
+ndvi_auto <- calculate_vegetation_index(
+  spectral_data = multiband,
+  index_type = "NDVI",
+  auto_detect_bands = TRUE  # Automatically finds red and nir!
+)
+
+# Calculate multiple indices with auto-detection
+indices_auto <- calculate_multiple_indices(
+  spectral_data = multiband,
+  indices = c("NDVI", "EVI", "GNDVI"),
+  auto_detect_bands = TRUE,
+  output_stack = TRUE
+)
+
+## ----landsat-example, eval=FALSE----------------------------------------------
+# # Use geospatialsuite with Landsat imagery
+# 
+# # 1. Load Landsat bands using geospatialsuite
+# landsat_bands <- load_raster_data(
+#   "landsat/LC08_L2SP_021033_20240715/",
+#   pattern = "SR_B[2-5].TIF$",
 #   verbose = TRUE
 # )
 # 
-# # View results
-# terra::plot(ndvi, main = "NDVI Analysis",
-#             col = colorRampPalette(c("brown", "yellow", "green"))(100))
+# # geospatialsuite validates and loads all bands
+# # Extract individual bands (assuming they're scaled to 0-1)
+# blue <- landsat_bands[[1]]
+# green <- landsat_bands[[2]]
+# red <- landsat_bands[[3]]
+# nir <- landsat_bands[[4]]
 # 
-# # Check value range
-# summary(terra::values(ndvi, mat = FALSE))
+# # 2. Calculate indices using geospatialsuite
+# # It has 60+ pre-programmed indices
+# landsat_indices <- calculate_multiple_indices(
+#   red = red,
+#   nir = nir,
+#   blue = blue,
+#   green = green,
+#   indices = c("NDVI", "EVI", "SAVI", "GNDVI", "MSAVI", "OSAVI"),
+#   output_stack = TRUE
+# )
+# 
+# # 3. Visualize using geospatialsuite
+# quick_map(landsat_indices$NDVI, title = "Landsat 8 NDVI")
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Calculate multiple vegetation indices
-# vegetation_stack <- calculate_multiple_indices(
-#   red = red_band,
-#   nir = nir_band,
-#   blue = blue_band,
-#   green = green_band,
-#   indices = c("NDVI", "EVI", "SAVI", "GNDVI", "DVI", "RVI"),
-#   output_stack = TRUE,
-#   region_boundary = "Ohio",
+## ----sentinel-example, eval=FALSE---------------------------------------------
+# # Use geospatialsuite with Sentinel-2
+# 
+# # 1. Load Sentinel-2 bands using geospatialsuite
+# s2_bands <- load_raster_data(
+#   "sentinel2/S2A_MSIL2A_20240715/GRANULE/.../IMG_DATA/R10m/",
+#   pattern = "*_B0[2-8]_10m.jp2$",
 #   verbose = TRUE
 # )
 # 
-# # Access individual indices
-# ndvi_layer <- vegetation_stack$NDVI
-# evi_layer <- vegetation_stack$EVI
+# # geospatialsuite handles JPEG2000 format
+# # Assuming bands are ordered: blue, green, red, nir
+# # and scaled to 0-1
 # 
-# # Create comparison visualization
-# terra::plot(vegetation_stack, main = names(vegetation_stack))
-
-## ----eval=FALSE---------------------------------------------------------------
-# # From multi-band raster with auto-detection
-# evi <- calculate_vegetation_index(
-#   spectral_data = "sentinel2_image.tif",
-#   index_type = "EVI",
-#   auto_detect_bands = TRUE,
-#   verbose = TRUE
-# )
-# 
-# # From directory with band detection
-# savi <- calculate_vegetation_index(
-#   spectral_data = "/path/to/sentinel/bands/",
-#   index_type = "SAVI",
-#   auto_detect_bands = TRUE
-# )
-# 
-# # Custom band names for non-standard data
-# ndvi_custom <- calculate_vegetation_index(
-#   spectral_data = custom_satellite_data,
-#   band_names = c("B4", "B3", "B2", "B8"),  # Red, Green, Blue, NIR
-#   index_type = "NDVI"
-# )
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Time series NDVI with quality control
-# ndvi_series <- calculate_ndvi_enhanced(
-#   red_data = "/path/to/red/time_series/",
-#   nir_data = "/path/to/nir/time_series/",
-#   match_by_date = TRUE,           # Automatically match files by date
-#   quality_filter = TRUE,          # Remove outliers
-#   temporal_smoothing = TRUE,      # Smooth time series
-#   clamp_range = c(-0.2, 1),
-#   verbose = TRUE
-# )
-# 
-# # Plot time series layers
-# terra::plot(ndvi_series, main = paste("NDVI", names(ndvi_series)))
-# 
-# # Calculate temporal statistics
-# temporal_mean <- terra::app(ndvi_series, mean, na.rm = TRUE)
-# temporal_cv <- terra::app(ndvi_series, function(x) sd(x, na.rm = TRUE) / mean(x, na.rm = TRUE))
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Temporal analysis workflow
-# temporal_results <- analyze_temporal_changes(
-#   data_list = c("ndvi_2020.tif", "ndvi_2021.tif", "ndvi_2022.tif", "ndvi_2023.tif"),
-#   dates = c("2020", "2021", "2022", "2023"),
-#   region_boundary = "Iowa",
-#   analysis_type = "trend",
-#   output_folder = "temporal_analysis/"
-# )
-# 
-# # Access trend results
-# slope_raster <- temporal_results$trend_rasters$slope
-# r_squared_raster <- temporal_results$trend_rasters$r_squared
-# 
-# # Interpret trends
-# # Positive slope = increasing vegetation
-# # Negative slope = declining vegetation
-# # High R² = strong temporal trend
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Comprehensive crop vegetation analysis
-# corn_analysis <- analyze_crop_vegetation(
-#   spectral_data = "sentinel2_data.tif",
-#   crop_type = "corn",
-#   growth_stage = "mid",
-#   analysis_type = "comprehensive",
-#   cdl_mask = corn_mask,
-#   verbose = TRUE
-# )
-# 
-# # Access results
-# vegetation_indices <- corn_analysis$vegetation_indices
-# stress_analysis <- corn_analysis$analysis_results$stress_analysis
-# yield_analysis <- corn_analysis$analysis_results$yield_analysis
-# 
-# # View stress detection results
-# print(stress_analysis$NDVI)
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Early season analysis (emergence to vegetative)
-# early_season <- analyze_crop_vegetation(
-#   spectral_data = "may_sentinel2.tif",
-#   crop_type = "soybeans",
-#   growth_stage = "early",
-#   analysis_type = "growth"
-# )
-# 
-# # Mid-season analysis (reproductive stage)
-# mid_season <- analyze_crop_vegetation(
-#   spectral_data = "july_sentinel2.tif",
-#   crop_type = "soybeans",
-#   growth_stage = "mid",
-#   analysis_type = "stress"
-# )
-# 
-# # Compare growth stages
-# early_ndvi <- early_season$vegetation_indices$NDVI
-# mid_ndvi <- mid_season$vegetation_indices$NDVI
-# growth_change <- mid_ndvi - early_ndvi
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Calculate stress-sensitive indices
-# stress_indices <- calculate_multiple_indices(
-#   red = red_band,
-#   nir = nir_band,
-#   green = green_band,
-#   red_edge = red_edge_band,     # If available
-#   indices = c("NDVI", "PRI", "SIPI", "NDRE"),
+# # 2. Calculate comprehensive indices with geospatialsuite
+# s2_indices <- calculate_multiple_indices(
+#   red = s2_bands[[3]],
+#   nir = s2_bands[[4]],
+#   blue = s2_bands[[1]],
+#   green = s2_bands[[2]],
+#   indices = c("NDVI", "EVI", "SAVI", "GNDVI", "NDMI"),
 #   output_stack = TRUE
 # )
 # 
-# # Stress analysis thresholds
-# ndvi_values <- terra::values(stress_indices$NDVI, mat = FALSE)
-# healthy_threshold <- 0.6
-# stress_threshold <- 0.4
-# 
-# # Classify stress levels
-# stress_mask <- terra::classify(stress_indices$NDVI,
-#                                matrix(c(-1, stress_threshold, 1,      # Severe stress
-#                                        stress_threshold, healthy_threshold, 2,  # Moderate stress
-#                                        healthy_threshold, 1, 3), ncol = 3, byrow = TRUE))
-# 
-# # Visualization
-# stress_colors <- c("red", "orange", "green")
-# terra::plot(stress_mask, main = "Vegetation Stress Classification",
-#             col = stress_colors, legend = c("Severe", "Moderate", "Healthy"))
+# # 3. Visualize
+# quick_map(s2_indices$NDVI, title = "Sentinel-2 NDVI (10m)")
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Water content indices
-# water_stress <- calculate_multiple_indices(
-#   nir = nir_band,
-#   swir1 = swir1_band,
-#   indices = c("NDMI", "MSI", "NDII"),
-#   output_stack = TRUE
-# )
+## ----multitemporal-example, eval=FALSE----------------------------------------
+# # Track vegetation changes with geospatialsuite
 # 
-# # NDMI interpretation:
-# # High NDMI (>0.4) = High water content
-# # Low NDMI (<0.1) = Water stress
+# # Load imagery from different dates
+# dates <- c("2024-05-01", "2024-06-01", "2024-07-01")
+# ndvi_series <- list()
 # 
-# # MSI interpretation (opposite of NDMI):
-# # Low MSI (<1.0) = High moisture
-# # High MSI (>1.6) = Water stress
+# for (date in dates) {
+#   # Load bands for each date using geospatialsuite
+#   bands <- load_raster_data(
+#     sprintf("satellite/%s/", date),
+#     pattern = "B[4-5].tif$"
+#   )
 # 
-# # Create water stress map
-# water_stress_binary <- terra::classify(water_stress$NDMI,
-#                                        matrix(c(-1, 0.1, 1,    # Water stress
-#                                                0.1, 0.4, 2,    # Moderate
-#                                                0.4, 1, 3), ncol = 3, byrow = TRUE))
+#   red_date <- bands[[1]]
+#   nir_date <- bands[[2]]
+# 
+#   # Calculate NDVI using geospatialsuite
+#   ndvi_series[[date]] <- calculate_vegetation_index(
+#     red = red_date,
+#     nir = nir_date,
+#     index_type = "NDVI"
+#   )
+# }
+# 
+# # Stack time series
+# ndvi_stack <- rast(ndvi_series)
+# names(ndvi_stack) <- dates
+# 
+# # Visualize temporal progression
+# plot(ndvi_stack, main = paste("NDVI -", dates))
+# 
+# # Calculate change
+# ndvi_change <- ndvi_stack[[3]] - ndvi_stack[[1]]
+# plot(ndvi_change,
+#      main = "NDVI Change (Jul - May)",
+#      col = colorRampPalette(c("red", "white", "green"))(100))
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Enhanced NDVI with quality filtering
-# ndvi_quality <- calculate_ndvi_enhanced(
-#   red_data = red_raster,
-#   nir_data = nir_raster,
-#   quality_filter = TRUE,          # Remove outliers
-#   clamp_range = c(-0.2, 1),      # Reasonable NDVI range
-#   temporal_smoothing = FALSE,     # For single date
-#   verbose = TRUE
-# )
-# 
-# # Custom quality filtering
-# vegetation_filtered <- calculate_vegetation_index(
-#   red = red_band,
-#   nir = nir_band,
-#   index_type = "NDVI",
-#   mask_invalid = TRUE,            # Remove invalid values
-#   clamp_range = c(-1, 1)         # Theoretical NDVI range
-# )
+## ----chlorophyll-indices------------------------------------------------------
+# Green NDVI - sensitive to chlorophyll content
+green <- load_sample_data("sample_green.rds")
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Compare with field measurements
-# field_ndvi_validation <- universal_spatial_join(
-#   source_data = "field_measurements.csv",  # Ground truth points
-#   target_data = ndvi_raster,              # Satellite NDVI
-#   method = "extract",
-#   buffer_distance = 30,                   # 30m buffer around points
-#   summary_function = "mean"
-# )
-# 
-# # Calculate correlation
-# observed <- field_ndvi_validation$field_ndvi
-# predicted <- field_ndvi_validation$extracted_NDVI
-# 
-# correlation <- cor(observed, predicted, use = "complete.obs")
-# rmse <- sqrt(mean((observed - predicted)^2, na.rm = TRUE))
-# 
-# print(paste("Validation R =", round(correlation, 3)))
-# print(paste("RMSE =", round(rmse, 4)))
+# Calculate using geospatialsuite
+gndvi <- calculate_vegetation_index(
+  green = green,
+  nir = nir,
+  index_type = "GNDVI"
+)
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Create NDVI time series for phenology
-# phenology_analysis <- analyze_temporal_changes(
-#   data_list = list.files("/ndvi/2023/", pattern = "*.tif", full.names = TRUE),
-#   dates = extract_dates_universal(list.files("/ndvi/2023/", pattern = "*.tif")),
-#   region_boundary = "Iowa",
-#   analysis_type = "seasonal",
-#   output_folder = "phenology_results/"
-# )
-# 
-# # Access seasonal patterns
-# spring_ndvi <- phenology_analysis$seasonal_rasters$Spring
-# summer_ndvi <- phenology_analysis$seasonal_rasters$Summer
-# fall_ndvi <- phenology_analysis$seasonal_rasters$Fall
-# 
-# # Calculate growing season metrics
-# peak_season <- terra::app(c(spring_ndvi, summer_ndvi), max, na.rm = TRUE)
-# growing_season_range <- summer_ndvi - spring_ndvi
+plot(gndvi, main = "Green NDVI - Chlorophyll Indicator",
+     col = colorRampPalette(c("white", "lightgreen", "darkgreen"))(100))
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Landsat NDVI (30m resolution)
-# landsat_ndvi <- calculate_vegetation_index(
-#   red = "landsat8_red.tif",
-#   nir = "landsat8_nir.tif",
-#   index_type = "NDVI"
-# )
-# 
-# # MODIS NDVI (250m resolution)
-# modis_ndvi <- calculate_vegetation_index(
-#   red = "modis_red.tif",
-#   nir = "modis_nir.tif",
-#   index_type = "NDVI"
-# )
-# 
-# # Resample MODIS to Landsat resolution for comparison
-# modis_resampled <- universal_spatial_join(
-#   source_data = modis_ndvi,
-#   target_data = landsat_ndvi,
-#   method = "resample",
-#   summary_function = "bilinear"
-# )
-# 
-# # Compare sensors
-# sensor_difference <- landsat_ndvi - modis_resampled
-# correlation <- calculate_spatial_correlation(landsat_ndvi, modis_resampled)
+## ----water-content------------------------------------------------------------
+# Load SWIR band for water content analysis
+swir1 <- load_sample_data("sample_swir1.rds")
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Forest-specific indices
-# forest_indices <- calculate_multiple_indices(
-#   red = red_band,
-#   nir = nir_band,
-#   swir1 = swir1_band,
-#   swir2 = swir2_band,
-#   indices = c("NDVI", "EVI", "NBR", "NDMI"),  # Normalized Burn Ratio, moisture
-#   region_boundary = "forest_boundary.shp",
-#   output_stack = TRUE
+# NDMI using geospatialsuite
+ndmi <- calculate_vegetation_index(
+  nir = nir,
+  swir1 = swir1,
+  index_type = "NDMI"
+)
+
+plot(ndmi, main = "Vegetation Water Content (NDMI)",
+     col = colorRampPalette(c("brown", "yellow", "blue"))(100))
+
+## ----zonal-stats--------------------------------------------------------------
+# Load sample boundary
+boundary <- load_sample_data("sample_boundary.rds")
+
+# Calculate NDVI using geospatialsuite
+ndvi <- calculate_vegetation_index(red = red, nir = nir, index_type = "NDVI")
+
+# Extract statistics for the region
+stats <- terra::extract(ndvi, vect(boundary), fun = function(x) {
+  c(mean = mean(x, na.rm = TRUE),
+    sd = sd(x, na.rm = TRUE),
+    min = min(x, na.rm = TRUE),
+    max = max(x, na.rm = TRUE))
+})
+
+print(stats)
+
+## ----field-analysis-----------------------------------------------------------
+# Load sample field points
+field_points <- load_sample_data("sample_points.rds")
+
+# Calculate NDVI using geospatialsuite
+ndvi <- calculate_vegetation_index(red = red, nir = nir, index_type = "NDVI")
+
+# Extract using geospatialsuite's spatial join
+field_ndvi <- universal_spatial_join(
+  source_data = field_points,
+  target_data = ndvi,
+  method = "extract"
+)
+
+# View results
+head(field_ndvi)
+
+## ----real-field-data, eval=FALSE----------------------------------------------
+# # Complete field analysis workflow with geospatialsuite
+# 
+# library(sf)
+# 
+# # 1. Load field boundaries
+# fields <- sf::st_read("farm_data/field_boundaries.shp")
+# 
+# # 2. Load and process satellite data using geospatialsuite
+# satellite_bands <- load_raster_data(
+#   "satellite/imagery/",
+#   pattern = "B[2-5].tif$"
 # )
 # 
-# # Burn severity assessment using NBR
-# pre_fire_nbr <- forest_indices$NBR  # Before fire
-# post_fire_nbr <- calculate_vegetation_index(
-#   red = "post_fire_red.tif",
-#   nir = "post_fire_nir.tif",
-#   swir2 = "post_fire_swir2.tif",
-#   index_type = "NBR"
-# )
-# 
-# # Calculate burn severity (dNBR)
-# burn_severity <- pre_fire_nbr - post_fire_nbr
-# 
-# # Classify burn severity
-# severity_classes <- terra::classify(burn_severity,
-#   matrix(c(-Inf, 0.1, 1,      # Unburned
-#            0.1, 0.27, 2,       # Low severity
-#            0.27, 0.44, 3,      # Moderate-low
-#            0.44, 0.66, 4,      # Moderate-high
-#            0.66, Inf, 5), ncol = 3, byrow = TRUE))
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Grassland-specific analysis
-# grassland_health <- calculate_multiple_indices(
-#   red = red_band,
-#   nir = nir_band,
-#   green = green_band,
-#   indices = c("NDVI", "SAVI", "MSAVI", "GNDVI"),  # Soil-adjusted indices
-#   output_stack = TRUE
-# )
-# 
-# # Analyze grazing impact
-# grazed_area_ndvi <- terra::mask(grassland_health$NDVI, grazing_areas)
-# ungrazed_area_ndvi <- terra::mask(grassland_health$NDVI, ungrazed_areas)
-# 
-# # Compare means
-# grazed_mean <- terra::global(grazed_area_ndvi, "mean", na.rm = TRUE)
-# ungrazed_mean <- terra::global(ungrazed_area_ndvi, "mean", na.rm = TRUE)
-# 
-# grazing_impact <- ungrazed_mean - grazed_mean
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Urban vegetation analysis with atmospheric correction
-# urban_vegetation <- calculate_vegetation_index(
-#   red = urban_red,
-#   nir = urban_nir,
-#   blue = urban_blue,
-#   index_type = "ARVI",           # Atmospherically Resistant VI
-#   region_boundary = "city_boundary.shp"
-# )
-# 
-# # Green space analysis
-# green_space_threshold <- 0.3
-# urban_greenness <- terra::classify(urban_vegetation,
-#   matrix(c(-1, green_space_threshold, 0,           # Non-vegetated
-#            green_space_threshold, 1, 1), ncol = 3, byrow = TRUE))  # Vegetated
-# 
-# # Calculate green space statistics
-# total_urban_area <- terra::ncell(urban_greenness) * prod(terra::res(urban_greenness))
-# green_area <- terra::global(urban_greenness, "sum", na.rm = TRUE) * prod(terra::res(urban_greenness))
-# green_space_percentage <- (green_area / total_urban_area) * 100
-
-## ----eval=FALSE---------------------------------------------------------------
-# ndvi <- calculate_vegetation_index(red = red, nir = nir, index_type = "NDVI")
-
-## ----eval=FALSE---------------------------------------------------------------
-# evi <- calculate_vegetation_index(red = red, nir = nir, blue = blue, index_type = "EVI")
-
-## ----eval=FALSE---------------------------------------------------------------
-# savi <- calculate_vegetation_index(red = red, nir = nir, index_type = "SAVI")
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Note: PRI typically uses 531nm and 570nm bands
-# # Using green and NIR as approximation
-# pri <- calculate_vegetation_index(green = green, nir = nir, index_type = "PRI")
-
-## ----eval=FALSE---------------------------------------------------------------
-# crop_health <- calculate_multiple_indices(
-#   red = red, nir = nir, green = green,
-#   indices = c("NDVI", "GNDVI", "SIPI"),  # Structure Insensitive Pigment Index
-#   output_stack = TRUE
-# )
-
-## ----eval=FALSE---------------------------------------------------------------
-# drought_indices <- calculate_multiple_indices(
-#   nir = nir, swir1 = swir1,
-#   indices = c("NDMI", "MSI"),  # Moisture indices
-#   output_stack = TRUE
-# )
-
-## ----eval=FALSE---------------------------------------------------------------
-# precision_ag <- calculate_multiple_indices(
-#   red = red, nir = nir, green = green, red_edge = red_edge,
-#   indices = c("NDVI", "NDRE", "GNDVI", "CCI"),  # Chlorophyll indices
-#   output_stack = TRUE
-# )
-
-## ----eval=FALSE---------------------------------------------------------------
-# # NDVI-specific visualization
-# create_spatial_map(
-#   spatial_data = ndvi_raster,
-#   color_scheme = "ndvi",          # NDVI-specific colors
-#   region_boundary = "study_area.shp",
-#   title = "NDVI Analysis - Growing Season Peak",
-#   output_file = "ndvi_analysis.png"
-# )
-# 
-# # Multi-index comparison
-# create_comparison_map(
-#   data1 = ndvi_raster,
-#   data2 = evi_raster,
-#   comparison_type = "side_by_side",
-#   titles = c("NDVI", "EVI"),
-#   color_scheme = "viridis"
-# )
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Interactive vegetation analysis
-# interactive_veg_map <- create_interactive_map(
-#   spatial_data = vegetation_points,
-#   fill_variable = "NDVI",
-#   popup_vars = c("NDVI", "EVI", "collection_date"),
-#   basemap = "satellite",
-#   title = "Interactive Vegetation Analysis"
-# )
-# 
-# # Save interactive map
-# htmlwidgets::saveWidget(interactive_veg_map, "vegetation_interactive.html")
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Calculate comprehensive statistics
-# vegetation_stats <- terra::global(vegetation_stack,
-#                                   c("mean", "sd", "min", "max"),
-#                                   na.rm = TRUE)
-# 
-# print(vegetation_stats)
-# 
-# # Zonal statistics by land cover
-# landcover_stats <- universal_spatial_join(
-#   source_data = vegetation_stack,
-#   target_data = "landcover_polygons.shp",
-#   method = "zonal",
-#   summary_function = "mean"
-# )
-# 
-# # Statistics by vegetation class
-# healthy_vegetation <- vegetation_stack$NDVI > 0.6
-# moderate_vegetation <- vegetation_stack$NDVI > 0.3 & vegetation_stack$NDVI <= 0.6
-# poor_vegetation <- vegetation_stack$NDVI <= 0.3
-# 
-# # Calculate percentages
-# total_pixels <- terra::ncell(vegetation_stack$NDVI)
-# healthy_pct <- terra::global(healthy_vegetation, "sum", na.rm = TRUE) / total_pixels * 100
-# moderate_pct <- terra::global(moderate_vegetation, "sum", na.rm = TRUE) / total_pixels * 100
-# poor_pct <- terra::global(poor_vegetation, "sum", na.rm = TRUE) / total_pixels * 100
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Analyze relationships between indices
-# index_correlations <- analyze_variable_correlations(
-#   variable_list = list(
-#     NDVI = vegetation_stack$NDVI,
-#     EVI = vegetation_stack$EVI,
-#     SAVI = vegetation_stack$SAVI,
-#     GNDVI = vegetation_stack$GNDVI
-#   ),
-#   method = "pearson",
-#   create_plots = TRUE,
-#   output_folder = "correlation_analysis/"
-# )
-# 
-# # View correlation matrix
-# print(index_correlations$correlation_matrix)
-
-## ----eval=FALSE---------------------------------------------------------------
-# # 1. Define study area
-# study_area <- get_region_boundary("Iowa:Story")  # Story County, Iowa
-# 
-# # 2. Create corn mask
-# corn_mask <- create_crop_mask(
-#   cdl_data = "cdl_iowa_2023.tif",
-#   crop_codes = get_comprehensive_cdl_codes("corn"),
-#   region_boundary = study_area
-# )
-# 
-# # 3. Calculate vegetation indices for corn areas
-# corn_vegetation <- calculate_multiple_indices(
-#   spectral_data = "sentinel2_iowa_july.tif",
+# # 3. Calculate indices using geospatialsuite
+# indices <- calculate_multiple_indices(
+#   red = satellite_bands[[3]],
+#   nir = satellite_bands[[4]],
+#   blue = satellite_bands[[1]],
+#   green = satellite_bands[[2]],
 #   indices = c("NDVI", "EVI", "GNDVI", "SAVI"),
-#   auto_detect_bands = TRUE,
 #   output_stack = TRUE
 # )
 # 
-# # 4. Apply corn mask
-# corn_vegetation_masked <- terra::mask(corn_vegetation, corn_mask)
-# 
-# # 5. Analyze corn health
-# corn_stats <- terra::global(corn_vegetation_masked,
-#                            c("mean", "sd", "min", "max"),
-#                            na.rm = TRUE)
-# 
-# # 6. Create visualization
-# quick_map(corn_vegetation_masked$NDVI,
-#           title = "Story County Corn NDVI - July 2023")
-# 
-# # 7. Save results
-# terra::writeRaster(corn_vegetation_masked, "story_county_corn_indices.tif")
-
-## ----eval=FALSE---------------------------------------------------------------
-# # 1. Load multi-temporal data
-# april_data <- calculate_ndvi_enhanced("april_sentinel2.tif")
-# july_data <- calculate_ndvi_enhanced("july_sentinel2.tif")
-# 
-# # 2. Calculate stress indices
-# stress_indices <- calculate_multiple_indices(
-#   spectral_data = "july_sentinel2.tif",
-#   indices = c("NDVI", "PRI", "SIPI", "NDMI"),
-#   auto_detect_bands = TRUE,
-#   output_stack = TRUE
-# )
-# 
-# # 3. Identify stressed areas
-# # NDVI decline from April to July
-# ndvi_change <- july_data - april_data
-# stress_areas <- ndvi_change < -0.2  # Significant decline
-# 
-# # Water stress (low NDMI)
-# water_stress <- stress_indices$NDMI < 0.2
-# 
-# # Combined stress map
-# combined_stress <- stress_areas | water_stress
-# 
-# # 4. Quantify stress
-# total_area <- terra::ncell(combined_stress) * prod(terra::res(combined_stress)) / 10000  # hectares
-# stressed_pixels <- terra::global(combined_stress, "sum", na.rm = TRUE)
-# stressed_area <- stressed_pixels * prod(terra::res(combined_stress)) / 10000  # hectares
-# stress_percentage <- (stressed_area / total_area) * 100
-# 
-# print(paste("Stressed area:", round(stressed_area, 1), "hectares"))
-# print(paste("Stress percentage:", round(stress_percentage, 1), "%"))
-
-## ----eval=FALSE---------------------------------------------------------------
-# # 1. Multi-state analysis
-# great_lakes_states <- c("Michigan", "Ohio", "Indiana", "Illinois", "Wisconsin")
-# 
-# regional_ndvi <- list()
-# for (state in great_lakes_states) {
-#   state_ndvi <- calculate_vegetation_index(
-#     spectral_data = paste0("/data/", tolower(state), "_modis.tif"),
-#     index_type = "NDVI",
-#     region_boundary = state,
-#     auto_detect_bands = TRUE
-#   )
-#   regional_ndvi[[state]] <- state_ndvi
-# }
-# 
-# # 2. Create regional mosaic
-# great_lakes_mosaic <- create_raster_mosaic(
-#   input_data = regional_ndvi,
-#   method = "merge",
-#   region_boundary = "Great Lakes Region"
-# )
-# 
-# # 3. Regional statistics
-# regional_stats <- terra::global(great_lakes_mosaic,
-#                                c("mean", "sd", "min", "max"),
-#                                na.rm = TRUE)
-# 
-# # 4. State-by-state comparison
-# state_means <- sapply(regional_ndvi, function(x) {
-#   terra::global(x, "mean", na.rm = TRUE)[[1]]
-# })
-# 
-# names(state_means) <- great_lakes_states
-# print(sort(state_means, decreasing = TRUE))
-
-## ----eval=FALSE---------------------------------------------------------------
-# # If auto-detection fails, specify band names manually
-# custom_ndvi <- calculate_vegetation_index(
-#   spectral_data = "unusual_satellite_data.tif",
-#   band_names = c("Band_4_Red", "Band_5_NIR"),  # Custom names
-#   index_type = "NDVI",
-#   auto_detect_bands = FALSE
-# )
-# 
-# # Or use individual band approach
-# manual_ndvi <- calculate_vegetation_index(
-#   red = satellite_data$Band_4_Red,
-#   nir = satellite_data$Band_5_NIR,
-#   index_type = "NDVI"
-# )
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Automatic CRS fixing
-# robust_indices <- calculate_multiple_indices(
-#   red = "red_utm.tif",        # UTM projection
-#   nir = "nir_geographic.tif", # Geographic coordinates
-#   indices = c("NDVI", "EVI"),
-#   auto_crs_fix = TRUE,        # Automatically handle CRS differences
-#   verbose = TRUE              # See what's being fixed
-# )
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Process large areas efficiently
-# # 1. Use chunked processing
-# large_area_ndvi <- calculate_vegetation_index(
-#   spectral_data = "very_large_raster.tif",
-#   index_type = "NDVI",
-#   chunk_size = 500000,    # Smaller chunks
-#   auto_detect_bands = TRUE
-# )
-# 
-# # 2. Process by regions
-# us_states <- c("Ohio", "Michigan", "Indiana")
-# state_results <- list()
-# 
-# for (state in us_states) {
-#   state_results[[state]] <- calculate_vegetation_index(
-#     spectral_data = "continental_satellite_data.tif",
-#     index_type = "NDVI",
-#     region_boundary = state,     # Process each state separately
-#     auto_detect_bands = TRUE
-#   )
-# }
-# 
-# # 3. Combine results
-# combined_results <- create_raster_mosaic(state_results, method = "merge")
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Efficient workflow
-# optimized_workflow <- function(satellite_data, study_region) {
-#   # 1. Crop to region first (reduces data size)
-#   cropped_data <- universal_spatial_join(
-#     source_data = satellite_data,
-#     target_data = get_region_boundary(study_region),
-#     method = "crop"
-#   )
-# 
-#   # 2. Calculate multiple indices in one call
-#   vegetation_indices <- calculate_multiple_indices(
-#     spectral_data = cropped_data,
-#     indices = c("NDVI", "EVI", "SAVI", "GNDVI"),
-#     auto_detect_bands = TRUE,
-#     output_stack = TRUE,
-#     parallel = FALSE  # Use FALSE for stability
-#   )
-# 
-#   # 3. Cache results
-#   terra::writeRaster(vegetation_indices, "cached_vegetation_indices.tif")
-# 
-#   return(vegetation_indices)
-# }
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Custom ratio index
-# custom_ratio <- nir_band / red_band
-# names(custom_ratio) <- "Custom_Ratio"
-# 
-# # Custom normalized difference
-# custom_nd <- (nir_band - green_band) / (nir_band + green_band)
-# names(custom_nd) <- "Custom_ND"
-# 
-# # Combine with standard indices
-# all_indices <- c(
-#   calculate_vegetation_index(red = red, nir = nir, index_type = "NDVI"),
-#   custom_ratio,
-#   custom_nd
-# )
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Combine vegetation indices with environmental data
-# environmental_analysis <- universal_spatial_join(
-#   source_data = vegetation_indices,
-#   target_data = list(
-#     precipitation = "annual_precip.tif",
-#     temperature = "mean_temp.tif",
-#     elevation = "dem.tif"
-#   ),
+# # 4. Extract to fields using geospatialsuite
+# fields_with_indices <- universal_spatial_join(
+#   source_data = fields,
+#   target_data = indices,
 #   method = "extract"
 # )
 # 
-# # Analyze relationships
-# vegetation_env_correlation <- analyze_variable_correlations(
-#   variable_list = list(
-#     NDVI = vegetation_indices$NDVI,
-#     precipitation = environmental_data$precipitation,
-#     temperature = environmental_data$temperature
-#   ),
-#   create_plots = TRUE
-# )
+# # geospatialsuite extracted all 4 indices
+# # Each field now has mean NDVI, EVI, GNDVI, SAVI
+# names(fields_with_indices)
+# 
+# # 5. Visualize using geospatialsuite
+# quick_map(fields_with_indices, variable = "NDVI")
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Explore more indices
-# list_vegetation_indices(detailed = TRUE)
-# 
-# # Get help
-# ?calculate_vegetation_index
-# ?calculate_multiple_indices
-# ?analyze_crop_vegetation
-# 
-# # Test your installation
-# test_geospatialsuite_package_simple(verbose = TRUE)
+## ----list-indices-------------------------------------------------------------
+# View all available vegetation indices in geospatialsuite
+all_indices <- list_vegetation_indices()
+
+# Show first few indices
+head(all_indices[, c("Index", "Category", "Description", "Required_Bands")], 10)
+
+# Filter by category
+health_indices <- all_indices[all_indices$Category == "basic", ]
+print(health_indices[, c("Index", "Description")])
+
+## ----quality-check------------------------------------------------------------
+# Check for valid value ranges
+ndvi <- calculate_vegetation_index(red = red, nir = nir, index_type = "NDVI")
+
+# NDVI should be between -1 and 1
+ndvi_stats <- global(ndvi, fun = "range", na.rm = TRUE)
+cat("NDVI range:", ndvi_stats[1,1], "to", ndvi_stats[2,1], "\n")
 

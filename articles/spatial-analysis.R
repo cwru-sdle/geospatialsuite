@@ -5,7 +5,8 @@ knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE,
   fig.width = 8,
-  fig.height = 6
+  fig.height = 6,
+  eval = TRUE 
 )
 
 ## ----setup--------------------------------------------------------------------
@@ -351,7 +352,7 @@ test_package_minimal(verbose = TRUE)
 # }
 
 ## ----ggplot-integration, eval=FALSE-------------------------------------------
-# # GeoSpatialSuite maps work well with ggplot2
+# # geospatialsuite maps work well with ggplot2
 # library(ggplot2)
 # 
 # # Extract ggplot object for further customization

@@ -1,11 +1,13 @@
 ---
-title: "Agricultural Applications with GeoSpatialSuite"
-author: "GeoSpatialSuite Development Team"
+title: "Agricultural Applications with geospatialsuite"
+author: "geospatialsuite Development Team"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Agricultural Applications}
+  %\VignetteIndexEntry{Agricultural Applications with geospatialsuite}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+---
+
 ---
 
 ```{r, include = FALSE}
@@ -15,11 +17,12 @@ knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE,
   fig.width = 10,
-  fig.height = 8
+  fig.height = 8,
+  eval = TRUE 
 )
 ```
 
-# Agricultural Applications with GeoSpatialSuite
+# Agricultural Applications with geospatialsuite
 
 This vignette demonstrates comprehensive agricultural analysis capabilities including USDA CDL integration, crop monitoring, stress detection, and yield assessment workflows.
 
@@ -500,7 +503,7 @@ fields <- unique(rotation_analysis$field)
 
 for (field in fields) {
   field_data <- rotation_analysis[rotation_analysis$field == field, ]
-  rotation_patterns[[field]] <- paste(field_data$crop, collapse = " → ")
+  rotation_patterns[[field]] <- paste(field_data$crop, collapse = " Ã¢â€ â€™ ")
 }
 
 print("Rotation Patterns:")
@@ -800,7 +803,7 @@ for (rec in workflow_output$recommendations) {
 
 ### Key Agricultural Functions
 
-GeoSpatialSuite provides comprehensive agricultural analysis through:
+geospatialsuite provides comprehensive agricultural analysis through:
 
 1. **CDL Integration**: `get_comprehensive_cdl_codes()`, `analyze_cdl_crops_dynamic()`
 2. **Crop Monitoring**: `analyze_crop_vegetation()`, `calculate_ndvi_enhanced()`
@@ -813,10 +816,10 @@ GeoSpatialSuite provides comprehensive agricultural analysis through:
 ```{r best-practices, eval=FALSE}
 # 1. Always validate your data
 print("Data Validation Checklist:")
-print("✓ Check coordinate reference systems")
-print("✓ Verify date ranges match growing season")
-print("✓ Validate vegetation index ranges")
-print("✓ Confirm crop mask accuracy")
+print("Check coordinate reference systems")
+print("Verify date ranges match growing season")
+print("Validate vegetation index ranges")
+print("Confirm crop mask accuracy")
 
 # 2. Use appropriate indices for your crop type
 crop_index_recommendations <- list(
@@ -860,11 +863,98 @@ for (component in names(precision_ag_components)) {
 
 
 
+## Understanding analyze_crop_vegetation() Outputs
+
+### Output Structure Overview
+
+The function returns three main components:
+
+1. **vegetation_indices**: Raster layers with calculated indices
+2. **analysis_results**: Detailed analysis (stress, growth, yield)
+3. **metadata**: Processing information
+
+### Interpreting Stress Analysis
+
+Stress detection classifies pixels into three categories:
+
+| Stress Level | NDVI Range | Interpretation |
+|--------------|------------|----------------|
+| Healthy | 0.6 - 1.0 | Normal vegetation growth |
+| Moderate Stress | 0.4 - 0.6 | Some stress present |
+| Severe Stress | 0.0 - 0.4 | Significant stress |
+```{r stress-example, eval=FALSE}
+result <- analyze_crop_vegetation(data, analysis_type = "stress")
+stress <- result$analysis_results$stress_analysis$NDVI
+
+# What percentage of my field needs attention?
+cat(sprintf("%.1f%% of field shows stress\n",
+            stress$moderate_stress_percentage + stress$severe_stress_percentage))
+```
+
+### Understanding Composite Yield Index
+
+The **composite yield index** is a 0-1 normalized score that combines multiple vegetation indices:
+
+**How it's calculated:**
+1. Multiple indices (NDVI, EVI, GNDVI, DVI, RVI) are normalized to 0-1
+2. Normalized values are averaged
+3. Result indicates relative yield potential
+
+**Interpretation:**
+- **0.0-0.3**: Low yield potential
+- **0.3-0.6**: Medium yield potential
+- **0.6-0.8**: High yield potential
+- **0.8-1.0**: Very high yield potential
+
+**Important caveats:**
+- This is a **relative** measure, not absolute yield
+- Should be calibrated with actual yield data
+- Works best for within-field comparisons
+- Correlation with actual yield varies by crop and region
+```{r yield-example, eval=FALSE}
+result <- analyze_crop_vegetation(data, crop_type = "corn", analysis_type = "yield")
+yield <- result$analysis_results$yield_analysis
+
+cat(sprintf("Yield Potential: %s\n", yield$yield_potential_class))
+cat(sprintf("Composite Score: %.2f\n", yield$composite_yield_index))
+
+# See which indices contributed
+for (idx in names(yield$index_contributions)) {
+  contrib <- yield$index_contributions[[idx]]
+  cat(sprintf("  %s: %.3f\n", idx, contrib$mean_normalized))
+}
+```
+
+### Growth Stage Predictions
+
+Growth stage is predicted from NDVI patterns:
+
+| Crop | Stage | NDVI Range |
+|------|-------|------------|
+| Corn | Emergence | < 0.3 |
+| Corn | Vegetative | 0.3 - 0.6 |
+| Corn | Reproductive | 0.6 - 0.8 |
+| Corn | Maturity | > 0.8 |
+```{r growth-example, eval=FALSE}
+result <- analyze_crop_vegetation(data, crop_type = "soybeans", analysis_type = "growth")
+growth <- result$analysis_results$growth_analysis
+
+cat(sprintf("Predicted stage: %s\n", growth$predicted_growth_stage))
+cat(sprintf("Confidence: %.0f%%\n", growth$stage_confidence * 100))
+```
+
+
+
+
+
+
+
 ## Summary
 
-GeoSpatialSuite's agricultural applications provide:
+geospatialsuite's agricultural applications provide:
 
 ### **CDL Analysis Capabilities:**
+
 - **Comprehensive crop codes** for all USDA CDL categories
 - **Dynamic crop analysis** with area calculations
 - **Flexible crop masking** and classification
@@ -872,6 +962,7 @@ GeoSpatialSuite's agricultural applications provide:
 - **Crop diversity mapping**
 
 ### **Precision Agriculture Tools:**
+
 - **Crop-specific vegetation analysis** with stress detection
 - **Enhanced NDVI** with agricultural processing
 - **Multi-scale field analysis** (50m to 2km scales)
@@ -879,6 +970,7 @@ GeoSpatialSuite's agricultural applications provide:
 - **Yield prediction support**
 
 ### **Integrated Workflows:**
+
 - **Environmental integration** (soil, weather, topography)
 - **Water quality assessment** in agricultural context
 - **Temporal growth monitoring**
@@ -886,6 +978,7 @@ GeoSpatialSuite's agricultural applications provide:
 - **Comprehensive reporting** and visualization
 
 ### **Key Advantages:**
+
 1. **Works with any agricultural region** - not limited to specific areas
 2. **Handles all crop types** - from row crops to specialty crops
 3. **Multi-scale analysis** - field to regional levels
@@ -894,6 +987,7 @@ GeoSpatialSuite's agricultural applications provide:
 6. **Comprehensive documentation** - easy to implement
 
 ### **Applications:**
+
 - Precision agriculture and variable rate applications
 - Crop yield prediction and forecasting
 - Agricultural sustainability assessment
@@ -901,10 +995,10 @@ GeoSpatialSuite's agricultural applications provide:
 - Policy and regulatory compliance
 - Research and development support
 
-The agricultural tools in GeoSpatialSuite provide everything needed for professional agricultural analysis and precision farming applications!
+The agricultural tools in geospatialsuite provide everything needed for professional agricultural analysis and precision farming applications!
 
 ## Acknowledgments
 
-This work was developed by the GeoSpatialSuite team with contributions from:
+This work was developed by the geospatialsuite team with contributions from:
 Olatunde D. Akanbi, Vibha Mandayam, Yinghui Wu, Jeffrey Yarus, Erika I. Barcelos, and Roger H. French.
 

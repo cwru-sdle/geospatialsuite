@@ -10,7 +10,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<meta name="author" content="GeoSpatialSuite Development Team" />
+<meta name="author" content="geospatialsuite Development Team" />
 
 
 <title>Water Quality Assessment</title>
@@ -61,7 +61,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
 { counter-reset: source-line 0; }
@@ -338,13 +338,14 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 <h1 class="title toc-ignore">Water Quality Assessment</h1>
-<h4 class="author">GeoSpatialSuite Development Team</h4>
+<h4 class="author">geospatialsuite Development Team</h4>
 
 
 
+<hr />
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
-<p>The GeoSpatialSuite package provides comprehensive tools for water
+<p>The geospatialsuite package provides comprehensive tools for water
 quality assessment using remote sensing data. This vignette demonstrates
 water detection indices, quality parameter monitoring, and basic trend
 analysis using the package’s reliable functions.</p>
@@ -368,7 +369,8 @@ analysis using the package’s reliable functions.</p>
 <span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">library</span>(sf)</span>
 <span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a></span>
 <span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co"># Check package functionality</span></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="fu">test_package_minimal</span>()</span></code></pre></div>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="fu">test_package_minimal</span>()</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 </div>
 <div id="water-detection-indices" class="section level2">
 <h2>Water Detection Indices</h2>
@@ -421,10 +423,64 @@ applications:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># List all available water indices</span></span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>water_indices_info <span class="ot">&lt;-</span> <span class="fu">list_water_indices</span>(<span class="at">detailed =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="fu">print</span>(water_indices_info)</span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a></span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co"># Get indices for specific applications</span></span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>water_detection <span class="ot">&lt;-</span> <span class="fu">list_water_indices</span>(<span class="at">application_filter =</span> <span class="st">&quot;water_detection&quot;</span>)</span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>moisture_monitoring <span class="ot">&lt;-</span> <span class="fu">list_water_indices</span>(<span class="at">application_filter =</span> <span class="st">&quot;moisture_monitoring&quot;</span>)</span></code></pre></div>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt;   Index                Type Required_Bands Primary_Application</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; 1  NDWI     Water Detection     Green, NIR     water_detection</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; 2 MNDWI     Water Detection   Green, SWIR1     water_detection</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; 3  NDMI Vegetation Moisture     NIR, SWIR1 moisture_monitoring</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt; 4   MSI     Moisture Stress     NIR, SWIR1  drought_assessment</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; 5  NDII Vegetation Moisture     NIR, SWIR1 moisture_monitoring</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; 6    WI       Water Content     NIR, SWIR1 moisture_monitoring</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt; 7  SRWI       Water Content     NIR, SWIR1 moisture_monitoring</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; 8  LSWI       Surface Water     NIR, SWIR1     water_detection</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt;                                                                           Description</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; 1 Normalized Difference Water Index (McFeeters 1996) - Original water detection index</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; 2 Modified NDWI (Xu 2006) - Enhanced water detection, reduces built-up area confusion</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt; 3          Normalized Difference Moisture Index (Gao 1996) - Vegetation water content</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; 4        Moisture Stress Index - Plant water stress detection (lower = more moisture)</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; 5     Normalized Difference Infrared Index - Alternative name for vegetation moisture</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt; 6                             Water Index - Simple ratio for water content assessment</span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt; 7                       Simple Ratio Water Index - Water content using NIR/SWIR ratio</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; 8                         Land Surface Water Index - Surface water content assessment</span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt;   Value_Range  Water_Threshold          Reference</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt; 1     [-1, 1]            &gt; 0.3   McFeeters (1996)</span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt; 2     [-1, 1]            &gt; 0.5          Xu (2006)</span></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt; 3     [-1, 1] N/A (vegetation)         Gao (1996)</span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt; 4    [0, 10+]            &lt; 1.0            Various</span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt; 5     [-1, 1] N/A (vegetation) Hunt &amp; Rock (1989)</span></span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt; 6    [0, 10+]            &gt; 1.0            Various</span></span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt; 7    [0, 10+]            &gt; 1.0            Various</span></span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt; 8     [-1, 1]            &gt; 0.0 Xiao et al. (2002)</span></span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt;                             Formula</span></span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a><span class="co">#&gt; 1     (Green - NIR) / (Green + NIR)</span></span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a><span class="co">#&gt; 2 (Green - SWIR1) / (Green + SWIR1)</span></span>
+<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a><span class="co">#&gt; 3     (NIR - SWIR1) / (NIR + SWIR1)</span></span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a><span class="co">#&gt; 4                       SWIR1 / NIR</span></span>
+<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a><span class="co">#&gt; 5     (NIR - SWIR1) / (NIR + SWIR1)</span></span>
+<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a><span class="co">#&gt; 6                       NIR / SWIR1</span></span>
+<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a><span class="co">#&gt; 7                       NIR / SWIR1</span></span>
+<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a><span class="co">#&gt; 8     (NIR - SWIR1) / (NIR + SWIR1)</span></span>
+<span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a><span class="co">#&gt;                                      Satellite_Bands</span></span>
+<span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a><span class="co">#&gt; 1  Landsat: B3,B5 | Sentinel-2: B3,B8 | MODIS: B4,B2</span></span>
+<span id="cb3-42"><a href="#cb3-42" tabindex="-1"></a><span class="co">#&gt; 2 Landsat: B3,B6 | Sentinel-2: B3,B11 | MODIS: B4,B6</span></span>
+<span id="cb3-43"><a href="#cb3-43" tabindex="-1"></a><span class="co">#&gt; 3 Landsat: B5,B6 | Sentinel-2: B8,B11 | MODIS: B2,B6</span></span>
+<span id="cb3-44"><a href="#cb3-44" tabindex="-1"></a><span class="co">#&gt; 4 Landsat: B5,B6 | Sentinel-2: B8,B11 | MODIS: B2,B6</span></span>
+<span id="cb3-45"><a href="#cb3-45" tabindex="-1"></a><span class="co">#&gt; 5 Landsat: B5,B6 | Sentinel-2: B8,B11 | MODIS: B2,B6</span></span>
+<span id="cb3-46"><a href="#cb3-46" tabindex="-1"></a><span class="co">#&gt; 6 Landsat: B5,B6 | Sentinel-2: B8,B11 | MODIS: B2,B6</span></span>
+<span id="cb3-47"><a href="#cb3-47" tabindex="-1"></a><span class="co">#&gt; 7 Landsat: B5,B6 | Sentinel-2: B8,B11 | MODIS: B2,B6</span></span>
+<span id="cb3-48"><a href="#cb3-48" tabindex="-1"></a><span class="co">#&gt; 8 Landsat: B5,B6 | Sentinel-2: B8,B11 | MODIS: B2,B6</span></span>
+<span id="cb3-49"><a href="#cb3-49" tabindex="-1"></a><span class="co">#&gt;                                                                            Interpretation</span></span>
+<span id="cb3-50"><a href="#cb3-50" tabindex="-1"></a><span class="co">#&gt; 1       Water bodies: &gt;0.3, Vegetation: &lt;0, Built-up: 0-0.2. Sensitive to built-up areas.</span></span>
+<span id="cb3-51"><a href="#cb3-51" tabindex="-1"></a><span class="co">#&gt; 2       Water bodies: &gt;0.5, Vegetation: &lt;0, Built-up: &lt;0.3. Better urban water detection.</span></span>
+<span id="cb3-52"><a href="#cb3-52" tabindex="-1"></a><span class="co">#&gt; 3        High moisture: &gt;0.4, Moderate: 0.1-0.4, Low: &lt;0.1. For vegetation water content.</span></span>
+<span id="cb3-53"><a href="#cb3-53" tabindex="-1"></a><span class="co">#&gt; 4     High moisture: &lt;1.0, Moderate: 1.0-1.6, Stress: &gt;1.6. Lower values = more moisture.</span></span>
+<span id="cb3-54"><a href="#cb3-54" tabindex="-1"></a><span class="co">#&gt; 5                  Same as NDMI. High values indicate higher vegetation moisture content.</span></span>
+<span id="cb3-55"><a href="#cb3-55" tabindex="-1"></a><span class="co">#&gt; 6 Higher values generally indicate higher water content. Threshold varies by application.</span></span>
+<span id="cb3-56"><a href="#cb3-56" tabindex="-1"></a><span class="co">#&gt; 7                                Similar to WI. Used for simple water content assessment.</span></span>
+<span id="cb3-57"><a href="#cb3-57" tabindex="-1"></a><span class="co">#&gt; 8  Higher values indicate more surface water. Used for wetland and irrigation monitoring.</span></span>
+<span id="cb3-58"><a href="#cb3-58" tabindex="-1"></a></span>
+<span id="cb3-59"><a href="#cb3-59" tabindex="-1"></a><span class="co"># Get indices for specific applications</span></span>
+<span id="cb3-60"><a href="#cb3-60" tabindex="-1"></a>water_detection <span class="ot">&lt;-</span> <span class="fu">list_water_indices</span>(<span class="at">application_filter =</span> <span class="st">&quot;water_detection&quot;</span>)</span>
+<span id="cb3-61"><a href="#cb3-61" tabindex="-1"></a>moisture_monitoring <span class="ot">&lt;-</span> <span class="fu">list_water_indices</span>(<span class="at">application_filter =</span> <span class="st">&quot;moisture_monitoring&quot;</span>)</span></code></pre></div>
 </div>
 <div id="multiple-water-index-calculation" class="section level3">
 <h3>Multiple Water Index Calculation</h3>
@@ -465,7 +521,56 @@ analysis:</p>
 <span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>statistics <span class="ot">&lt;-</span> water_body_analysis<span class="sc">$</span>statistics</span>
 <span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a></span>
 <span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co"># Print water body statistics</span></span>
-<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="fu">print</span>(statistics)</span></code></pre></div>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="fu">print</span>(statistics)</span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt; $ndwi_water</span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; $ndwi_water$water_pixels</span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; [1] 0</span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="co">#&gt; $ndwi_water$total_pixels</span></span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt; [1] 10000</span></span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a><span class="co">#&gt; $ndwi_water$water_percentage</span></span>
+<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a><span class="co">#&gt; [1] 0</span></span>
+<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a><span class="co">#&gt; $ndwi_water$pixel_area_m2</span></span>
+<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a><span class="co">#&gt; [1] 1e-04</span></span>
+<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a><span class="co">#&gt; $ndwi_water$estimated_water_area_m2</span></span>
+<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a><span class="co">#&gt; [1] 0</span></span>
+<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a><span class="co">#&gt; $mndwi_water</span></span>
+<span id="cb5-36"><a href="#cb5-36" tabindex="-1"></a><span class="co">#&gt; $mndwi_water$water_pixels</span></span>
+<span id="cb5-37"><a href="#cb5-37" tabindex="-1"></a><span class="co">#&gt; [1] 381</span></span>
+<span id="cb5-38"><a href="#cb5-38" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-39"><a href="#cb5-39" tabindex="-1"></a><span class="co">#&gt; $mndwi_water$total_pixels</span></span>
+<span id="cb5-40"><a href="#cb5-40" tabindex="-1"></a><span class="co">#&gt; [1] 10000</span></span>
+<span id="cb5-41"><a href="#cb5-41" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-42"><a href="#cb5-42" tabindex="-1"></a><span class="co">#&gt; $mndwi_water$water_percentage</span></span>
+<span id="cb5-43"><a href="#cb5-43" tabindex="-1"></a><span class="co">#&gt; [1] 3.81</span></span>
+<span id="cb5-44"><a href="#cb5-44" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-45"><a href="#cb5-45" tabindex="-1"></a><span class="co">#&gt; $mndwi_water$pixel_area_m2</span></span>
+<span id="cb5-46"><a href="#cb5-46" tabindex="-1"></a><span class="co">#&gt; [1] 1e-04</span></span>
+<span id="cb5-47"><a href="#cb5-47" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-48"><a href="#cb5-48" tabindex="-1"></a><span class="co">#&gt; $mndwi_water$estimated_water_area_m2</span></span>
+<span id="cb5-49"><a href="#cb5-49" tabindex="-1"></a><span class="co">#&gt; [1] 0.0381</span></span>
+<span id="cb5-50"><a href="#cb5-50" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-51"><a href="#cb5-51" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-52"><a href="#cb5-52" tabindex="-1"></a><span class="co">#&gt; $consensus</span></span>
+<span id="cb5-53"><a href="#cb5-53" tabindex="-1"></a><span class="co">#&gt; $consensus$water_pixels</span></span>
+<span id="cb5-54"><a href="#cb5-54" tabindex="-1"></a><span class="co">#&gt; [1] 0</span></span>
+<span id="cb5-55"><a href="#cb5-55" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-56"><a href="#cb5-56" tabindex="-1"></a><span class="co">#&gt; $consensus$total_pixels</span></span>
+<span id="cb5-57"><a href="#cb5-57" tabindex="-1"></a><span class="co">#&gt; [1] 10000</span></span>
+<span id="cb5-58"><a href="#cb5-58" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-59"><a href="#cb5-59" tabindex="-1"></a><span class="co">#&gt; $consensus$water_percentage</span></span>
+<span id="cb5-60"><a href="#cb5-60" tabindex="-1"></a><span class="co">#&gt; [1] 0</span></span>
+<span id="cb5-61"><a href="#cb5-61" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-62"><a href="#cb5-62" tabindex="-1"></a><span class="co">#&gt; $consensus$pixel_area_m2</span></span>
+<span id="cb5-63"><a href="#cb5-63" tabindex="-1"></a><span class="co">#&gt; [1] 1e-04</span></span>
+<span id="cb5-64"><a href="#cb5-64" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-65"><a href="#cb5-65" tabindex="-1"></a><span class="co">#&gt; $consensus$estimated_water_area_m2</span></span>
+<span id="cb5-66"><a href="#cb5-66" tabindex="-1"></a><span class="co">#&gt; [1] 0</span></span></code></pre></div>
 </div>
 </div>
 <div id="field-water-quality-data-analysis" class="section level2">
@@ -888,7 +993,7 @@ Visualization</li>
 </div>
 <div id="acknowledgments" class="section level2">
 <h2>Acknowledgments</h2>
-<p>This work was developed by the GeoSpatialSuite team with
+<p>This work was developed by the geospatialsuite team with
 contributions from: Olatunde D. Akanbi, Vibha Mandayam, Yinghui Wu,
 Jeffrey Yarus, Erika I. Barcelos, and Roger H. French.</p>
 </div>

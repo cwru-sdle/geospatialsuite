@@ -5,17 +5,18 @@ knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE,
   fig.width = 8,
-  fig.height = 6
+  fig.height = 6,
+  eval = TRUE  
 )
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Load required packages
-# library(geospatialsuite)
-# library(terra)
-# library(sf)
-# 
-# # Verify package functionality
-# test_function_availability()
+## -----------------------------------------------------------------------------
+# Load required packages
+library(geospatialsuite)
+library(terra)
+library(sf)
+
+# Verify package functionality
+test_function_availability()
 
 ## ----eval=FALSE---------------------------------------------------------------
 # # Create sample point data (field sites)

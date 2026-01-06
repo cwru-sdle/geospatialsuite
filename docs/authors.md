@@ -40,13 +40,13 @@ Multimodal Integration Toolkit*. R package version 0.1.1,
     }
 
 Akanbi O, Mandayam V, Wu Y, Yarus J, Barcelos E, French R (2025).
-“GeoSpatialSuite: Comprehensive Geospatiotemporal Analysis and
+“geospatialsuite: Comprehensive Geospatiotemporal Analysis and
 Multimodal Integration Toolkit for R.” *Journal of Open Source
 Software*. Under review,
 <https://joss.theoj.org/papers/8147cac49f5caae89b8bd2b0d91c56fe>.
 
     @Article{,
-      title = {GeoSpatialSuite: Comprehensive Geospatiotemporal Analysis and Multimodal Integration Toolkit for R},
+      title = {geospatialsuite: Comprehensive Geospatiotemporal Analysis and Multimodal Integration Toolkit for R},
       author = {Olatunde D. Akanbi and Vibha Mandayam and Yinghui Wu and Jeffrey Yarus and Erika I. Barcelos and Roger H. French},
       journal = {Journal of Open Source Software},
       year = {2025},

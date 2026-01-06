@@ -5,17 +5,18 @@ knitr::opts_chunk$set(
   fig.width = 10,
   fig.height = 7,
   warning = FALSE,
-  message = FALSE
+  message = FALSE,
+  eval = TRUE  # Now TRUE by default
 )
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Load required packages
-# library(geospatialsuite)
-# library(terra)
-# library(sf)
-# 
-# # Verify package functionality
-# test_geospatialsuite_package_simple(verbose = TRUE)
+## -----------------------------------------------------------------------------
+# Load required packages
+library(geospatialsuite)
+library(terra)
+library(sf)
+
+# Verify package functionality
+test_geospatialsuite_package_simple(verbose = TRUE)
 
 ## ----eval=FALSE---------------------------------------------------------------
 # # Create sample multi-temporal data
@@ -180,6 +181,7 @@ knitr::opts_chunk$set(
 # parameters <- c("nitrate_mg_l", "phosphorus_mg_l", "turbidity_ntu", "dissolved_oxygen_mg_l")
 # 
 # for (param in parameters) {
+# 
 # 
 #   # Define parameter-specific thresholds
 #   thresholds <- switch(param,

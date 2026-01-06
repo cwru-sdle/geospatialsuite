@@ -5,308 +5,327 @@ knitr::opts_chunk$set(
   fig.width = 8,
   fig.height = 6,
   warning = FALSE,
-  message = FALSE
+  message = FALSE,
+  eval = TRUE
 )
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Install from source
-# # install.packages("geospatialsuite")
-# 
-# 
-# # Load the package
-# library(geospatialsuite)
+## ----installation, eval=FALSE-------------------------------------------------
+# # Install from CRAN
+# install.packages("geospatialsuite")
 
-## ----echo=FALSE---------------------------------------------------------------
-# For vignette building - adjust as needed
+## ----load-library-------------------------------------------------------------
+# Load the package
+library(geospatialsuite)
 library(terra)
-library(sf)
-library(ggplot2)
-library(dplyr)
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Core packages (required)
-# library(terra)    # Raster operations and plotting
-# library(sf)       # Vector operations
-# library(ggplot2)  # Static mapping
-# library(dplyr)    # Data manipulation
-# 
-# # Optional packages (for enhanced features)
-# library(leaflet)      # Interactive mapping
-# library(viridis)      # Enhanced color schemes
-# library(RColorBrewer) # Additional color palettes
+## ----quick-start--------------------------------------------------------------
+library(geospatialsuite)
+library(terra)
 
-## ----eval=FALSE---------------------------------------------------------------
-# # One-line mapping - auto-detects data type and creates appropriate map
-# quick_map("mydata.shp")
-# quick_map("satellite_image.tif")
-# quick_map(my_spatial_data, interactive = TRUE)
+# List available sample datasets
+list_sample_datasets()
 
-## ----eval=FALSE---------------------------------------------------------------
-# # US States
-# ohio_boundary <- get_region_boundary("Ohio")
-# california_boundary <- get_region_boundary("California")
-# 
-# # Countries
-# nigeria_boundary <- get_region_boundary("Nigeria")
-# brazil_boundary <- get_region_boundary("Brazil")
-# 
-# # Continental US
-# conus_boundary <- get_region_boundary("CONUS")
-# 
-# # Custom bounding box
-# custom_area <- get_region_boundary(c(-84.5, 39.0, -82.0, 41.0))
-# 
-# # State and county
-# franklin_county <- get_region_boundary("Ohio:Franklin")
+# Load sample raster data
+red <- load_sample_data("sample_red.rds")
+nir <- load_sample_data("sample_nir.rds")
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Basic NDVI calculation
+# Calculate NDVI
+ndvi <- calculate_vegetation_index(red = red, nir = nir, index_type = "NDVI")
+
+# Visualize
+plot(ndvi, main = "NDVI from Sample Data", col = terrain.colors(100))
+
+## ----calculate-indices--------------------------------------------------------
+# Load sample spectral bands
+red <- load_sample_data("sample_red.rds")
+nir <- load_sample_data("sample_nir.rds")
+blue <- load_sample_data("sample_blue.rds")
+
+# Calculate NDVI
+ndvi <- calculate_vegetation_index(red = red, nir = nir, index_type = "NDVI")
+plot(ndvi, main = "NDVI")
+
+# Calculate EVI (requires blue band)
+evi <- calculate_vegetation_index(red = red, nir = nir, blue = blue, index_type = "EVI")
+plot(evi, main = "EVI")
+
+# Calculate multiple indices at once
+indices <- calculate_multiple_indices(
+  red = red,
+  nir = nir,
+  blue = blue,
+  indices = c("NDVI", "EVI", "SAVI"),
+  output_stack = TRUE
+)
+
+# Plot all indices
+plot(indices)
+
+## ----multiband-data-----------------------------------------------------------
+# Load multi-band sample raster
+multiband <- load_sample_data("sample_multiband.rds")
+
+# Check band names
+names(multiband)
+
+# Auto-detect bands and calculate index
+ndvi_auto <- calculate_vegetation_index(
+  spectral_data = multiband,
+  index_type = "NDVI",
+  auto_detect_bands = TRUE
+)
+
+## ----spatial-operations-------------------------------------------------------
+# Load sample vector data
+points <- load_sample_data("sample_points.rds")
+boundary <- load_sample_data("sample_boundary.rds")
+
+# Calculate NDVI
+red <- load_sample_data("sample_red.rds")
+nir <- load_sample_data("sample_nir.rds")
+ndvi <- calculate_vegetation_index(red = red, nir = nir, index_type = "NDVI")
+
+# Extract raster values to points
+points_with_values <- universal_spatial_join(
+  source_data = points,
+  target_data = ndvi,
+  method = "extract"
+)
+
+# Check result
+head(points_with_values)
+
+## ----visualization------------------------------------------------------------
+# Load sample data
+points <- load_sample_data("sample_points.rds")
+
+# Quick map (auto-detects everything)
+quick_map(points, variable = "ndvi", title = "NDVI at Sample Sites")
+
+## ----list-datasets------------------------------------------------------------
+# List all available datasets
+datasets <- list_sample_datasets()
+print(datasets[, c("filename", "type", "description")])
+
+## ----load-single-tif, eval=FALSE----------------------------------------------
+# # Use geospatialsuite's load_raster_data() function
+# # It provides robust error handling and validation
+# 
+# # Load a single .tif file
+# my_raster <- load_raster_data("path/to/your/ndvi.tif")
+# 
+# # Result is a list, extract the raster
+# ndvi_raster <- my_raster[[1]]
+# 
+# # Now use with geospatialsuite functions
+# # The raster is ready for analysis
+# summary(ndvi_raster)
+
+## ----load-multiple-tif, eval=FALSE--------------------------------------------
+# # Load multiple Landsat bands with geospatialsuite
+# # Handles validation automatically
+# 
+# landsat_files <- c(
+#   "LC08_B4_red.tif",
+#   "LC08_B5_nir.tif",
+#   "LC08_B3_green.tif"
+# )
+# 
+# # geospatialsuite loads them with error checking
+# bands <- load_raster_data(landsat_files, verbose = TRUE)
+# 
+# # Extract individual bands
+# red_band <- bands[[1]]
+# nir_band <- bands[[2]]
+# green_band <- bands[[3]]
+# 
+# # Calculate indices using geospatialsuite
 # ndvi <- calculate_vegetation_index(
-#   red = "red_band.tif",
-#   nir = "nir_band.tif",
+#   red = red_band,
+#   nir = nir_band,
 #   index_type = "NDVI"
 # )
 # 
-# # Enhanced NDVI with quality filtering
-# ndvi_enhanced <- calculate_ndvi_enhanced(
-#   red_data = red_raster,
-#   nir_data = nir_raster,
-#   quality_filter = TRUE,
-#   clamp_range = c(-0.2, 1)
+# gndvi <- calculate_vegetation_index(
+#   green = green_band,
+#   nir = nir_band,
+#   index_type = "GNDVI"
+# )
+
+## ----load-directory, eval=FALSE-----------------------------------------------
+# # geospatialsuite can load all rasters from a directory
+# # Perfect for batch processing
+# 
+# # Load all .tif files from Landsat directory
+# all_bands <- load_raster_data(
+#   "/path/to/landsat/imagery/",
+#   pattern = "\\.(tif|tiff)$",
+#   verbose = TRUE
 # )
 # 
-# # Multiple vegetation indices
-# vegetation_indices <- calculate_multiple_indices(
-#   red = red_band,
-#   nir = nir_band,
-#   blue = blue_band,
+# # geospatialsuite finds, loads, and validates all files
+# # Returns a list of SpatRaster objects ready to use
+# cat("Loaded", length(all_bands), "raster files\n")
+
+## ----landsat-workflow, eval=FALSE---------------------------------------------
+# # Complete workflow using geospatialsuite functions
+# 
+# library(geospatialsuite)
+# 
+# # 1. Load Landsat bands using geospatialsuite
+# landsat_bands <- load_raster_data(
+#   "landsat/LC08_L2SP_021033_20240715/",
+#   pattern = "SR_B[2-5].TIF$",
+#   verbose = TRUE
+# )
+# 
+# # geospatialsuite loaded them with validation
+# # Extract bands (scaled values 0-1 after Collection 2 scaling)
+# blue <- landsat_bands[[1]]   # After scaling
+# green <- landsat_bands[[2]]
+# red <- landsat_bands[[3]]
+# nir <- landsat_bands[[4]]
+# 
+# # 2. Calculate vegetation indices using geospatialsuite
+# # The package has 60+ pre-programmed indices
+# veg_indices <- calculate_multiple_indices(
+#   red = red,
+#   nir = nir,
+#   blue = blue,
+#   green = green,
 #   indices = c("NDVI", "EVI", "SAVI", "GNDVI"),
 #   output_stack = TRUE
 # )
+# 
+# # 3. Visualize using geospatialsuite
+# quick_map(veg_indices$NDVI, title = "Landsat 8 NDVI - July 15, 2024")
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Water detection indices
-# ndwi <- calculate_water_index(
-#   green = green_band,
-#   nir = nir_band,
-#   index_type = "NDWI"
+## ----load-shapefile, eval=FALSE-----------------------------------------------
+# # Load shapefile with sf (standard approach)
+# library(sf)
+# field_boundaries <- sf::st_read("data/farm_fields.shp")
+# 
+# # Then use with geospatialsuite's spatial functions
+# # Calculate NDVI first
+# ndvi <- calculate_vegetation_index(red = red, nir = nir, index_type = "NDVI")
+# 
+# # Extract NDVI to field boundaries using geospatialsuite
+# fields_with_ndvi <- universal_spatial_join(
+#   source_data = field_boundaries,
+#   target_data = ndvi,
+#   method = "extract"
 # )
 # 
-# # Enhanced water detection
-# mndwi <- calculate_water_index(
-#   green = green_band,
-#   swir1 = swir1_band,
-#   index_type = "MNDWI"
-# )
-# 
-# # Comprehensive water analysis
-# water_analysis <- analyze_water_bodies(
-#   green = "green.tif",
-#   nir = "nir.tif",
-#   swir1 = "swir1.tif",
-#   region_boundary = "Ohio"
-# )
+# # geospatialsuite handles CRS mismatches automatically
+# # Returns field boundaries with extracted NDVI statistics
+# head(fields_with_ndvi)
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Get crop codes
-# corn_codes <- get_comprehensive_cdl_codes("corn")
-# grain_codes <- get_comprehensive_cdl_codes("grains")
+## ----load-geopackage, eval=FALSE----------------------------------------------
+# # Load GeoPackage (modern format, better than shapefile)
+# farm_data <- sf::st_read("farm_management.gpkg", layer = "fields")
+# sample_points <- sf::st_read("farm_management.gpkg", layer = "samples")
 # 
-# # Create crop mask
-# corn_mask <- create_crop_mask(
-#   cdl_data = "cdl_2023.tif",
-#   crop_codes = corn_codes,
-#   region_boundary = "Iowa"
-# )
-# 
-# # Analyze crop areas
-# crop_analysis <- analyze_cdl_crops_dynamic(
-#   cdl_data = "cdl_2023.tif",
-#   crop_selection = "soybeans",
-#   region_boundary = "Ohio",
-#   analysis_type = "area"
-# )
-# 
-# # Access results
-# total_area_hectares <- crop_analysis$total_area_ha
-# total_area_acres <- total_area_hectares * 2.47105
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Extract raster values to points - most common use case
-# field_data <- universal_spatial_join(
-#   source_data = "field_sites.csv",      # CSV with coordinates
-#   target_data = "satellite_image.tif",  # Any raster
+# # Use geospatialsuite's spatial join
+# samples_with_indices <- universal_spatial_join(
+#   source_data = sample_points,
+#   target_data = veg_indices,
 #   method = "extract",
-#   buffer_distance = 100,                # 100m buffer around points
-#   summary_function = "mean"
+#   buffer_distance = 30  # 30m buffer
 # )
 # 
-# # Zonal statistics for polygons
-# watershed_stats <- universal_spatial_join(
-#   source_data = "precipitation.tif",    # Raster data
-#   target_data = "watersheds.shp",       # Polygon boundaries
-#   method = "zonal",
-#   summary_function = "mean"
+# # geospatialsuite extracted all indices in the stack
+# # Each index becomes a column in the result
+# names(samples_with_indices)
+
+## ----multiband-auto, eval=FALSE-----------------------------------------------
+# # geospatialsuite's auto-detection feature
+# 
+# # Load a stacked multi-band GeoTIFF
+# multiband_raster <- load_raster_data("sentinel2_stack.tif")[[1]]
+# 
+# # Name the bands (Sentinel-2 example)
+# names(multiband_raster) <- c("blue", "green", "red", "nir", "swir1")
+# 
+# # Use geospatialsuite's auto-detection
+# # It finds the right bands automatically!
+# indices <- calculate_multiple_indices(
+#   spectral_data = multiband_raster,
+#   indices = c("NDVI", "EVI", "MNDWI"),
+#   auto_detect_bands = TRUE,  # This is geospatialsuite's feature!
+#   output_stack = TRUE
 # )
 # 
-# # Resample raster to different resolution
-# resampled <- universal_spatial_join(
-#   source_data = "fine_resolution.tif",
-#   target_data = "coarse_template.tif",
-#   method = "resample"
-# )
+# # No need to specify which band is which
+# # geospatialsuite figured it out!
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Simple raster plotting
-# terra::plot(ndvi_raster, main = "NDVI Analysis",
-#             col = colorRampPalette(c("brown", "yellow", "green"))(100))
+## ----complete-workflow, eval=FALSE--------------------------------------------
+# # End-to-end agricultural monitoring with geospatialsuite
 # 
-# # RGB composite
-# plot_rgb_raster(
-#   raster_data = satellite_data,
-#   r = 4, g = 3, b = 2,           # False color composite
-#   stretch = "hist",
-#   title = "False Color Composite"
+# library(geospatialsuite)
+# library(sf)
+# 
+# # 1. Load satellite imagery using geospatialsuite
+# spectral_bands <- load_raster_data(
+#   "/path/to/satellite/bands/",
+#   pattern = "B[0-9].tif$",
+#   verbose = TRUE
 # )
 # 
-# # Custom NDVI visualization
-# create_spatial_map(
-#   spatial_data = ndvi_raster,
-#   color_scheme = "ndvi",
-#   region_boundary = "Ohio",
-#   title = "Ohio NDVI Analysis"
-# )
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Interactive point map
-# interactive_map <- create_interactive_map(
-#   spatial_data = monitoring_stations,
-#   fill_variable = "water_quality",
-#   basemap = "terrain",
-#   title = "Water Quality Monitoring"
+# # 2. Extract bands
+# red <- spectral_bands[[3]]
+# nir <- spectral_bands[[4]]
+# green <- spectral_bands[[2]]
+# 
+# # 3. Calculate indices using geospatialsuite
+# crop_health <- calculate_multiple_indices(
+#   red = red,
+#   nir = nir,
+#   green = green,
+#   indices = c("NDVI", "GNDVI", "SAVI"),
+#   output_stack = TRUE
 # )
 # 
-# # Interactive with custom popup
-# leaflet_map <- create_spatial_map(
-#   spatial_data = crop_data,
-#   fill_variable = "yield",
-#   interactive = TRUE,
-#   title = "Crop Yield Distribution"
-# )
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Automatic CRS fixing
-# result <- calculate_vegetation_index(
-#   red = red_band,
-#   nir = nir_band,
-#   auto_crs_fix = TRUE,  # Automatically handle CRS differences
-#   verbose = TRUE        # See what's happening
-# )
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Handle missing values
-# interpolated <- spatial_interpolation_comprehensive(
-#   spatial_data = sparse_data,
-#   target_variables = "temperature",
-#   method = "NN",               # Nearest neighbor for gaps
-#   na_strategy = "nearest"      # Strategy for NAs
-# )
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Process large datasets efficiently
-# result <- universal_spatial_join(
-#   source_data = large_points,
-#   target_data = large_raster,
-#   method = "extract",
-#   chunk_size = 500000,    # Smaller chunks for memory
-#   parallel = FALSE        # Disable parallel for stability
-# )
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Test package functionality
-# test_results <- test_geospatialsuite_package_simple(verbose = TRUE)
+# # 4. Load field data
+# fields <- sf::st_read("farm_data/fields.shp")
 # 
-# # Quick diagnostic
-# quick_diagnostic()
-# 
-# # Check function availability
-# function_status <- test_function_availability(verbose = TRUE)
-
-## ----eval=FALSE---------------------------------------------------------------
-# # Load raster data
-# rasters <- load_raster_data("/path/to/raster/files/")
-# single_raster <- load_raster_data("satellite_image.tif")
-# 
-# # Load with region boundary
-# ohio_rasters <- load_raster_data(
-#   "/path/to/files/",
-#   pattern = "\\.(tif|tiff)$"
+# # 5. Extract to fields using geospatialsuite
+# fields_analysis <- universal_spatial_join(
+#   source_data = fields,
+#   target_data = crop_health,
+#   method = "extract"
 # )
 # 
-# # Date extraction from filenames
-# dates <- extract_dates_universal(
-#   c("ndvi_2023-05-15.tif", "ndvi_2023-06-15.tif")
-# )
+# # 6. Visualize using geospatialsuite
+# quick_map(fields_analysis,
+#           variable = "NDVI",
+#           title = "Field Health Assessment")
+# 
+# # geospatialsuite handled:
+# # - Loading multiple files
+# # - Calculating indices
+# # - Spatial extraction with CRS handling
+# # - Visualization
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Automatic CRS handling
-# vegetation_indices <- calculate_multiple_indices(
-#   spectral_data = "/path/to/bands/",   # Mixed CRS files
-#   indices = c("NDVI", "EVI", "SAVI"),
-#   auto_detect_bands = TRUE,
-#   auto_crs_fix = TRUE,                 # Fix CRS mismatches
-#   region_boundary = "Michigan"
-# )
+## ----list-indices-------------------------------------------------------------
+# See all vegetation indices geospatialsuite provides
+veg_indices <- list_vegetation_indices()
+head(veg_indices[, c("Index", "Category", "Description")])
 
-## ----eval=FALSE---------------------------------------------------------------
+# See water indices
+water_indices <- list_water_indices()
+head(water_indices)
+
+## ----help, eval=FALSE---------------------------------------------------------
 # # Package documentation
 # help(package = "geospatialsuite")
 # 
 # # Function help
 # ?calculate_vegetation_index
+# ?load_raster_data
 # ?universal_spatial_join
 # ?quick_map
-# 
-# # List available vegetation indices
-# list_vegetation_indices(detailed = TRUE)
-# 
-# # List available water indices
-# list_water_indices(detailed = TRUE)
-# 
-# # Test package installation
-# test_geospatialsuite_package_simple()
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Complete example: Analyze crop vegetation in Ohio
-# library(geospatialsuite)
-# 
-# # 1. Calculate vegetation indices
-# vegetation <- calculate_multiple_indices(
-#   red = "landsat_red.tif",
-#   nir = "landsat_nir.tif",
-#   blue = "landsat_blue.tif",
-#   indices = c("NDVI", "EVI", "SAVI"),
-#   region_boundary = "Ohio",
-#   output_stack = TRUE
-# )
-# 
-# # 2. Create crop mask
-# crop_mask <- create_crop_mask(
-#   cdl_data = "cdl_ohio_2023.tif",
-#   crop_codes = get_comprehensive_cdl_codes("corn"),
-#   region_boundary = "Ohio"
-# )
-# 
-# # 3. Apply crop mask to vegetation data
-# crop_vegetation <- terra::mask(vegetation, crop_mask)
-# 
-# # 4. Create visualization
-# quick_map(crop_vegetation$NDVI, title = "Ohio Corn NDVI")
-# 
-# # 5. Calculate statistics
-# crop_stats <- terra::global(crop_vegetation, "mean", na.rm = TRUE)
-# print(crop_stats)
-# 
-# # 6. Save results
-# terra::writeRaster(crop_vegetation, "ohio_corn_vegetation.tif")
+## ----test-package-------------------------------------------------------------
+# Test package installation
+test_geospatialsuite_package_simple()
 

@@ -5,100 +5,101 @@ knitr::opts_chunk$set(
   fig.width = 12,
   fig.height = 8,
   warning = FALSE,
-  message = FALSE
+  message = FALSE,
+  eval = TRUE  
 )
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Load required packages
-# library(geospatialsuite)
-# library(terra)
-# library(sf)
-# 
-# # Check package functionality
-# test_package_minimal()
+## -----------------------------------------------------------------------------
+# Load required packages
+library(geospatialsuite)
+library(terra)
+library(sf)
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Load sample bands (Green, NIR, SWIR1)
-# green_band <- rast(nrows = 100, ncols = 100,
-#                    xmin = -84, xmax = -83, ymin = 40, ymax = 41)
-# values(green_band) <- runif(10000, 0.2, 0.4)
-# 
-# nir_band <- rast(nrows = 100, ncols = 100,
-#                  xmin = -84, xmax = -83, ymin = 40, ymax = 41)
-# values(nir_band) <- runif(10000, 0.4, 0.8)
-# 
-# swir1_band <- rast(nrows = 100, ncols = 100,
-#                    xmin = -84, xmax = -83, ymin = 40, ymax = 41)
-# values(swir1_band) <- runif(10000, 0.1, 0.3)
-# 
-# # Calculate Original NDWI (McFeeters 1996) - Water body detection
-# ndwi <- calculate_water_index(
-#   green = green_band,
-#   nir = nir_band,
-#   index_type = "NDWI",
-#   verbose = TRUE
-# )
-# 
-# # Calculate Modified NDWI (Xu 2006) - Enhanced water detection
-# mndwi <- calculate_water_index(
-#   green = green_band,
-#   nir = nir_band,
-#   swir1 = swir1_band,
-#   index_type = "MNDWI",
-#   verbose = TRUE
-# )
-# 
-# # Calculate NDMI (Gao 1996) - Vegetation moisture content
-# ndmi <- calculate_water_index(
-#   green = green_band,
-#   nir = nir_band,
-#   swir1 = swir1_band,
-#   index_type = "NDMI",
-#   verbose = TRUE
-# )
+# Check package functionality
+test_package_minimal()
 
-## ----eval=FALSE---------------------------------------------------------------
-# # List all available water indices
-# water_indices_info <- list_water_indices(detailed = TRUE)
-# print(water_indices_info)
-# 
-# # Get indices for specific applications
-# water_detection <- list_water_indices(application_filter = "water_detection")
-# moisture_monitoring <- list_water_indices(application_filter = "moisture_monitoring")
+## -----------------------------------------------------------------------------
+# Load sample bands (Green, NIR, SWIR1)
+green_band <- rast(nrows = 100, ncols = 100, 
+                   xmin = -84, xmax = -83, ymin = 40, ymax = 41)
+values(green_band) <- runif(10000, 0.2, 0.4)
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Calculate multiple water indices at once
-# water_analysis <- calculate_multiple_water_indices(
-#   green = green_band,
-#   nir = nir_band,
-#   swir1 = swir1_band,
-#   indices = c("NDWI", "MNDWI", "NDMI", "MSI"),
-#   output_stack = TRUE,
-#   verbose = TRUE
-# )
-# 
-# # Access individual indices
-# ndwi_layer <- water_analysis[["NDWI"]]
-# mndwi_layer <- water_analysis[["MNDWI"]]
+nir_band <- rast(nrows = 100, ncols = 100, 
+                 xmin = -84, xmax = -83, ymin = 40, ymax = 41)
+values(nir_band) <- runif(10000, 0.4, 0.8)
 
-## ----eval=FALSE---------------------------------------------------------------
-# # Perform complete water body analysis
-# water_body_analysis <- analyze_water_bodies(
-#   green = green_band,
-#   nir = nir_band,
-#   swir1 = swir1_band,
-#   water_threshold_ndwi = 0.3,
-#   water_threshold_mndwi = 0.5,
-#   verbose = TRUE
-# )
-# 
-# # Access results
-# water_indices <- water_body_analysis$water_indices
-# water_masks <- water_body_analysis$water_masks
-# statistics <- water_body_analysis$statistics
-# 
-# # Print water body statistics
-# print(statistics)
+swir1_band <- rast(nrows = 100, ncols = 100, 
+                   xmin = -84, xmax = -83, ymin = 40, ymax = 41)
+values(swir1_band) <- runif(10000, 0.1, 0.3)
+
+# Calculate Original NDWI (McFeeters 1996) - Water body detection
+ndwi <- calculate_water_index(
+  green = green_band,
+  nir = nir_band,
+  index_type = "NDWI",
+  verbose = TRUE
+)
+
+# Calculate Modified NDWI (Xu 2006) - Enhanced water detection
+mndwi <- calculate_water_index(
+  green = green_band,
+  nir = nir_band,
+  swir1 = swir1_band,
+  index_type = "MNDWI",
+  verbose = TRUE
+)
+
+# Calculate NDMI (Gao 1996) - Vegetation moisture content
+ndmi <- calculate_water_index(
+  green = green_band,
+  nir = nir_band,
+  swir1 = swir1_band,
+  index_type = "NDMI",
+  verbose = TRUE
+)
+
+## -----------------------------------------------------------------------------
+# List all available water indices
+water_indices_info <- list_water_indices(detailed = TRUE)
+print(water_indices_info)
+
+# Get indices for specific applications
+water_detection <- list_water_indices(application_filter = "water_detection")
+moisture_monitoring <- list_water_indices(application_filter = "moisture_monitoring")
+
+## -----------------------------------------------------------------------------
+# Calculate multiple water indices at once
+water_analysis <- calculate_multiple_water_indices(
+  green = green_band,
+  nir = nir_band,
+  swir1 = swir1_band,
+  indices = c("NDWI", "MNDWI", "NDMI", "MSI"),
+  output_stack = TRUE,
+  verbose = TRUE
+)
+
+# Access individual indices
+ndwi_layer <- water_analysis[["NDWI"]]
+mndwi_layer <- water_analysis[["MNDWI"]]
+
+## -----------------------------------------------------------------------------
+# Perform complete water body analysis
+water_body_analysis <- analyze_water_bodies(
+  green = green_band,
+  nir = nir_band,
+  swir1 = swir1_band,
+  water_threshold_ndwi = 0.3,
+  water_threshold_mndwi = 0.5,
+  verbose = TRUE
+)
+
+# Access results
+water_indices <- water_body_analysis$water_indices
+water_masks <- water_body_analysis$water_masks
+statistics <- water_body_analysis$statistics
+
+# Print water body statistics
+print(statistics)
 
 ## ----eval=FALSE---------------------------------------------------------------
 # # Create sample water quality monitoring data

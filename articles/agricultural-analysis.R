@@ -5,7 +5,8 @@ knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE,
   fig.width = 10,
-  fig.height = 8
+  fig.height = 8,
+  eval = TRUE 
 )
 
 ## ----enhanced-ndvi, eval=FALSE------------------------------------------------
@@ -412,7 +413,7 @@ knitr::opts_chunk$set(
 # 
 # for (field in fields) {
 #   field_data <- rotation_analysis[rotation_analysis$field == field, ]
-#   rotation_patterns[[field]] <- paste(field_data$crop, collapse = " → ")
+#   rotation_patterns[[field]] <- paste(field_data$crop, collapse = " Ã¢â€ â€™ ")
 # }
 # 
 # print("Rotation Patterns:")
@@ -674,10 +675,10 @@ knitr::opts_chunk$set(
 ## ----best-practices, eval=FALSE-----------------------------------------------
 # # 1. Always validate your data
 # print("Data Validation Checklist:")
-# print("✓ Check coordinate reference systems")
-# print("✓ Verify date ranges match growing season")
-# print("✓ Validate vegetation index ranges")
-# print("✓ Confirm crop mask accuracy")
+# print("Check coordinate reference systems")
+# print("Verify date ranges match growing season")
+# print("Validate vegetation index ranges")
+# print("Confirm crop mask accuracy")
 # 
 # # 2. Use appropriate indices for your crop type
 # crop_index_recommendations <- list(
@@ -714,4 +715,32 @@ knitr::opts_chunk$set(
 # for (component in names(precision_ag_components)) {
 #   print(paste(component, ":", paste(precision_ag_components[[component]], collapse = ", ")))
 # }
+
+## ----stress-example, eval=FALSE-----------------------------------------------
+# result <- analyze_crop_vegetation(data, analysis_type = "stress")
+# stress <- result$analysis_results$stress_analysis$NDVI
+# 
+# # What percentage of my field needs attention?
+# cat(sprintf("%.1f%% of field shows stress\n",
+#             stress$moderate_stress_percentage + stress$severe_stress_percentage))
+
+## ----yield-example, eval=FALSE------------------------------------------------
+# result <- analyze_crop_vegetation(data, crop_type = "corn", analysis_type = "yield")
+# yield <- result$analysis_results$yield_analysis
+# 
+# cat(sprintf("Yield Potential: %s\n", yield$yield_potential_class))
+# cat(sprintf("Composite Score: %.2f\n", yield$composite_yield_index))
+# 
+# # See which indices contributed
+# for (idx in names(yield$index_contributions)) {
+#   contrib <- yield$index_contributions[[idx]]
+#   cat(sprintf("  %s: %.3f\n", idx, contrib$mean_normalized))
+# }
+
+## ----growth-example, eval=FALSE-----------------------------------------------
+# result <- analyze_crop_vegetation(data, crop_type = "soybeans", analysis_type = "growth")
+# growth <- result$analysis_results$growth_analysis
+# 
+# cat(sprintf("Predicted stage: %s\n", growth$predicted_growth_stage))
+# cat(sprintf("Confidence: %.0f%%\n", growth$stage_confidence * 100))
 

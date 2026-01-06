@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="geospatialsuite Development Team" />
+
+
+<title>Using analyze_crop_vegetation() in geospatialsuite</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Using analyze_crop_vegetation() in
+geospatialsuite</h1>
+<h4 class="author">geospatialsuite Development Team</h4>
+
+
+
+<hr />
+<div id="complete-documentation-analyze_crop_vegetation-output-structure" class="section level1">
+<h1>Complete Documentation: analyze_crop_vegetation() Output
+Structure</h1>
+<div id="overview" class="section level2">
+<h2>Overview</h2>
+<p>The <code>analyze_crop_vegetation()</code> function returns a nested
+list with three main components containing comprehensive crop analysis
+results.</p>
+<hr />
+</div>
+<div id="output-structure" class="section level2">
+<h2>Output Structure</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">analyze_crop_vegetation</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>  <span class="at">spectral_data =</span> your_data,</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>  <span class="at">crop_type =</span> <span class="st">&quot;corn&quot;</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>  <span class="at">analysis_type =</span> <span class="st">&quot;comprehensive&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>)</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co"># Structure:</span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>result<span class="sc">$</span>vegetation_indices      <span class="co"># SpatRaster with calculated indices</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>result<span class="sc">$</span>analysis_results        <span class="co"># Detailed analysis results</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>result<span class="sc">$</span>metadata                <span class="co"># Processing metadata</span></span></code></pre></div>
+<hr />
+</div>
+<div id="vegetation_indices-spatraster" class="section level2">
+<h2>1. vegetation_indices (SpatRaster)</h2>
+<p><strong>Type:</strong> terra::SpatRaster object (multi-layer)</p>
+<p><strong>Description:</strong> A raster stack containing all
+calculated vegetation indices for the specified crop type.</p>
+<p><strong>Contents:</strong></p>
+<ul>
+<li>Each layer is a different vegetation index (NDVI, EVI, GNDVI,
+etc.)</li>
+<li>Values are the actual index calculations for each pixel</li>
+<li>Layer names correspond to the index abbreviations</li>
+</ul>
+<p><strong>Example Access:</strong></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># View all calculated indices</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">names</span>(result<span class="sc">$</span>vegetation_indices)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co"># [1] &quot;NDVI&quot; &quot;EVI&quot; &quot;GNDVI&quot; &quot;DVI&quot; &quot;RVI&quot; &quot;PRI&quot;</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co"># Extract a specific index</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>ndvi <span class="ot">&lt;-</span> result<span class="sc">$</span>vegetation_indices[[<span class="st">&quot;NDVI&quot;</span>]]</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co"># Plot an index</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="fu">plot</span>(result<span class="sc">$</span>vegetation_indices[[<span class="st">&quot;NDVI&quot;</span>]], <span class="at">main =</span> <span class="st">&quot;NDVI&quot;</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co"># Get values for analysis</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>ndvi_values <span class="ot">&lt;-</span> terra<span class="sc">::</span><span class="fu">values</span>(result<span class="sc">$</span>vegetation_indices[[<span class="st">&quot;NDVI&quot;</span>]])</span></code></pre></div>
+<hr />
+</div>
+<div id="analysis_results-list" class="section level2">
+<h2>2. analysis_results (List)</h2>
+<p><strong>Type:</strong> Named list with up to 5 components depending
+on <code>analysis_type</code></p>
+<div id="stress_analysis-if-analysis_type-includes-stress-or-comprehensive" class="section level3">
+<h3>2.1 stress_analysis (if analysis_type includes “stress” or
+“comprehensive”)</h3>
+<p><strong>Purpose:</strong> Identifies vegetation stress based on index
+thresholds</p>
+<p><strong>Structure:</strong></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>result<span class="sc">$</span>analysis_results<span class="sc">$</span>stress_analysis</span></code></pre></div>
+<p><strong>Contents for each index analyzed (e.g., NDVI, EVI, SIPI,
+GNDVI):</strong></p>
+<table>
+<colgroup>
+<col width="20%" />
+<col width="17%" />
+<col width="37%" />
+<col width="25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>healthy_percentage</code></td>
+<td>numeric</td>
+<td>% of pixels classified as healthy vegetation</td>
+<td>65.3</td>
+</tr>
+<tr class="even">
+<td><code>moderate_stress_percentage</code></td>
+<td>numeric</td>
+<td>% of pixels showing moderate stress</td>
+<td>25.1</td>
+</tr>
+<tr class="odd">
+<td><code>severe_stress_percentage</code></td>
+<td>numeric</td>
+<td>% of pixels showing severe stress</td>
+<td>9.6</td>
+</tr>
+<tr class="even">
+<td><code>mean_value</code></td>
+<td>numeric</td>
+<td>Mean index value across all pixels</td>
+<td>0.72</td>
+</tr>
+<tr class="odd">
+<td><code>median_value</code></td>
+<td>numeric</td>
+<td>Median index value</td>
+<td>0.74</td>
+</tr>
+<tr class="even">
+<td><code>std_dev</code></td>
+<td>numeric</td>
+<td>Standard deviation of index values</td>
+<td>0.15</td>
+</tr>
+<tr class="odd">
+<td><code>thresholds_used</code></td>
+<td>list</td>
+<td>The threshold values used for classification</td>
+<td>See below</td>
+</tr>
+<tr class="even">
+<td><code>total_pixels_analyzed</code></td>
+<td>integer</td>
+<td>Total number of valid pixels</td>
+<td>125000</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Threshold Structure:</strong></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>result<span class="sc">$</span>analysis_results<span class="sc">$</span>stress_analysis<span class="sc">$</span>NDVI<span class="sc">$</span>thresholds_used</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co"># $healthy: c(0.6, 1.0)         # NDVI 0.6-1.0 = healthy</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co"># $moderate_stress: c(0.4, 0.6) # NDVI 0.4-0.6 = moderate stress</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co"># $severe_stress: c(0.0, 0.4)   # NDVI 0.0-0.4 = severe stress</span></span></code></pre></div>
+<p><strong>Interpretation:</strong></p>
+<ul>
+<li><strong>Healthy</strong>: Vegetation is growing normally, adequate
+water/nutrients</li>
+<li><strong>Moderate Stress</strong>: Some stress present, may indicate
+water deficit or nutrient issues</li>
+<li><strong>Severe Stress</strong>: Significant stress, requires
+immediate attention</li>
+</ul>
+<p><strong>Example Usage:</strong></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Access stress results for NDVI</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>ndvi_stress <span class="ot">&lt;-</span> result<span class="sc">$</span>analysis_results<span class="sc">$</span>stress_analysis<span class="sc">$</span>NDVI</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co"># What percentage of my field is healthy?</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Healthy vegetation: %.1f%%</span><span class="sc">\n</span><span class="st">&quot;</span>, ndvi_stress<span class="sc">$</span>healthy_percentage))</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co"># What&#39;s the average NDVI?</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Mean NDVI: %.3f</span><span class="sc">\n</span><span class="st">&quot;</span>, ndvi_stress<span class="sc">$</span>mean_value))</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co"># Check all indices analyzed</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="fu">names</span>(result<span class="sc">$</span>analysis_results<span class="sc">$</span>stress_analysis)</span></code></pre></div>
+<hr />
+</div>
+<div id="growth_analysis-if-analysis_type-includes-growth-or-comprehensive" class="section level3">
+<h3>2.2 growth_analysis (if analysis_type includes “growth” or
+“comprehensive”)</h3>
+<p><strong>Purpose:</strong> Estimates crop growth stage and provides
+growth statistics</p>
+<p><strong>Structure:</strong></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>result<span class="sc">$</span>analysis_results<span class="sc">$</span>growth_analysis</span></code></pre></div>
+<p><strong>Contents:</strong></p>
+<div id="index-specific-statistics-for-ndvi-evi-gndvi-dvi" class="section level4">
+<h4>Index-specific statistics (for NDVI, EVI, GNDVI, DVI):</h4>
+<table>
+<colgroup>
+<col width="20%" />
+<col width="17%" />
+<col width="37%" />
+<col width="25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>mean</code></td>
+<td>numeric</td>
+<td>Mean index value</td>
+<td>0.68</td>
+</tr>
+<tr class="even">
+<td><code>median</code></td>
+<td>numeric</td>
+<td>Median index value</td>
+<td>0.70</td>
+</tr>
+<tr class="odd">
+<td><code>std_dev</code></td>
+<td>numeric</td>
+<td>Standard deviation</td>
+<td>0.12</td>
+</tr>
+<tr class="even">
+<td><code>min</code></td>
+<td>numeric</td>
+<td>Minimum value</td>
+<td>0.15</td>
+</tr>
+<tr class="odd">
+<td><code>max</code></td>
+<td>numeric</td>
+<td>Maximum value</td>
+<td>0.92</td>
+</tr>
+<tr class="even">
+<td><code>range</code></td>
+<td>numeric</td>
+<td>Max - Min</td>
+<td>0.77</td>
+</tr>
+<tr class="odd">
+<td><code>percentiles</code></td>
+<td>numeric vector</td>
+<td>10th, 25th, 75th, 90th percentiles</td>
+<td>c(0.45, 0.58, 0.78, 0.85)</td>
+</tr>
+<tr class="even">
+<td><code>coefficient_of_variation</code></td>
+<td>numeric</td>
+<td>std_dev / mean (measure of variability)</td>
+<td>0.18</td>
+</tr>
+<tr class="odd">
+<td><code>n_pixels</code></td>
+<td>integer</td>
+<td>Number of pixels analyzed</td>
+<td>125000</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="growth-stage-prediction-overall" class="section level4">
+<h4>Growth stage prediction (overall):</h4>
+<table>
+<colgroup>
+<col width="20%" />
+<col width="17%" />
+<col width="37%" />
+<col width="25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>predicted_growth_stage</code></td>
+<td>character</td>
+<td>Predicted crop growth stage</td>
+<td>“reproductive”</td>
+</tr>
+<tr class="even">
+<td><code>stage_confidence</code></td>
+<td>numeric</td>
+<td>Confidence in prediction (0-1)</td>
+<td>0.85</td>
+</tr>
+<tr class="odd">
+<td><code>crop_type_used</code></td>
+<td>character</td>
+<td>Crop type used for classification</td>
+<td>“corn”</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Growth Stage Classifications:</strong></p>
+<p><strong>For Corn:</strong></p>
+<ul>
+<li>“emergence”: NDVI &lt; 0.3</li>
+<li>“vegetative”: NDVI 0.3-0.6</li>
+<li>“reproductive”: NDVI 0.6-0.8</li>
+<li>“maturity”: NDVI &gt; 0.8</li>
+</ul>
+<p><strong>For Soybeans:</strong></p>
+<ul>
+<li>“emergence”: NDVI &lt; 0.4</li>
+<li>“vegetative”: NDVI 0.4-0.65</li>
+<li>“reproductive”: NDVI 0.65-0.8</li>
+<li>“maturity”: NDVI &gt; 0.8</li>
+</ul>
+<p><strong>For Wheat:</strong></p>
+<ul>
+<li>“tillering”: NDVI &lt; 0.35</li>
+<li>“stem_elongation”: NDVI 0.35-0.7</li>
+<li>“grain_filling”: NDVI 0.7-0.8</li>
+<li>“maturity”: NDVI &gt; 0.8</li>
+</ul>
+<p><strong>Example Usage:</strong></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># What growth stage is the crop in?</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>growth <span class="ot">&lt;-</span> result<span class="sc">$</span>analysis_results<span class="sc">$</span>growth_analysis</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Growth stage: %s (confidence: %.2f)</span><span class="sc">\n</span><span class="st">&quot;</span>, </span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>            growth<span class="sc">$</span>predicted_growth_stage,</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>            growth<span class="sc">$</span>stage_confidence))</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co"># Get detailed NDVI statistics</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>ndvi_stats <span class="ot">&lt;-</span> growth<span class="sc">$</span>NDVI</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;NDVI range: %.3f - %.3f</span><span class="sc">\n</span><span class="st">&quot;</span>, ndvi_stats<span class="sc">$</span>min, ndvi_stats<span class="sc">$</span>max))</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;NDVI variability (CV): %.3f</span><span class="sc">\n</span><span class="st">&quot;</span>, ndvi_stats<span class="sc">$</span>coefficient_of_variation))</span></code></pre></div>
+<hr />
+</div>
+</div>
+<div id="yield_analysis-if-analysis_type-includes-yield-or-comprehensive" class="section level3">
+<h3>2.3 yield_analysis (if analysis_type includes “yield” or
+“comprehensive”)</h3>
+<p><strong>Purpose:</strong> Estimates yield potential using multiple
+vegetation indices</p>
+<p><strong>Structure:</strong></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>result<span class="sc">$</span>analysis_results<span class="sc">$</span>yield_analysis</span></code></pre></div>
+<p><strong>Contents:</strong></p>
+<table>
+<colgroup>
+<col width="20%" />
+<col width="17%" />
+<col width="37%" />
+<col width="25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>composite_yield_index</code></td>
+<td>numeric</td>
+<td>Normalized yield potential score (0-1)</td>
+<td>0.72</td>
+</tr>
+<tr class="even">
+<td><code>yield_potential_class</code></td>
+<td>character</td>
+<td>Categorical yield potential</td>
+<td>“High”</td>
+</tr>
+<tr class="odd">
+<td><code>indices_used</code></td>
+<td>character vector</td>
+<td>Which indices contributed</td>
+<td>c(“NDVI”, “EVI”, “GNDVI”)</td>
+</tr>
+<tr class="even">
+<td><code>n_indices_used</code></td>
+<td>integer</td>
+<td>Number of indices used</td>
+<td>3</td>
+</tr>
+<tr class="odd">
+<td><code>index_contributions</code></td>
+<td>list</td>
+<td>Individual index contributions</td>
+<td>See below</td>
+</tr>
+<tr class="even">
+<td><code>crop_type</code></td>
+<td>character</td>
+<td>Crop type used</td>
+<td>“corn”</td>
+</tr>
+<tr class="odd">
+<td><code>classification_confidence</code></td>
+<td>numeric</td>
+<td>Confidence in classification (0-1)</td>
+<td>0.44</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Index Contributions Structure:</strong></p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>result<span class="sc">$</span>analysis_results<span class="sc">$</span>yield_analysis<span class="sc">$</span>index_contributions<span class="sc">$</span>NDVI</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co"># $mean_normalized: 0.75    # Normalized contribution (0-1)</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co"># $raw_mean: 0.68           # Raw mean NDVI value</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co"># $raw_std: 0.12            # Raw standard deviation</span></span></code></pre></div>
+<p><strong>Composite Yield Index Calculation:</strong></p>
+<ol style="list-style-type: decimal">
+<li>Each index (NDVI, EVI, GNDVI, DVI, RVI) is normalized to 0-1
+scale</li>
+<li>Normalized values are averaged across all available indices</li>
+<li>Result is a single 0-1 score where:
+<ul>
+<li>0.0 = Very low yield potential</li>
+<li>0.5 = Medium yield potential<br />
+</li>
+<li>1.0 = Maximum yield potential</li>
+</ul></li>
+</ol>
+<p><strong>Yield Potential Classifications:</strong></p>
+<p><strong>For Corn:</strong></p>
+<ul>
+<li>“Low”: composite_index &lt; 0.3</li>
+<li>“Medium”: composite_index 0.3-0.6</li>
+<li>“High”: composite_index 0.6-0.8</li>
+<li>“Very High”: composite_index &gt; 0.8</li>
+</ul>
+<p><strong>For Soybeans:</strong></p>
+<ul>
+<li>“Low”: composite_index &lt; 0.35</li>
+<li>“Medium”: composite_index 0.35-0.65</li>
+<li>“High”: composite_index 0.65-0.85</li>
+<li>“Very High”: composite_index &gt; 0.85</li>
+</ul>
+<p><strong>For Wheat:</strong></p>
+<ul>
+<li>“Low”: composite_index &lt; 0.3</li>
+<li>“Medium”: composite_index 0.3-0.6</li>
+<li>“High”: composite_index 0.6-0.8</li>
+<li>“Very High”: composite_index &gt; 0.8</li>
+</ul>
+<p><strong>Interpretation:</strong></p>
+<ul>
+<li><strong>Composite Yield Index (0.0-1.0):</strong> Higher values
+indicate better yield potential</li>
+<li><strong>Yield Potential Class:</strong> Categorical assessment for
+easier interpretation</li>
+<li><strong>Index Contributions:</strong> Shows which indices
+contributed and their individual scores</li>
+<li><strong>Classification Confidence:</strong> Higher when
+composite_index is far from class boundaries (e.g., 0.2 or 0.9 are more
+confident than 0.5)</li>
+</ul>
+<p><strong>Example Usage:</strong></p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># What&#39;s the yield potential?</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>yield <span class="ot">&lt;-</span> result<span class="sc">$</span>analysis_results<span class="sc">$</span>yield_analysis</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Yield Potential: %s (score: %.2f)</span><span class="sc">\n</span><span class="st">&quot;</span>, </span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>            yield<span class="sc">$</span>yield_potential_class,</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>            yield<span class="sc">$</span>composite_yield_index))</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co"># Which indices contributed?</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Based on %d indices: %s</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>            yield<span class="sc">$</span>n_indices_used,</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>            <span class="fu">paste</span>(yield<span class="sc">$</span>indices_used, <span class="at">collapse =</span> <span class="st">&quot;, &quot;</span>)))</span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co"># Get individual index contributions</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="cf">for</span> (idx <span class="cf">in</span> <span class="fu">names</span>(yield<span class="sc">$</span>index_contributions)) {</span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>  contrib <span class="ot">&lt;-</span> yield<span class="sc">$</span>index_contributions[[idx]]</span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;%s: %.3f (raw: %.3f Ã‚Â± %.3f)</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>              idx, </span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>              contrib<span class="sc">$</span>mean_normalized,</span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a>              contrib<span class="sc">$</span>raw_mean,</span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a>              contrib<span class="sc">$</span>raw_std))</span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a>}</span></code></pre></div>
+<hr />
+</div>
+<div id="summary_statistics" class="section level3">
+<h3>2.4 summary_statistics</h3>
+<p><strong>Purpose:</strong> Basic statistical summary for all
+calculated indices</p>
+<p><strong>Structure:</strong></p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>result<span class="sc">$</span>analysis_results<span class="sc">$</span>summary_statistics</span></code></pre></div>
+<p><strong>Contents for each index:</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>mean</code></td>
+<td>numeric</td>
+<td>Mean value across all pixels</td>
+</tr>
+<tr class="even">
+<td><code>median</code></td>
+<td>numeric</td>
+<td>Median value</td>
+</tr>
+<tr class="odd">
+<td><code>std_dev</code></td>
+<td>numeric</td>
+<td>Standard deviation</td>
+</tr>
+<tr class="even">
+<td><code>min</code></td>
+<td>numeric</td>
+<td>Minimum value</td>
+</tr>
+<tr class="odd">
+<td><code>max</code></td>
+<td>numeric</td>
+<td>Maximum value</td>
+</tr>
+<tr class="even">
+<td><code>count</code></td>
+<td>integer</td>
+<td>Number of valid pixels</td>
+</tr>
+<tr class="odd">
+<td><code>na_count</code></td>
+<td>integer</td>
+<td>Number of NA pixels</td>
+</tr>
+<tr class="even">
+<td><code>range</code></td>
+<td>numeric</td>
+<td>Max - Min</td>
+</tr>
+<tr class="odd">
+<td><code>cv</code></td>
+<td>numeric</td>
+<td>Coefficient of variation (std_dev/mean)</td>
+</tr>
+<tr class="even">
+<td><code>percentiles</code></td>
+<td>numeric vector</td>
+<td>5th, 25th, 75th, 95th percentiles</td>
+</tr>
+<tr class="odd">
+<td><code>coverage_percent</code></td>
+<td>numeric</td>
+<td>% of total pixels with valid data</td>
+</tr>
+<tr class="even">
+<td><code>histogram</code></td>
+<td>list (optional)</td>
+<td>Histogram data if Ã¢â€°Â¥100 pixels</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Plus Overall Summary:</strong></p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>result<span class="sc">$</span>analysis_results<span class="sc">$</span>summary_statistics<span class="sc">$</span>summary</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="co"># $total_indices_calculated: 6</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co"># $indices_with_valid_data: c(&quot;NDVI&quot;, &quot;EVI&quot;, &quot;GNDVI&quot;, ...)</span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="co"># $total_indices_requested: 6</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co"># $success_rate: 100.0</span></span></code></pre></div>
+<p><strong>Example Usage:</strong></p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># Get statistics for all indices</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>stats <span class="ot">&lt;-</span> result<span class="sc">$</span>analysis_results<span class="sc">$</span>summary_statistics</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co"># NDVI statistics</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>ndvi_stats <span class="ot">&lt;-</span> stats<span class="sc">$</span>NDVI</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;NDVI: %.3f Ã‚Â± %.3f (range: %.3f to %.3f)</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>            ndvi_stats<span class="sc">$</span>mean,</span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>            ndvi_stats<span class="sc">$</span>std_dev,</span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>            ndvi_stats<span class="sc">$</span>min,</span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>            ndvi_stats<span class="sc">$</span>max))</span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a></span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a><span class="co"># Check data quality</span></span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Coverage: %.1f%% (%d pixels)</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a>            ndvi_stats<span class="sc">$</span>coverage_percent,</span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a>            ndvi_stats<span class="sc">$</span>count))</span></code></pre></div>
+<hr />
+</div>
+<div id="validation-if-reference_data-provided" class="section level3">
+<h3>2.5 validation (if reference_data provided)</h3>
+<p><strong>Purpose:</strong> Validates analysis against ground truth
+data</p>
+<p><strong>Note:</strong> This component only appears if you provide
+reference_data parameter</p>
+<p><strong>Structure:</strong> TBD (depends on reference data
+format)</p>
+<hr />
+</div>
+</div>
+<div id="metadata-list" class="section level2">
+<h2>3. metadata (List)</h2>
+<p><strong>Purpose:</strong> Documents analysis parameters and
+processing information</p>
+<p><strong>Structure:</strong></p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>result<span class="sc">$</span>metadata</span></code></pre></div>
+<p><strong>Contents:</strong></p>
+<table>
+<colgroup>
+<col width="20%" />
+<col width="17%" />
+<col width="37%" />
+<col width="25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>crop_type</code></td>
+<td>character</td>
+<td>Crop type analyzed</td>
+<td>“corn”</td>
+</tr>
+<tr class="even">
+<td><code>growth_stage</code></td>
+<td>character</td>
+<td>Growth stage specified</td>
+<td>“mid”</td>
+</tr>
+<tr class="odd">
+<td><code>analysis_type</code></td>
+<td>character</td>
+<td>Type of analysis performed</td>
+<td>“comprehensive”</td>
+</tr>
+<tr class="even">
+<td><code>indices_used</code></td>
+<td>character vector</td>
+<td>Indices calculated</td>
+<td>c(“NDVI”, “EVI”, …)</td>
+</tr>
+<tr class="odd">
+<td><code>processing_date</code></td>
+<td>POSIXct</td>
+<td>When analysis was performed</td>
+<td>2025-11-03 10:30:45</td>
+</tr>
+<tr class="even">
+<td><code>input_bands</code></td>
+<td>integer</td>
+<td>Number of input spectral bands</td>
+<td>8</td>
+</tr>
+<tr class="odd">
+<td><code>spatial_resolution</code></td>
+<td>numeric vector</td>
+<td>Resolution (x, y) in map units</td>
+<td>c(10, 10)</td>
+</tr>
+<tr class="even">
+<td><code>spatial_extent</code></td>
+<td>numeric vector</td>
+<td>Extent (xmin, xmax, ymin, ymax)</td>
+<td>c(-95.5, -95.0, 41.5, 42.0)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example Usage:</strong></p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># Check what was analyzed</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>meta <span class="ot">&lt;-</span> result<span class="sc">$</span>metadata</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Analyzed %s at %s growth stage</span><span class="sc">\n</span><span class="st">&quot;</span>, </span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>            meta<span class="sc">$</span>crop_type, </span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>            meta<span class="sc">$</span>growth_stage))</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Used %d indices: %s</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>            <span class="fu">length</span>(meta<span class="sc">$</span>indices_used),</span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>            <span class="fu">paste</span>(meta<span class="sc">$</span>indices_used, <span class="at">collapse =</span> <span class="st">&quot;, &quot;</span>)))</span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Processed on: %s</span><span class="sc">\n</span><span class="st">&quot;</span>, meta<span class="sc">$</span>processing_date))</span></code></pre></div>
+<hr />
+</div>
+<div id="complete-example-workflow" class="section level2">
+<h2>Complete Example Workflow</h2>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">library</span>(geospatialsuite)</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="fu">library</span>(terra)</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="co"># Run comprehensive crop analysis</span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">analyze_crop_vegetation</span>(</span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>  <span class="at">spectral_data =</span> <span class="st">&quot;path/to/sentinel2_data.tif&quot;</span>,</span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>  <span class="at">crop_type =</span> <span class="st">&quot;corn&quot;</span>,</span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>  <span class="at">growth_stage =</span> <span class="st">&quot;mid&quot;</span>,</span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a>  <span class="at">analysis_type =</span> <span class="st">&quot;comprehensive&quot;</span>,</span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a>  <span class="at">verbose =</span> <span class="cn">TRUE</span></span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a>)</span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a></span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a><span class="co"># ===== 1. Check what was calculated =====</span></span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Indices calculated:</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">names</span>(result<span class="sc">$</span>vegetation_indices))</span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a></span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a><span class="co"># ===== 2. Assess crop stress =====</span></span>
+<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a>stress <span class="ot">&lt;-</span> result<span class="sc">$</span>analysis_results<span class="sc">$</span>stress_analysis<span class="sc">$</span>NDVI</span>
+<span id="cb16-19"><a href="#cb16-19" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">Stress Assessment:</span><span class="sc">\n</span><span class="st">&quot;</span>))</span>
+<span id="cb16-20"><a href="#cb16-20" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;  Healthy: %.1f%%</span><span class="sc">\n</span><span class="st">&quot;</span>, stress<span class="sc">$</span>healthy_percentage))</span>
+<span id="cb16-21"><a href="#cb16-21" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;  Moderate stress: %.1f%%</span><span class="sc">\n</span><span class="st">&quot;</span>, stress<span class="sc">$</span>moderate_stress_percentage))</span>
+<span id="cb16-22"><a href="#cb16-22" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;  Severe stress: %.1f%%</span><span class="sc">\n</span><span class="st">&quot;</span>, stress<span class="sc">$</span>severe_stress_percentage))</span>
+<span id="cb16-23"><a href="#cb16-23" tabindex="-1"></a></span>
+<span id="cb16-24"><a href="#cb16-24" tabindex="-1"></a><span class="co"># ===== 3. Identify growth stage =====</span></span>
+<span id="cb16-25"><a href="#cb16-25" tabindex="-1"></a>growth <span class="ot">&lt;-</span> result<span class="sc">$</span>analysis_results<span class="sc">$</span>growth_analysis</span>
+<span id="cb16-26"><a href="#cb16-26" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">Growth Stage: %s (%.0f%% confidence)</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb16-27"><a href="#cb16-27" tabindex="-1"></a>            growth<span class="sc">$</span>predicted_growth_stage,</span>
+<span id="cb16-28"><a href="#cb16-28" tabindex="-1"></a>            growth<span class="sc">$</span>stage_confidence <span class="sc">*</span> <span class="dv">100</span>))</span>
+<span id="cb16-29"><a href="#cb16-29" tabindex="-1"></a></span>
+<span id="cb16-30"><a href="#cb16-30" tabindex="-1"></a><span class="co"># ===== 4. Estimate yield potential =====</span></span>
+<span id="cb16-31"><a href="#cb16-31" tabindex="-1"></a>yield <span class="ot">&lt;-</span> result<span class="sc">$</span>analysis_results<span class="sc">$</span>yield_analysis</span>
+<span id="cb16-32"><a href="#cb16-32" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;</span><span class="sc">\n</span><span class="st">Yield Potential: %s</span><span class="sc">\n</span><span class="st">&quot;</span>, yield<span class="sc">$</span>yield_potential_class))</span>
+<span id="cb16-33"><a href="#cb16-33" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Composite Yield Index: %.3f</span><span class="sc">\n</span><span class="st">&quot;</span>, yield<span class="sc">$</span>composite_yield_index))</span>
+<span id="cb16-34"><a href="#cb16-34" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Based on %d indices: %s</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb16-35"><a href="#cb16-35" tabindex="-1"></a>            yield<span class="sc">$</span>n_indices_used,</span>
+<span id="cb16-36"><a href="#cb16-36" tabindex="-1"></a>            <span class="fu">paste</span>(yield<span class="sc">$</span>indices_used, <span class="at">collapse =</span> <span class="st">&quot;, &quot;</span>)))</span>
+<span id="cb16-37"><a href="#cb16-37" tabindex="-1"></a></span>
+<span id="cb16-38"><a href="#cb16-38" tabindex="-1"></a><span class="co"># ===== 5. Visualize results =====</span></span>
+<span id="cb16-39"><a href="#cb16-39" tabindex="-1"></a><span class="co"># Plot stress map</span></span>
+<span id="cb16-40"><a href="#cb16-40" tabindex="-1"></a><span class="fu">plot</span>(result<span class="sc">$</span>vegetation_indices[[<span class="st">&quot;NDVI&quot;</span>]], </span>
+<span id="cb16-41"><a href="#cb16-41" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">&quot;NDVI - Stress Detection&quot;</span>,</span>
+<span id="cb16-42"><a href="#cb16-42" tabindex="-1"></a>     <span class="at">col =</span> <span class="fu">terrain.colors</span>(<span class="dv">100</span>))</span>
+<span id="cb16-43"><a href="#cb16-43" tabindex="-1"></a></span>
+<span id="cb16-44"><a href="#cb16-44" tabindex="-1"></a><span class="co"># Create stress classification map</span></span>
+<span id="cb16-45"><a href="#cb16-45" tabindex="-1"></a>ndvi <span class="ot">&lt;-</span> result<span class="sc">$</span>vegetation_indices[[<span class="st">&quot;NDVI&quot;</span>]]</span>
+<span id="cb16-46"><a href="#cb16-46" tabindex="-1"></a>stress_map <span class="ot">&lt;-</span> <span class="fu">classify</span>(ndvi, </span>
+<span id="cb16-47"><a href="#cb16-47" tabindex="-1"></a>                      <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="sc">-</span><span class="cn">Inf</span>, <span class="fl">0.4</span>, <span class="dv">1</span>,    <span class="co"># Severe stress</span></span>
+<span id="cb16-48"><a href="#cb16-48" tabindex="-1"></a>                              <span class="fl">0.4</span>, <span class="fl">0.6</span>, <span class="dv">2</span>,       <span class="co"># Moderate stress</span></span>
+<span id="cb16-49"><a href="#cb16-49" tabindex="-1"></a>                              <span class="fl">0.6</span>, <span class="cn">Inf</span>, <span class="dv">3</span>),      <span class="co"># Healthy</span></span>
+<span id="cb16-50"><a href="#cb16-50" tabindex="-1"></a>                            <span class="at">ncol =</span> <span class="dv">3</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb16-51"><a href="#cb16-51" tabindex="-1"></a><span class="fu">plot</span>(stress_map, </span>
+<span id="cb16-52"><a href="#cb16-52" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">&quot;Crop Stress Classification&quot;</span>,</span>
+<span id="cb16-53"><a href="#cb16-53" tabindex="-1"></a>     <span class="at">col =</span> <span class="fu">c</span>(<span class="st">&quot;red&quot;</span>, <span class="st">&quot;yellow&quot;</span>, <span class="st">&quot;green&quot;</span>),</span>
+<span id="cb16-54"><a href="#cb16-54" tabindex="-1"></a>     <span class="at">legend =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb16-55"><a href="#cb16-55" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">&quot;topright&quot;</span>, </span>
+<span id="cb16-56"><a href="#cb16-56" tabindex="-1"></a>       <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">&quot;Severe Stress&quot;</span>, <span class="st">&quot;Moderate Stress&quot;</span>, <span class="st">&quot;Healthy&quot;</span>),</span>
+<span id="cb16-57"><a href="#cb16-57" tabindex="-1"></a>       <span class="at">fill =</span> <span class="fu">c</span>(<span class="st">&quot;red&quot;</span>, <span class="st">&quot;yellow&quot;</span>, <span class="st">&quot;green&quot;</span>))</span>
+<span id="cb16-58"><a href="#cb16-58" tabindex="-1"></a></span>
+<span id="cb16-59"><a href="#cb16-59" tabindex="-1"></a><span class="co"># ===== 6. Export results =====</span></span>
+<span id="cb16-60"><a href="#cb16-60" tabindex="-1"></a><span class="co"># Save as geotiff</span></span>
+<span id="cb16-61"><a href="#cb16-61" tabindex="-1"></a><span class="fu">writeRaster</span>(result<span class="sc">$</span>vegetation_indices, </span>
+<span id="cb16-62"><a href="#cb16-62" tabindex="-1"></a>            <span class="st">&quot;crop_indices.tif&quot;</span>, </span>
+<span id="cb16-63"><a href="#cb16-63" tabindex="-1"></a>            <span class="at">overwrite =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb16-64"><a href="#cb16-64" tabindex="-1"></a></span>
+<span id="cb16-65"><a href="#cb16-65" tabindex="-1"></a><span class="co"># Save statistics as CSV</span></span>
+<span id="cb16-66"><a href="#cb16-66" tabindex="-1"></a>stats_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb16-67"><a href="#cb16-67" tabindex="-1"></a>  <span class="at">Index =</span> <span class="fu">names</span>(result<span class="sc">$</span>analysis_results<span class="sc">$</span>summary_statistics)[<span class="sc">-</span><span class="fu">length</span>(<span class="fu">names</span>(result<span class="sc">$</span>analysis_results<span class="sc">$</span>summary_statistics))],</span>
+<span id="cb16-68"><a href="#cb16-68" tabindex="-1"></a>  <span class="at">Mean =</span> <span class="fu">sapply</span>(result<span class="sc">$</span>analysis_results<span class="sc">$</span>summary_statistics[<span class="dv">1</span><span class="sc">:</span>(<span class="fu">length</span>(result<span class="sc">$</span>analysis_results<span class="sc">$</span>summary_statistics)<span class="sc">-</span><span class="dv">1</span>)], <span class="cf">function</span>(x) x<span class="sc">$</span>mean),</span>
+<span id="cb16-69"><a href="#cb16-69" tabindex="-1"></a>  <span class="at">StdDev =</span> <span class="fu">sapply</span>(result<span class="sc">$</span>analysis_results<span class="sc">$</span>summary_statistics[<span class="dv">1</span><span class="sc">:</span>(<span class="fu">length</span>(result<span class="sc">$</span>analysis_results<span class="sc">$</span>summary_statistics)<span class="sc">-</span><span class="dv">1</span>)], <span class="cf">function</span>(x) x<span class="sc">$</span>std_dev),</span>
+<span id="cb16-70"><a href="#cb16-70" tabindex="-1"></a>  <span class="at">Min =</span> <span class="fu">sapply</span>(result<span class="sc">$</span>analysis_results<span class="sc">$</span>summary_statistics[<span class="dv">1</span><span class="sc">:</span>(<span class="fu">length</span>(result<span class="sc">$</span>analysis_results<span class="sc">$</span>summary_statistics)<span class="sc">-</span><span class="dv">1</span>)], <span class="cf">function</span>(x) x<span class="sc">$</span>min),</span>
+<span id="cb16-71"><a href="#cb16-71" tabindex="-1"></a>  <span class="at">Max =</span> <span class="fu">sapply</span>(result<span class="sc">$</span>analysis_results<span class="sc">$</span>summary_statistics[<span class="dv">1</span><span class="sc">:</span>(<span class="fu">length</span>(result<span class="sc">$</span>analysis_results<span class="sc">$</span>summary_statistics)<span class="sc">-</span><span class="dv">1</span>)], <span class="cf">function</span>(x) x<span class="sc">$</span>max)</span>
+<span id="cb16-72"><a href="#cb16-72" tabindex="-1"></a>)</span>
+<span id="cb16-73"><a href="#cb16-73" tabindex="-1"></a><span class="fu">write.csv</span>(stats_df, <span class="st">&quot;crop_analysis_statistics.csv&quot;</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<hr />
+</div>
+<div id="tips-for-using-results" class="section level2">
+<h2>Tips for Using Results</h2>
+<div id="identifying-problem-areas" class="section level3">
+<h3>1. Identifying Problem Areas</h3>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="co"># Find pixels with severe stress</span></span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>ndvi <span class="ot">&lt;-</span> result<span class="sc">$</span>vegetation_indices[[<span class="st">&quot;NDVI&quot;</span>]]</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>severe_stress <span class="ot">&lt;-</span> ndvi <span class="sc">&lt;</span> <span class="fl">0.4</span></span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="fu">plot</span>(severe_stress, <span class="at">main =</span> <span class="st">&quot;Severe Stress Areas&quot;</span>)</span></code></pre></div>
+</div>
+<div id="comparing-multiple-fields" class="section level3">
+<h3>2. Comparing Multiple Fields</h3>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="co"># Run analysis for multiple fields and compare</span></span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>field1_result <span class="ot">&lt;-</span> <span class="fu">analyze_crop_vegetation</span>(field1_data, <span class="at">crop_type =</span> <span class="st">&quot;corn&quot;</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>field2_result <span class="ot">&lt;-</span> <span class="fu">analyze_crop_vegetation</span>(field2_data, <span class="at">crop_type =</span> <span class="st">&quot;corn&quot;</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a><span class="co"># Compare yield potential</span></span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Field 1 yield: %s (%.3f)</span><span class="sc">\n</span><span class="st">&quot;</span>, </span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a>            field1_result<span class="sc">$</span>analysis_results<span class="sc">$</span>yield_analysis<span class="sc">$</span>yield_potential_class,</span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a>            field1_result<span class="sc">$</span>analysis_results<span class="sc">$</span>yield_analysis<span class="sc">$</span>composite_yield_index))</span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Field 2 yield: %s (%.3f)</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a>            field2_result<span class="sc">$</span>analysis_results<span class="sc">$</span>yield_analysis<span class="sc">$</span>yield_potential_class,</span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a>            field2_result<span class="sc">$</span>analysis_results<span class="sc">$</span>yield_analysis<span class="sc">$</span>composite_yield_index))</span></code></pre></div>
+</div>
+<div id="time-series-analysis" class="section level3">
+<h3>3. Time Series Analysis</h3>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="co"># Analyze the same field at different dates</span></span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>early_season <span class="ot">&lt;-</span> <span class="fu">analyze_crop_vegetation</span>(june_data, <span class="at">growth_stage =</span> <span class="st">&quot;early&quot;</span>)</span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a>mid_season <span class="ot">&lt;-</span> <span class="fu">analyze_crop_vegetation</span>(july_data, <span class="at">growth_stage =</span> <span class="st">&quot;mid&quot;</span>)</span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a>late_season <span class="ot">&lt;-</span> <span class="fu">analyze_crop_vegetation</span>(august_data, <span class="at">growth_stage =</span> <span class="st">&quot;late&quot;</span>)</span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a></span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a><span class="co"># Track NDVI progression</span></span>
+<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a>ndvi_progression <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb19-8"><a href="#cb19-8" tabindex="-1"></a>  early_season<span class="sc">$</span>analysis_results<span class="sc">$</span>growth_analysis<span class="sc">$</span>NDVI<span class="sc">$</span>mean,</span>
+<span id="cb19-9"><a href="#cb19-9" tabindex="-1"></a>  mid_season<span class="sc">$</span>analysis_results<span class="sc">$</span>growth_analysis<span class="sc">$</span>NDVI<span class="sc">$</span>mean,</span>
+<span id="cb19-10"><a href="#cb19-10" tabindex="-1"></a>  late_season<span class="sc">$</span>analysis_results<span class="sc">$</span>growth_analysis<span class="sc">$</span>NDVI<span class="sc">$</span>mean</span>
+<span id="cb19-11"><a href="#cb19-11" tabindex="-1"></a>)</span>
+<span id="cb19-12"><a href="#cb19-12" tabindex="-1"></a><span class="fu">plot</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, ndvi_progression, <span class="at">type =</span> <span class="st">&quot;b&quot;</span>,</span>
+<span id="cb19-13"><a href="#cb19-13" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;Time Period&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Mean NDVI&quot;</span>,</span>
+<span id="cb19-14"><a href="#cb19-14" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">&quot;NDVI Progression Through Season&quot;</span>)</span></code></pre></div>
+<hr />
+</div>
+</div>
+<div id="validation-notes" class="section level2">
+<h2>Validation Notes</h2>
+<p><strong>Important Caveats:</strong></p>
+<ol style="list-style-type: decimal">
+<li><strong>Threshold-based</strong>: Stress and yield classifications
+use literature-based thresholds that may need adjustment for your
+specific region/conditions</li>
+<li><strong>Composite Yield Index</strong>: This is a vegetation-based
+proxy, not a direct yield prediction. Correlation with actual yield
+varies by crop, region, and year</li>
+<li><strong>Growth Stage</strong>: Predictions are based on NDVI
+patterns and may not align perfectly with field observations</li>
+<li><strong>No guarantee</strong>: These are analytical tools to support
+decision-making, not definitive assessments</li>
+</ol>
+<p><strong>Recommended Validation:</strong></p>
+<ul>
+<li>Compare with ground truth data (yield monitors, field scouting)</li>
+<li>Calibrate thresholds for your specific conditions</li>
+<li>Use multiple years of data to establish local patterns</li>
+<li>Combine with other data sources (weather, soil, management)</li>
+</ul>
+<hr />
+</div>
+<div id="acknowledgments" class="section level2">
+<h2>Acknowledgments</h2>
+<p>This work was developed by the geospatialsuite team with
+contributions from: Olatunde D. Akanbi, Vibha Mandayam, Yinghui Wu,
+Jeffrey Yarus, Erika I. Barcelos, and Roger H. French.</p>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

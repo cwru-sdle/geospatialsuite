@@ -4,12 +4,21 @@
 \alias{select_rasters_for_region}
 \title{Select rasters for specific region with intelligent filtering}
 \usage{
-select_rasters_for_region(input_folder, region_boundary, buffer_size = 0.1)
+select_rasters_for_region(
+  input_folder,
+  region_boundary,
+  overlap = TRUE,
+  buffer_size = 0.1
+)
 }
 \arguments{
 \item{input_folder}{Directory containing raster files}
 
 \item{region_boundary}{Region boundary or bounding box}
+
+\item{overlap}{Logical. If TRUE (default), checks for actual overlap with region.
+If FALSE, only includes tiles whose centroid falls within region.
+Only applies to ASTER files; non-ASTER files always use overlap detection.}
 
 \item{buffer_size}{Buffer around region (in degrees)}
 }
@@ -18,11 +27,17 @@ Character vector of relevant file paths
 }
 \description{
 Intelligently select raster files that overlap with a specified region.
+For ASTER files (GDEM and WBD), uses filename-based coordinate extraction
+for fast filtering without loading full rasters.
 }
 \examples{
 \donttest{
-# Select ASTER files for Michigan
+# Select ASTER files for Michigan using overlap detection
 michigan_files <- select_rasters_for_region("/aster/files", "Michigan")
+
+# Use centroid-based selection (faster, fewer tiles)
+michigan_files_centroid <- select_rasters_for_region("/aster/files", "Michigan", 
+                                                      overlap = FALSE)
 
 # Select with custom buffer
 nevada_files <- select_rasters_for_region("/data", "Nevada", buffer_size = 0.2)

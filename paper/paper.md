@@ -13,9 +13,9 @@ tags:
 - environmental monitoring
 date: "28 December 2025"
 output:
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
 bibliography: paper.bib
 authors:
 - name: Olatunde D. Akanbi
@@ -48,7 +48,7 @@ affiliations:
 
 # Summary
 
-Geospatialsuite is a comprehensive R package for geospatiotemporal analysis that provides researchers with a unified toolkit for multimodal spatial data integration. The package features over 60 vegetation indices with automatic satellite band detection, universal spatial join operations that work with any raster-vector combination, robust raster visualization with built-in error handling, and rapid mapping capabilities through the `quick_map()` function. Designed for reliability and universal applicability, geospatialsuite addresses critical needs in agricultural research, environmental monitoring, and remote sensing applications while maintaining computational efficiency for large datasets.
+A comprehensive R package for geospatiotemporal analysis, geospatialsuite provides researchers with a unified toolkit for multimodal spatial data integration. The package features over 60 vegetation indices with automatic satellite band detection, universal spatial join operations that work with any raster-vector combination, robust raster visualization with built-in error handling, and rapid mapping capabilities through the `quick_map()` function. Designed for reliability and universal applicability, geospatialsuite addresses critical needs in agricultural research, environmental monitoring, and remote sensing applications while maintaining computational efficiency for large datasets.
 
 The package seamlessly integrates with the modern R spatial ecosystem through `terra` [@hijmans2022terra] and `sf` [@pebesma2018simple], providing enhanced NDVI calculations with quality filtering, comprehensive water quality analysis using multiple indices (NDWI [@mcfeeters1996normalized], MNDWI [@xu2006modification], NDMI), crop data layer (CDL) analysis [@usda2024cdl], spatial interpolation techniques [@cressie1993statistics], and terrain analysis. Unlike existing solutions that are often limited by complex dependencies or geographic scope, geospatialsuite emphasizes universal functionality—working seamlessly across different regions, satellite platforms (Landsat, Sentinel-2, MODIS), and data types with comprehensive error handling throughout. The package has enabled research in agricultural systems monitoring [@akanbi2024multiscale] and multimodal data integration [@akanbi2024integrating].
 

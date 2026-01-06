@@ -1,7 +1,7 @@
 
-# Contributing to GeoSpatialSuite
+# Contributing to geospatialsuite
 
-Thank you for your interest in contributing to GeoSpatialSuite! We
+Thank you for your interest in contributing to geospatialsuite! We
 welcome contributions from the community.
 
 ## How to Contribute

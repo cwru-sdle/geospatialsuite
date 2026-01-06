@@ -23,7 +23,7 @@ What actually happened.
 **System Information:**
 - OS: [e.g., Windows 10, macOS 13, Ubuntu 22.04]
 - R version: [e.g., 4.3.0]
-- GeoSpatialSuite version: [e.g., 0.1.0]
+- geospatialsuite version: [e.g., 0.1.0]
 - Relevant package versions:
 ```r
   packageVersion("terra")

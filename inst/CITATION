@@ -24,7 +24,7 @@ bibentry(
 
 bibentry(
   bibtype  = "Article",
-  title    = "GeoSpatialSuite: Comprehensive Geospatiotemporal Analysis and Multimodal Integration Toolkit for R",
+  title    = "geospatialsuite: Comprehensive Geospatiotemporal Analysis and Multimodal Integration Toolkit for R",
   author   = c(
     person("Olatunde D.", "Akanbi", , "olatunde.akanbi@case.edu", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0001-7719-2619")),
