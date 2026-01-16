@@ -30,13 +30,16 @@ navbar:
       - text: -------
       - text: Vegetation Analysis
         href: articles/vegetation-indices.html
+      - text: -------
       - text: Agricultural Applications
         href: articles/agricultural-analysis.html
+      - text: -------
       - text: Analyzing Crop Vegetation
         href: articles/analyze-crop-vegetation.html
       - text: -------
       - text: Spatial Operations
         href: articles/spatial-analysis.html
+      - text: -------
       - text: Spatial Integration
         href: articles/spatial-integration.html
       - text: -------
@@ -44,7 +47,10 @@ navbar:
         href: articles/water-quality.html
       - text: -------
       - text: Complete Workflows
-        href: articles/workflows-case-studies.html
+        href: articles/workflows-case-studies.html-
+      - text: -------
+      - text: Performance Benchmarks
+        href: articles/performance_benchmark.html
     news:
       text: News
       href: news/index.html
