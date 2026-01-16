@@ -119,6 +119,8 @@ install.packages(c("tidyterra", "RStoolbox", "leaflet", "patchwork"))
 install.packages(c("tigris", "nhdplusTools", "zipcodeR", "tidygeocoder"))
 ```
 
+
+
 ## 🚀 Quick Start
 
 ### Load Package and Test Installation
@@ -439,6 +441,15 @@ geospatialsuite is optimized for:
 - **Big data**: Streaming and chunked processing for large satellite imagery
 - **Interactive analysis**: Fast visualization without data conversion overhead
 - **Geocoding**: Efficient caching and batch processing for large datasets
+
+For realistic satellite imagery (5K×5K pixels):
+
+- **7.6× more memory efficient** than ggplot2 (75 MB vs 572 MB)
+- **4.2× faster** execution (684 ms vs 2,897 ms)
+
+
+See `vignette("performance-benchmark")` for complete benchmarks and reproducible code.
+
 
 ### Performance Tips
 ```r

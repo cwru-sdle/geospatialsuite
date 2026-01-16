@@ -13,9 +13,9 @@ tags:
 - environmental monitoring
 date: "28 December 2025"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
-  pdf_document: default
 bibliography: paper.bib
 authors:
 - name: Olatunde D. Akanbi
@@ -64,7 +64,20 @@ geospatialsuite addresses these fundamental challenges through several key innov
 
 **Comprehensive vegetation analysis with automatic detection**: Over 60 vegetation indices including NDVI [@rouse1974monitoring], EVI [@huete2002overview], SAVI [@rondeaux1996optimization], and ARVI [@kaufman1992atmospherically] with automatic band detection that works seamlessly across Landsat, Sentinel-2, and MODIS platforms. Quality filtering and standardized output formats ensure consistent results regardless of input data source.
 
-**Reliable visualization for large datasets**: Built on `terra`'s efficient raster handling, the package provides publication-quality mapping through functions like `quick_map()` that handle large rasters without memory issues, automatic legend generation, and consistent color schemes. The visualization system includes robust error handling that prevents common plotting failures.
+**Reliable visualization for large datasets**: Built on `terra`'s efficient raster handling, `quick_map()` maintains constant memory usage (~75 MB) regardless of raster size while providing substantial performance advantages over data frame-based visualization approaches. Benchmarking demonstrates 4.2× faster execution and 7.6× better memory efficiency compared to ggplot2 for realistic satellite imagery (5,000×5,000 pixels), with performance advantages increasing at larger scales. The visualization system includes robust error handling that prevents common plotting failures.
+
+**Performance Comparison**
+
+Benchmarking `quick_map()` against comparable functions demonstrates:
+
+| Method | Memory (5K×5K) | Time (5K×5K) |
+|--------|----------------|--------------|
+| `quick_map()` | 75 MB | 684 ms |
+| `terra::plot()` | 75 MB | 675 ms |
+| `ggplot2::geom_raster()` | 572 MB | 2,897 ms |
+
+For realistic satellite imagery, `quick_map()` demonstrates 7.6× better 
+memory efficiency and 4.2× faster execution compared to ggplot2. 
 
 ![Example output from geospatialsuite's `quick_map()` function demonstrating universal spatial mapping capabilities. The function automatically detects data types, coordinate systems, and optimal visualization parameters, requiring only a single line of code to produce publication-quality maps from any spatial data format.](../img/quick.png){#fig:quickmap width=90%}
 

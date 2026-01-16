@@ -2,7 +2,6 @@ Package: geospatialsuite
 Title: Comprehensive Geospatiotemporal Analysis and Multimodal Integration
     Toolkit
 Version: 0.1.1
-Date: 2025-12-28
 Authors@R: c(
     person("Olatunde D.", "Akanbi", , "olatunde.akanbi@case.edu", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0001-7719-2619")),

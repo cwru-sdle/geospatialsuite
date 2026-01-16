@@ -483,6 +483,15 @@ geospatialsuite is optimized for:
 - **Geocoding**: Efficient caching and batch processing for large
   datasets
 
+For realistic satellite imagery (5K×5K pixels):
+
+- **7.6× more memory efficient** than ggplot2 (75 MB vs 572 MB)
+- **4.2× faster** execution (684 ms vs 2,897 ms)
+- **Constant memory** usage regardless of raster size
+
+See `vignette("performance-benchmark")` for complete benchmarks and
+reproducible code.
+
 ### Performance Tips
 
 ``` r

@@ -483,6 +483,15 @@ geospatialsuite is optimized for:
 - **Geocoding**: Efficient caching and batch processing for large
   datasets
 
+For realistic satellite imagery (5K×5K pixels):
+
+- **7.6× more memory efficient** than ggplot2 (75 MB vs 572 MB)
+- **4.2× faster** execution (684 ms vs 2,897 ms)
+- **Constant memory** usage regardless of raster size
+
+See `vignette("performance-benchmark")` for complete benchmarks and
+reproducible code.
+
 ### Performance Tips
 
 ``` r
@@ -1213,6 +1222,8 @@ Example workflows and use cases
   geospatialsuite](https://exelegch.github.io/geospatialsuite-docs/articles/analyze-crop-vegetation.md):
 - [Getting Started with
   geospatialsuite](https://exelegch.github.io/geospatialsuite-docs/articles/getting-started.md):
+- [Performance Benchmark: quick_map() vs Alternative
+  Approaches](https://exelegch.github.io/geospatialsuite-docs/articles/performance_benchmark.md):
 - [Universal Spatial Mapping with
   geospatialsuite](https://exelegch.github.io/geospatialsuite-docs/articles/spatial-analysis.md):
 - [Spatial Data
