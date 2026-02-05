@@ -56,7 +56,7 @@ research, environmental monitoring, and remote sensing applications.
 
 ## ✨ Key Features
 
-### 🗺️ **Auto-Geocoding Without Coordinates** ⭐ NEW!
+### 🗺️ **Auto-Geocoding Without Coordinates**
 
 - **Work with data that has NO lat/lon!** Automatically geocode using
   geographic identifiers
@@ -184,9 +184,9 @@ indices <- calculate_multiple_indices(
 
 ## 🗺️ Auto-Geocoding Without Coordinates
 
-**NEW!** Work with data that doesn’t have latitude/longitude
-coordinates. geospatialsuite automatically detects and geocodes
-geographic identifiers:
+Work with data that doesn’t have latitude/longitude coordinates.
+geospatialsuite automatically detects and geocodes geographic
+identifiers:
 
 ``` r
 # Works with state names or abbreviations
@@ -238,7 +238,7 @@ abbreviations) - ✅ Counties - ✅ FIPS codes - ✅ HUC watershed codes
   Package overview and quick start examples
 - [**Analyze Crop
   Vegetation**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/analyze-crop-vegetation.html) -
-  Using analyze_crop_vegetation() in geospatialsuite ⭐ NEW!
+  Using analyze_crop_vegetation() in geospatialsuite
 - [**Universal Spatial
   Analysis**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/spatial-analysis.html) -
   Core spatial join capabilities
@@ -261,7 +261,7 @@ abbreviations) - ✅ Counties - ✅ FIPS codes - ✅ HUC watershed codes
 # View all available functions
 help(package = "geospatialsuite")
 
-# New auto-geocoding functions
+# Auto-geocoding functions
 ?auto_geocode_data
 ?preview_geocoding
 
@@ -349,7 +349,7 @@ county_sf <- auto_geocode_data(county_data, verbose = TRUE)
 
 ## 🌟 What Makes geospatialsuite Special
 
-### 1. **Auto-Geocoding Revolution** ⭐ NEW!
+### 1. **Auto-Geocoding Revolution**
 
 No more manual coordinate lookups! Work directly with: - State names,
 county names, FIPS codes - HUC watershed codes (any format) - ZIP codes,

@@ -55,7 +55,7 @@ geospatialsuite is a powerful R package for geospatial analysis featuring **60+ 
 
 ## ✨ Key Features
 
-### 🗺️ **Auto-Geocoding Without Coordinates** ⭐ NEW!
+### 🗺️ **Auto-Geocoding Without Coordinates**
 - **Work with data that has NO lat/lon!** Automatically geocode using geographic identifiers
 - **States**: Full names or abbreviations (e.g., "Ohio", "OH")
 - **Counties**: County names with or without state
@@ -169,7 +169,7 @@ indices <- calculate_multiple_indices(
 
 ## 🗺️ Auto-Geocoding Without Coordinates
 
-**NEW!** Work with data that doesn't have latitude/longitude coordinates. geospatialsuite automatically detects and geocodes geographic identifiers:
+Work with data that doesn't have latitude/longitude coordinates. geospatialsuite automatically detects and geocodes geographic identifiers:
 ```r
 # Works with state names or abbreviations
 state_data <- data.frame(
@@ -219,7 +219,7 @@ preview_geocoding(my_data)
 ### Vignettes and Tutorials
 
 - [**Getting Started**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/getting-started.html) - Package overview and quick start examples
-- [**Analyze Crop Vegetation**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/analyze-crop-vegetation.html) - Using analyze_crop_vegetation() in geospatialsuite ⭐ NEW!
+- [**Analyze Crop Vegetation**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/analyze-crop-vegetation.html) - Using analyze_crop_vegetation() in geospatialsuite 
 - [**Universal Spatial Analysis**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/spatial-analysis.html) - Core spatial join capabilities
 - [**Spatial Integration**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/spatial-integration.html) - Robust multi-modal spatial integration capabilities
 - [**Vegetation Analysis**](https://cran.r-project.org/web/packages/geospatialsuite/vignettes/vegetation-indices.html) - 60+ vegetation indices and crop analysis
@@ -231,7 +231,7 @@ preview_geocoding(my_data)
 # View all available functions
 help(package = "geospatialsuite")
 
-# New auto-geocoding functions
+# Auto-geocoding functions
 ?auto_geocode_data
 ?preview_geocoding
 
@@ -319,7 +319,7 @@ county_sf <- auto_geocode_data(county_data, verbose = TRUE)
 
 ## 🌟 What Makes geospatialsuite Special
 
-### 1. **Auto-Geocoding Revolution** ⭐ NEW!
+### 1. **Auto-Geocoding Revolution**
 No more manual coordinate lookups! Work directly with:
 - State names, county names, FIPS codes
 - HUC watershed codes (any format)
