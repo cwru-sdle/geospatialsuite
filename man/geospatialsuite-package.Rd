@@ -152,6 +152,12 @@ Useful links:
 \author{
 Olatunde D. Akanbi \email{olatunde.akanbi@case.edu}
 
+Vibha Mandayam \email{vibha.mandayam@case.edu}
+
+Yinghui Wu \email{yinghui.wu2@case.edu}
+
+Jeffrey Yarus \email{jmy41@case.edu}
+
 Erika I. Barcelos \email{erika.barcelos@case.edu}
 
 Roger H. French \email{roger.french@case.edu}

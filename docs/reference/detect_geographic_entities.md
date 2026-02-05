@@ -5,7 +5,7 @@ Detect and geocode geographic entity columns
 ## Usage
 
 ``` r
-detect_geographic_entities(data_input)
+detect_geographic_entities(data_input, verbose_debug = FALSE)
 ```
 
 ## Arguments
@@ -13,6 +13,10 @@ detect_geographic_entities(data_input)
 - data_input:
 
   Data frame with potential geographic identifiers
+
+- verbose_debug:
+
+  Print debugging information (default: FALSE)
 
 ## Value
 

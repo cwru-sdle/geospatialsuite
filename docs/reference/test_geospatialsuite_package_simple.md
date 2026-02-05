@@ -41,7 +41,7 @@ test_results <- test_geospatialsuite_package_simple()
 #>  SIMPLIFIED TEST SUMMARY
 #> ====================
 #> Tests passed: 8/8 (100.0%)
-#> Duration: 0.23 seconds
+#> Duration: 0.32 seconds
 #> 
 #>  ALL TESTS PASSED! geospatialsuite is working correctly.
 #> Core functionality verified
@@ -85,7 +85,7 @@ test_results <- test_geospatialsuite_package_simple(verbose = TRUE)
 #>  SIMPLIFIED TEST SUMMARY
 #> ====================
 #> Tests passed: 8/8 (100.0%)
-#> Duration: 0.23 seconds
+#> Duration: 0.31 seconds
 #> 
 #> Detailed Results:
 #>   basic_ndvi_test: PASS

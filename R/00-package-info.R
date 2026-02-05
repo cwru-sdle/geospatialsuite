@@ -14,6 +14,9 @@
 #' @importFrom ggplot2 ggplot aes geom_sf geom_tile geom_text geom_raster coord_sf coord_fixed theme_minimal theme element_text labs scale_fill_gradient2 scale_fill_gradientn scale_color_manual ggsave scale_colour_viridis_c scale_fill_viridis_c
 #' @importFrom viridis scale_fill_viridis scale_color_viridis
 #' @author Olatunde D. Akanbi \email{olatunde.akanbi@case.edu}
+#' @author Vibha Mandayam \email{vibha.mandayam@case.edu}
+#' @author Yinghui Wu \email{yinghui.wu2@case.edu}
+#' @author Jeffrey Yarus \email{jmy41@case.edu}
 #' @author Erika I. Barcelos \email{erika.barcelos@case.edu}
 #' @author Roger H. French \email{roger.french@case.edu}
 #' @description
@@ -134,7 +137,7 @@
 # Package startup message - UPDATED
 .onAttach <- function(libname, pkgname) {
   packageStartupMessage("==================================================")
-  packageStartupMessage("geospatialsuite v0.1.1 - Reliable Spatiotemporal Analysis")
+  packageStartupMessage("geospatialsuite v0.2.0 - Reliable Spatiotemporal Analysis")
   packageStartupMessage("==================================================")
   packageStartupMessage("Universal - 60+ Vegetation Indices - Robust & Simple")
   packageStartupMessage("")

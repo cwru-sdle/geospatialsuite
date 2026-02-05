@@ -1,5 +1,6 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://exelegch.github.io/geospatialsuite-docs/404.html</loc></url>
+<url><loc>https://exelegch.github.io/geospatialsuite-docs/CODE_OF_CONDUCT.html</loc></url>
 <url><loc>https://exelegch.github.io/geospatialsuite-docs/CONTRIBUTING.html</loc></url>
 <url><loc>https://exelegch.github.io/geospatialsuite-docs/LICENSE-text.html</loc></url>
 <url><loc>https://exelegch.github.io/geospatialsuite-docs/articles/agricultural-analysis.html</loc></url>
@@ -15,7 +16,6 @@
 <url><loc>https://exelegch.github.io/geospatialsuite-docs/authors.html</loc></url>
 <url><loc>https://exelegch.github.io/geospatialsuite-docs/index.html</loc></url>
 <url><loc>https://exelegch.github.io/geospatialsuite-docs/news/index.html</loc></url>
-<url><loc>https://exelegch.github.io/geospatialsuite-docs/paper.html</loc></url>
 <url><loc>https://exelegch.github.io/geospatialsuite-docs/reference/add_boundary_overlay.html</loc></url>
 <url><loc>https://exelegch.github.io/geospatialsuite-docs/reference/add_crop_statistics_overlay.html</loc></url>
 <url><loc>https://exelegch.github.io/geospatialsuite-docs/reference/add_lines_to_leaflet.html</loc></url>

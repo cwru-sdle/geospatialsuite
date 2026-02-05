@@ -48,13 +48,13 @@ affiliations:
 
 # Summary
 
-A comprehensive R package for geospatiotemporal analysis, geospatialsuite provides researchers with a unified toolkit for multimodal spatial data integration. The package features over 60 vegetation indices with automatic satellite band detection, universal spatial join operations that work with any raster-vector combination, robust raster visualization with built-in error handling, and rapid mapping capabilities through the `quick_map()` function. Designed for reliability and universal applicability, geospatialsuite addresses critical needs in agricultural research, environmental monitoring, and remote sensing applications while maintaining computational efficiency for large datasets.
+Geospatial analysis in environmental and agricultural research requires reliable, standardized tools that can handle diverse datasets across different geographic regions and satellite platforms. geospatialsuite is a comprehensive R package for geospatiotemporal analysis that provides researchers with a unified toolkit for multimodal spatial data integration. The package features over 60 vegetation indices with automatic satellite band detection, universal spatial join operations that work with any raster-vector combination, robust raster visualization with built-in error handling, and rapid mapping capabilities through the `quick_map()` function. Designed for reliability and universal applicability, geospatialsuite addresses critical needs in agricultural research, environmental monitoring, and remote sensing applications while maintaining computational efficiency for large datasets.
 
-The package seamlessly integrates with the modern R spatial ecosystem through `terra` [@hijmans2022terra] and `sf` [@pebesma2018simple], providing enhanced NDVI calculations with quality filtering, comprehensive water quality analysis using multiple indices (NDWI [@mcfeeters1996normalized], MNDWI [@xu2006modification], NDMI), crop data layer (CDL) analysis [@usda2024cdl], spatial interpolation techniques [@cressie1993statistics], and terrain analysis. Unlike existing solutions that are often limited by complex dependencies or geographic scope, geospatialsuite emphasizes universal functionality—working seamlessly across different regions, satellite platforms (Landsat, Sentinel-2, MODIS), and data types with comprehensive error handling throughout. The package has enabled research in agricultural systems monitoring [@akanbi2024multiscale] and multimodal data integration [@akanbi2024integrating].
+The package seamlessly integrates with the modern R spatial ecosystem through `terra` [@hijmans2022terra] and `sf` [@pebesma2018simple], providing enhanced NDVI calculations with quality filtering, comprehensive water quality analysis using multiple indices (NDWI [@mcfeeters1996normalized], MNDWI [@xu2006modification], NDMI), crop data layer (CDL) analysis [@usda2024cdl], spatial interpolation techniques [@cressie1993statistics], and terrain analysis. Unlike existing solutions that are often limited by complex dependencies or geographic scope, geospatialsuite emphasizes universal functionalityâ€”working seamlessly across different regions, satellite platforms (Landsat, Sentinel-2, MODIS), and data types with comprehensive error handling throughout. The package has enabled research in agricultural systems monitoring [@akanbi2024multiscale] and multimodal data integration [@akanbi2024integrating].
 
 # Statement of Need
 
-Geospatial analysis in environmental and agricultural research requires reliable, standardized tools that can handle diverse datasets across different geographic regions and satellite platforms. While foundational packages like `terra` [@hijmans2022terra] and `sf` [@pebesma2018simple] provide essential spatial data handling capabilities, researchers often face significant challenges when attempting to integrate multiple data sources, calculate specialized indices, or create reliable visualizations from large raster datasets.
+While foundational packages like `terra` [@hijmans2022terra] and `sf` [@pebesma2018simple] provide essential spatial data handling capabilities, researchers often face significant challenges when attempting to integrate multiple data sources, calculate specialized indices, or create reliable visualizations from large raster datasets.
 
 Current solutions in the R ecosystem present several critical limitations: vegetation index packages typically cover only a subset of available indices and lack automatic band detection across different satellite platforms; spatial join operations often fail with edge cases or require extensive preprocessing; visualization tools frequently encounter memory issues with large rasters or produce inconsistent results; and multimodal data integration requires custom workflows that are difficult to reproduce, error-prone, and time-consuming to implement.
 
@@ -77,7 +77,7 @@ Benchmarking `quick_map()` against comparable functions demonstrates:
 | `ggplot2::geom_raster()` | 572 MB | 2,897 ms |
 
 For realistic satellite imagery, `quick_map()` demonstrates 7.6× better 
-memory efficiency and 4.2× faster execution compared to ggplot2. 
+memory efficiency and 4.2× faster execution compared to ggplot2.
 
 ![Example output from geospatialsuite's `quick_map()` function demonstrating universal spatial mapping capabilities. The function automatically detects data types, coordinate systems, and optimal visualization parameters, requiring only a single line of code to produce publication-quality maps from any spatial data format.](../img/quick.png){#fig:quickmap width=90%}
 
@@ -91,7 +91,7 @@ geospatialsuite fills a critical gap by providing a single, well-documented pack
 
 geospatialsuite is organized into 10 functional categories comprising 165 functions (Figure 2), designed to provide comprehensive geospatial analysis capabilities while maintaining ease of use and reliability. The package architecture emphasizes modularity, with each functional category serving specific analytical needs while integrating seamlessly with other components.
 
-![geospatialsuite functional organization showing the 10 major categories of functions: Core Spatial Operations, Water Quality and Indices, Spatial Interpolation, Testing & Validation, Utility Functions, Temporal Analysis, Data Processing, Visualization & Mapping, Comprehensive Workflows, and Vegetation Analysis. \label{fig:architecture}](../img/fig2.png)
+![geospatialsuite functional organization showing the 10 major categories of functions: Core Spatial Operations, Water Quality and Indices, Spatial Interpolation, Testing & Validation, Utility Functions, Temporal Analysis, Data Processing, Visualization & Mapping, Comprehensive Workflows, and Vegetation Analysis.](../img/fig2.png){#fig:architecture width=70%}
 
 The core design philosophy centers on universal compatibility and robust error handling. Functions automatically detect data types, coordinate systems, and optimal processing methods, reducing the technical barrier for researchers while maintaining the flexibility needed for advanced applications. This architecture enables both novice users to quickly generate results and experienced researchers to implement sophisticated analytical workflows.
 
@@ -101,6 +101,6 @@ geospatialsuite is available on the Comprehensive R Archive Network (CRAN) at ht
 
 # Acknowledgements
 
-This material is based upon financial support by the National Science Foundation, EEC Division of Engineering Education and Centers, NSF Engineering Research Center for Advancing Sustainable and Distributed Fertilizer production (CASFER), NSF 20-553 Gen-4 Engineering Research Centers award 2133576. The authors thank the broader CASFER research community for feedback and testing that improved the package's functionality and usability.
+This material is based upon financial support by the National Science Foundation, EEC Division of Engineering Education and Centers, NSF Engineering Research Center for Advancing Sustainable and Distributed Fertilizer production (CASFER), NSF 20-553 Gen-4 Engineering Research Centers award 2133576. The authors thank the broader Solar Durablity and Lifetime Extension (SDLE) research community for feedback and testing that improved the package's functionality and usability.
 
 # References

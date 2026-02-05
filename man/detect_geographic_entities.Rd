@@ -4,10 +4,12 @@
 \alias{detect_geographic_entities}
 \title{Detect and geocode geographic entity columns}
 \usage{
-detect_geographic_entities(data_input)
+detect_geographic_entities(data_input, verbose_debug = FALSE)
 }
 \arguments{
 \item{data_input}{Data frame with potential geographic identifiers}
+
+\item{verbose_debug}{Print debugging information (default: FALSE)}
 }
 \value{
 List with detected column and type, or NULL if none found

@@ -157,6 +157,12 @@ Useful links:
 
 Olatunde D. Akanbi <olatunde.akanbi@case.edu>
 
+Vibha Mandayam <vibha.mandayam@case.edu>
+
+Yinghui Wu <yinghui.wu2@case.edu>
+
+Jeffrey Yarus <jmy41@case.edu>
+
 Erika I. Barcelos <erika.barcelos@case.edu>
 
 Roger H. French <roger.french@case.edu>
