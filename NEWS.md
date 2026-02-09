@@ -1,4 +1,4 @@
-# geospatialsuite 0.1.1
+# geospatialsuite 0.2.0
 
 ## Major Improvements
 
