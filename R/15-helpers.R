@@ -1011,10 +1011,10 @@ geocode_fips <- function(data, column, verbose) {
 geocode_hucs <- function(data, column, verbose) {
   if (verbose) message("Geocoding HUC codes...")
 
-  # nhdplusTools is needed for HUC geocoding
-  if (!requireNamespace("nhdplusTools", quietly = TRUE)) {
-    stop("Package 'nhdplusTools' is required for HUC geocoding.\n",
-         "Install it with: install.packages('nhdplusTools')", call. = FALSE)
+  # hydrogeofetch is needed for HUC geocoding
+  if (!requireNamespace("hydrogeofetch", quietly = TRUE)) {
+    stop("Package 'hydrogeofetch' is required for HUC geocoding.\n",
+         "Install it with: install.packages('hydrogeofetch')", call. = FALSE)
   }
 
   # Detect HUC level
@@ -1035,7 +1035,7 @@ geocode_hucs <- function(data, column, verbose) {
     huc_code <- data$huc_clean[i]
 
     tryCatch({
-      huc_boundary <- nhdplusTools::get_huc(id = huc_code, type = huc_level)
+      huc_boundary <- hydrogeofetch::get_huc(id = huc_code, type = huc_level)
 
       # Add the original HUC code for matching
       huc_boundary$huc_code_match <- huc_code
@@ -1334,7 +1334,7 @@ process_vector_data <- function(data_input, coord_cols = c("lon", "lat"),
 #' Required packages (installed automatically when needed):
 #' \itemize{
 #'   \item \code{tigris}: For US Census boundaries (states, counties, FIPS)
-#'   \item \code{nhdplusTools}: For HUC watershed boundaries
+#'   \item \code{hydrogeofetch}: For HUC watershed boundaries
 #'   \item \code{zipcodeR}: For ZIP code centroids
 #'   \item \code{tidygeocoder}: For city name geocoding
 #' }

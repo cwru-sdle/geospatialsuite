@@ -67,7 +67,7 @@ Suggests:
     pkgnet,
     rmarkdown,
     kableExtra,
-    nhdplusTools,
+    hydrogeofetch,
     zipcodeR,
     tidygeocoder,
     testthat (>= 3.0.0)
