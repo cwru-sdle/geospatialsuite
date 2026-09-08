@@ -52,7 +52,7 @@ Column name variations supported:
 Required packages (installed automatically when needed):
 \itemize{
 \item \code{tigris}: For US Census boundaries (states, counties, FIPS)
-\item \code{nhdplusTools}: For HUC watershed boundaries
+\item \code{hydrogeofetch}: For HUC watershed boundaries
 \item \code{zipcodeR}: For ZIP code centroids
 \item \code{tidygeocoder}: For city name geocoding
 }

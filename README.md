@@ -621,7 +621,7 @@ install.packages(c(
 
 # Extended geocoding capabilities (listed in DESCRIPTION Suggests)
 install.packages(c(
-  "nhdplusTools",  # HUC watershed boundaries
+  "hydrogeofetch",  # HUC watershed boundaries
   "zipcodeR",      # ZIP code centroids
   "tidygeocoder"   # City name geocoding
 ))
@@ -700,7 +700,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - `terra` package developers (Robert J. Hijmans et al.)
 - `sf` package developers (Edzer Pebesma et al.)
 - Remote sensing and geospatial R community
-- geocoding package developers (`tigris`, `nhdplusTools`, `zipcodeR`,
+- geocoding package developers (`tigris`, `hydrogeofetch`, `zipcodeR`,
   `tidygeocoder`)
 
 ------------------------------------------------------------------------
